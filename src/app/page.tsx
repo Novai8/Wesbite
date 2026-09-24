@@ -47,7 +47,7 @@ export default function HomePage() {
                 </Link>
               </Button>
               <Button asChild variant="secondary">
-                <Link href="/contact" data-cursor-label="Open">
+                <Link href="/contact">
                   Contact
                 </Link>
               </Button>

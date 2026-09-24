@@ -4,6 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { motion, useMotionValue, useReducedMotion, useSpring } from "framer-motion";
 import { usePrefs } from "@/components/providers";
 
+const HOVER_SELECTOR =
+  "a, button, input, textarea, select, summary, [data-cursor='hover'], [role='button']";
+
 export function CustomCursor() {
   const { cursor } = usePrefs();
   const reduce = useReducedMotion();
@@ -12,14 +15,12 @@ export function CustomCursor() {
   const [hover, setHover] = useState(false);
   const [label, setLabel] = useState("");
   const glowRef = useRef<HTMLDivElement>(null);
-  const hoverKey = useRef("");
-  const x = useMotionValue(-120);
-  const y = useMotionValue(-120);
-  const spring = reduce
-    ? { stiffness: 900, damping: 70, mass: 0.2 }
-    : { stiffness: 260, damping: 28, mass: 0.55 };
-  const ringX = useSpring(x, spring);
-  const ringY = useSpring(y, spring);
+  const visibleRef = useRef(false);
+  const stateKey = useRef("");
+  const x = useMotionValue(-80);
+  const y = useMotionValue(-80);
+  const sx = useSpring(x, { stiffness: 460, damping: 34, mass: 0.32 });
+  const sy = useSpring(y, { stiffness: 460, damping: 34, mass: 0.32 });
 
   useEffect(() => {
     const media = window.matchMedia("(hover: hover) and (pointer: fine)");
@@ -38,92 +39,90 @@ export function CustomCursor() {
   useEffect(() => {
     if (!cursor || !fine) return;
 
-    const onMove = (event: MouseEvent) => {
+    function onMove(event: MouseEvent) {
       x.set(event.clientX);
       y.set(event.clientY);
-      const target = event.target;
-      const field =
-        target instanceof Element
-          ? target.closest("input, textarea, select, [contenteditable='true']")
-          : null;
-      if (field) {
-        setVisible(false);
-        if (hoverKey.current) {
-          hoverKey.current = "";
-          setHover(false);
-          setLabel("");
-        }
-        return;
+      const glow = glowRef.current;
+      if (glow) {
+        glow.style.setProperty("--cx", `${event.clientX}px`);
+        glow.style.setProperty("--cy", `${event.clientY}px`);
       }
-      setVisible(true);
-      if (glowRef.current) {
-        glowRef.current.style.background = `radial-gradient(560px circle at ${event.clientX}px ${event.clientY}px, rgba(249,115,22,0.065), transparent 62%)`;
-      }
-      const zone =
-        target instanceof Element
-          ? target.closest("a, button, [data-cursor-label], [role='button']")
-          : null;
-      const nextLabel = zone?.getAttribute("data-cursor-label") ?? "";
+      const target = event.target instanceof Element ? event.target : null;
+      const zone = target?.closest(HOVER_SELECTOR) ?? null;
+      const labeled = target?.closest("[data-cursor='hover']");
+      const nextLabel = labeled?.getAttribute("data-cursor-label") ?? "";
       const nextHover = Boolean(zone);
       const key = `${nextHover}:${nextLabel}`;
-      if (key !== hoverKey.current) {
-        hoverKey.current = key;
+      if (key !== stateKey.current) {
+        stateKey.current = key;
         setHover(nextHover);
         setLabel(nextLabel);
       }
-    };
+      if (!visibleRef.current) {
+        visibleRef.current = true;
+        setVisible(true);
+      }
+    }
 
-    const onLeave = () => setVisible(false);
+    function onLeave() {
+      visibleRef.current = false;
+      stateKey.current = "";
+      setVisible(false);
+      setHover(false);
+      setLabel("");
+    }
+
     window.addEventListener("mousemove", onMove, { passive: true });
-    document.documentElement.addEventListener("mouseleave", onLeave);
+    document.addEventListener("mouseleave", onLeave);
     return () => {
       window.removeEventListener("mousemove", onMove);
-      document.documentElement.removeEventListener("mouseleave", onLeave);
+      document.removeEventListener("mouseleave", onLeave);
     };
   }, [cursor, fine, x, y]);
 
   if (!cursor || !fine) return null;
 
-  const ring = label ? 78 : hover ? 54 : 36;
-
   return (
     <>
-      <div ref={glowRef} className="cursor-glow" aria-hidden />
+      {reduce ? null : <div ref={glowRef} className="cursor-glow" aria-hidden />}
       <motion.div
         aria-hidden
-        className="pointer-events-none fixed top-0 left-0 z-[120] h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full"
-        style={{
-          x,
-          y,
-          opacity: visible ? 1 : 0,
-          background: hover ? "#F97316" : "#0F172A",
-        }}
-      />
-      <motion.div
-        aria-hidden
-        className="pointer-events-none fixed top-0 left-0 z-[120] grid -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border"
-        style={{
-          x: reduce ? x : ringX,
-          y: reduce ? y : ringY,
-          opacity: visible ? 1 : 0,
-        }}
-        animate={{
-          width: ring,
-          height: ring,
-          borderColor: hover ? "rgba(249,115,22,0.95)" : "rgba(15,23,42,0.45)",
-          backgroundColor: label ? "rgba(255,255,255,0.94)" : "rgba(255,255,255,0)",
-        }}
-        transition={
-          reduce
-            ? { duration: 0 }
-            : { type: "spring", stiffness: 340, damping: 28 }
-        }
+        className="pointer-events-none fixed top-0 left-0 z-[120]"
+        style={{ x: reduce ? x : sx, y: reduce ? y : sy, opacity: visible ? 1 : 0 }}
       >
-        {label ? (
-          <span className="text-[10px] font-semibold tracking-[0.14em] text-ink uppercase">
-            {label}
-          </span>
-        ) : null}
+        <motion.div
+          className="relative"
+          style={{ transformOrigin: "0px 0px" }}
+          animate={{ scale: hover ? 1.15 : 1 }}
+          transition={reduce ? { duration: 0 } : { type: "spring", stiffness: 520, damping: 30 }}
+        >
+          <svg width="28" height="32" viewBox="0 0 28 32" className="block overflow-visible">
+            {hover ? (
+              <circle
+                cx="12"
+                cy="14"
+                r="13.25"
+                fill="none"
+                stroke="var(--color-accent)"
+                strokeWidth="1"
+                opacity="0.42"
+              />
+            ) : null}
+            <path
+              d="M0.4 0.2 L22.6 12.4 Q14.2 19.6 9.8 27.8 Z"
+              fill={hover ? "var(--color-accent-bright)" : "var(--color-accent)"}
+              stroke="#ffffff"
+              strokeWidth="1.1"
+              strokeLinejoin="miter"
+              strokeMiterlimit={8}
+            />
+          </svg>
+          {label ? (
+            <span className="pointer-events-none absolute top-3.5 left-6 whitespace-nowrap rounded-full border border-accent-line bg-white px-1.5 py-px text-[9px] leading-4 font-semibold tracking-[0.14em] text-accent-ink uppercase">
+              {label}
+            </span>
+          ) : null}
+        </motion.div>
       </motion.div>
     </>
   );

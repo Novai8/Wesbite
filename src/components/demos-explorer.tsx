@@ -264,7 +264,9 @@ export function DemosExplorer({ initial }: { initial: FilterState }) {
             </div>
             <div className="mt-5 flex flex-wrap gap-2">
               <Button asChild>
-                <Link href={`/demos/${preview.slug}`}>Open details</Link>
+                <Link href={`/demos/${preview.slug}`} data-cursor-label="Open">
+                  Open details
+                </Link>
               </Button>
               <Button asChild variant="secondary">
                 <a href={workflowMailto(preview.title)}>Request this workflow</a>
@@ -325,7 +327,7 @@ function NichePills({
         {box.ready ? (
           <motion.span
             aria-hidden
-            className="absolute rounded-xl bg-white shadow-[0_1px_2px_rgba(15,23,42,0.06)] ring-1 ring-orange-200"
+            className="absolute rounded-xl bg-white shadow-[0_1px_2px_rgba(15,23,42,0.06)] ring-1 ring-accent-line"
             initial={false}
             animate={{ left: box.x, top: box.y, width: box.w, height: box.h }}
             transition={

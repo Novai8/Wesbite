@@ -62,7 +62,6 @@ function NicheTile({
     <Link
       ref={ref}
       href={`/demos?niche=${id}`}
-      data-cursor-label="Open"
       onMouseMove={onMove}
       onMouseLeave={onLeave}
       className="niche-tile group"

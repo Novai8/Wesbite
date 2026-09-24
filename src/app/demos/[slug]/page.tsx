@@ -85,7 +85,9 @@ export default async function DemoDetailPage({ params }: Props) {
             sent until you send it.
           </p>
           <Button asChild className="mt-5 w-full">
-            <a href={workflowMailto(demo.title)}>Request this workflow</a>
+            <a href={workflowMailto(demo.title)} data-cursor-label="Open">
+              Request this workflow
+            </a>
           </Button>
           <div className="mt-4 flex flex-wrap gap-1.5">
             {demo.reliabilityFeatures.map((item) => (
@@ -178,7 +180,6 @@ export default async function DemoDetailPage({ params }: Props) {
               <Link
                 key={item.slug}
                 href={`/demos/${item.slug}`}
-                data-cursor-label="View"
                 className="surface block min-w-0 p-4 transition-transform duration-200 hover:-translate-y-0.5"
               >
                 <p className="text-xs text-slate-500">{item.niche}</p>

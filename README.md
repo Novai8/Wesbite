@@ -1,6 +1,6 @@
 # Rapigents
 
-Portfolio site for **Hussnain Tariq** / **Rapigents**. Twelve niche-specific n8n workflow demos, with human review, audit notes, and fictional data. Orange and white, minimal, with page transitions, a custom cursor, and optional click sound.
+Portfolio site for **Hussnain Tariq** / **Rapigents**. Twelve niche-specific n8n workflow demos, with human review, audit notes, and fictional data. Purple and white, minimal, with page transitions, a custom cursor, and optional click sound.
 
 This is an independent portfolio prototype. Time-saved figures are illustrative assumptions. Actual results vary.
 
@@ -84,4 +84,4 @@ Direct `https://` video files also work. YouTube links (`youtube.com/watch?v=` o
 - `public/brand/logo.png` — raster of the same mark
 - `public/brand/og.png` — Open Graph image
 
-No logo file was attached to the repository when this site was built, so the mark is an original RA monogram in the brand orange (`#F97316`). Replace those three files to swap the logo. The navbar uses the same paths, inlined in `src/components/logo.tsx` — update that path data if the SVG letterforms change.
+No logo file was attached to the repository when this site was built, so the mark is an original RA monogram in the brand purple (`#7C3AED`). Replace those three files to swap the logo. The navbar uses the same paths, inlined in `src/components/logo.tsx` — update that path data if the SVG letterforms change.

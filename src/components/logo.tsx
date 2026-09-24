@@ -10,7 +10,7 @@ export function Logo({ className }: { className?: string }) {
       className={cn("h-8 w-8 shrink-0", className)}
       aria-hidden="true"
     >
-      <rect width="128" height="128" rx="30" fill="#F97316" />
+      <rect width="128" height="128" rx="30" fill="var(--color-accent)" />
       <path fill="#FFFFFF" d={MARK_PATH} />
     </svg>
   );
