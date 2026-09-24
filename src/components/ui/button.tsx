@@ -37,7 +37,7 @@ export function Button({
     <Comp
       className={cn(buttonVariants({ variant, size }), className)}
       {...props}
-      {...(isPrimary ? { "data-cursor": "hover" } : {})}
+      {...(isPrimary ? { "data-cursor": "hover invert" } : {})}
     />
   );
 }

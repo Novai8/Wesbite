@@ -42,14 +42,7 @@ GitHub: [https://github.com/Novai8](https://github.com/Novai8)
 
 Demo content lives in one file: `src/data/demos.ts`.
 
-Each demo has:
-
-```ts
-videoUrl: "",
-thumbnailUrl: "",
-```
-
-Leave both empty to keep the blank frame. When a recording is ready:
+Each demo has `videoUrl`, `thumbnailUrl`, and `youtubeUrl`. The twelve demos already point at their YouTube walkthroughs. `videoUrl` is an embed URL (`https://www.youtube.com/embed/VIDEO_ID`). Detail pages and the preview modal render that as a responsive iframe. Cards show a Watch demo poster and open the video. Leave `videoUrl` empty to keep the blank frame. A local file still works:
 
 1. Put the file in `public/videos/` (for example `public/videos/lead-qualification.mp4`).
 2. Optionally add a poster image in `public/videos/` or `public/thumbs/`.
@@ -60,13 +53,13 @@ videoUrl: "/videos/lead-qualification.mp4",
 thumbnailUrl: "/thumbs/lead-qualification.jpg",
 ```
 
-Direct `https://` video files also work. YouTube links (`youtube.com/watch?v=` or `youtu.be/`) render as an embed. Do not autoplay. The detail page and the library cards both read these two fields.
+Direct `https://` video files also work. YouTube links (`youtube.com/watch?v=` or `youtu.be/`) render as an embed. Do not autoplay. The detail page embeds `videoUrl`. Cards use the poster and open that same video.
 
 ## Sound and cursor
 
 - **Sound: Off** by default. The navbar toggle turns on a quiet Web Audio click. The choice is stored in `localStorage` (`rapigents-sound`).
 - **Cursor effects: On** by default on a fine pointer, off when `prefers-reduced-motion` is set and the visitor has not chosen. Stored as `rapigents-cursor`.
-- Touch devices keep the system cursor. The custom cursor is desktop only.
+- Touch devices keep the system cursor. The custom cursor is desktop only. It is dark purple, and turns white over purple surfaces marked `data-cursor="invert"`.
 
 ## Deploy to Vercel
 

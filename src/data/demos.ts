@@ -49,6 +49,7 @@ export type Demo = {
   tools: string[];
   videoUrl: string;
   thumbnailUrl: string;
+  youtubeUrl: string;
 };
 
 export const demos: Demo[] = [
@@ -85,8 +86,9 @@ export const demos: Demo[] = [
       notes: "Assumes a person checks the fit note and the CRM draft before any handover. Does not include sales conversations or CRM cleanup.",
     },
     tools: ["n8n", "OpenAI", "HubSpot", "Inbound form"],
-    videoUrl: "",
-    thumbnailUrl: "",
+    videoUrl: "https://www.youtube.com/embed/EdLpBw73RIw",
+    thumbnailUrl: "https://i.ytimg.com/vi/EdLpBw73RIw/hqdefault.jpg",
+    youtubeUrl: "https://youtu.be/EdLpBw73RIw",
   },
   {
     slug: "ai-follow-up-monitor",
@@ -121,8 +123,9 @@ export const demos: Demo[] = [
       notes: "Assumes someone still glances at the ambiguous queue. Does not include writing the original sequence.",
     },
     tools: ["n8n", "Gmail", "OpenAI"],
-    videoUrl: "",
-    thumbnailUrl: "",
+    videoUrl: "https://www.youtube.com/embed/A3X_X7KRHJ4",
+    thumbnailUrl: "https://i.ytimg.com/vi/A3X_X7KRHJ4/hqdefault.jpg",
+    youtubeUrl: "https://youtu.be/A3X_X7KRHJ4",
   },
   {
     slug: "client-reporting-automation",
@@ -157,8 +160,9 @@ export const demos: Demo[] = [
       notes: "Assumes the sources are already connected and the narrative is edited, not rewritten from scratch. Does not include the client call.",
     },
     tools: ["n8n", "Google Sheets", "OpenAI", "Gmail"],
-    videoUrl: "",
-    thumbnailUrl: "",
+    videoUrl: "https://www.youtube.com/embed/ZCkYMFwCVV4",
+    thumbnailUrl: "https://i.ytimg.com/vi/ZCkYMFwCVV4/hqdefault.jpg",
+    youtubeUrl: "https://youtu.be/ZCkYMFwCVV4",
   },
   {
     slug: "ai-inbox-triage-for-agencies",
@@ -193,8 +197,9 @@ export const demos: Demo[] = [
       notes: "Assumes the owner still edits the draft. Does not include the time spent on the actual client work the email describes.",
     },
     tools: ["n8n", "Gmail", "OpenAI"],
-    videoUrl: "",
-    thumbnailUrl: "",
+    videoUrl: "https://www.youtube.com/embed/tLnd9kEnQFc",
+    thumbnailUrl: "https://i.ytimg.com/vi/tLnd9kEnQFc/hqdefault.jpg",
+    youtubeUrl: "https://youtu.be/tLnd9kEnQFc",
   },
   {
     slug: "candidate-profile-generator",
@@ -229,8 +234,9 @@ export const demos: Demo[] = [
       notes: "Assumes the CV text is already available to the workflow. Does not include interviews or reference calls.",
     },
     tools: ["n8n", "OpenAI", "Google Docs"],
-    videoUrl: "",
-    thumbnailUrl: "",
+    videoUrl: "https://www.youtube.com/embed/_lIu3VDMHDk",
+    thumbnailUrl: "https://i.ytimg.com/vi/_lIu3VDMHDk/hqdefault.jpg",
+    youtubeUrl: "https://youtu.be/_lIu3VDMHDk",
   },
   {
     slug: "candidate-to-role-evidence-analysis",
@@ -265,8 +271,9 @@ export const demos: Demo[] = [
       notes: "Assumes a written role brief already exists. Does not include the client debrief.",
     },
     tools: ["n8n", "OpenAI", "Google Docs"],
-    videoUrl: "",
-    thumbnailUrl: "",
+    videoUrl: "https://www.youtube.com/embed/fleVKn86PKs",
+    thumbnailUrl: "https://i.ytimg.com/vi/fleVKn86PKs/hqdefault.jpg",
+    youtubeUrl: "https://youtu.be/fleVKn86PKs",
   },
   {
     slug: "search-inbox-assistant",
@@ -301,8 +308,9 @@ export const demos: Demo[] = [
       notes: "Assumes a person still confirms the next action. Does not include the call itself.",
     },
     tools: ["n8n", "Gmail", "OpenAI"],
-    videoUrl: "",
-    thumbnailUrl: "",
+    videoUrl: "https://www.youtube.com/embed/Ny1v86BzkNM",
+    thumbnailUrl: "https://i.ytimg.com/vi/Ny1v86BzkNM/hqdefault.jpg",
+    youtubeUrl: "https://youtu.be/Ny1v86BzkNM",
   },
   {
     slug: "search-launch-preparation-assistant",
@@ -337,8 +345,9 @@ export const demos: Demo[] = [
       notes: "Assumes intake notes already exist. Does not include sourcing or the hiring-manager workshop.",
     },
     tools: ["n8n", "OpenAI", "Google Docs"],
-    videoUrl: "",
-    thumbnailUrl: "",
+    videoUrl: "https://www.youtube.com/embed/A-tz0yCfdio",
+    thumbnailUrl: "https://i.ytimg.com/vi/A-tz0yCfdio/hqdefault.jpg",
+    youtubeUrl: "https://youtu.be/A-tz0yCfdio",
   },
   {
     slug: "customer-support-email-agent",
@@ -373,8 +382,9 @@ export const demos: Demo[] = [
       notes: "Assumes a short approved answer set already exists. Does not include resolving the underlying job.",
     },
     tools: ["n8n", "Gmail", "OpenAI"],
-    videoUrl: "",
-    thumbnailUrl: "",
+    videoUrl: "https://www.youtube.com/embed/SLDwego-pKA",
+    thumbnailUrl: "https://i.ytimg.com/vi/SLDwego-pKA/hqdefault.jpg",
+    youtubeUrl: "https://youtu.be/SLDwego-pKA",
   },
   {
     slug: "appointment-request-automation",
@@ -409,8 +419,9 @@ export const demos: Demo[] = [
       notes: "Assumes booking rules are written down. Does not include travel time or the appointment itself.",
     },
     tools: ["n8n", "Gmail", "Google Calendar", "OpenAI"],
-    videoUrl: "",
-    thumbnailUrl: "",
+    videoUrl: "https://www.youtube.com/embed/ctzsYA_sEmU",
+    thumbnailUrl: "https://i.ytimg.com/vi/ctzsYA_sEmU/hqdefault.jpg",
+    youtubeUrl: "https://youtu.be/ctzsYA_sEmU",
   },
   {
     slug: "ai-document-intake",
@@ -445,8 +456,9 @@ export const demos: Demo[] = [
       notes: "Assumes a written checklist of required fields. Does not include chasing the customer after the note is sent.",
     },
     tools: ["n8n", "Gmail", "OpenAI", "Google Drive"],
-    videoUrl: "",
-    thumbnailUrl: "",
+    videoUrl: "https://www.youtube.com/embed/aNd9a-ix8_o",
+    thumbnailUrl: "https://i.ytimg.com/vi/aNd9a-ix8_o/hqdefault.jpg",
+    youtubeUrl: "https://youtu.be/aNd9a-ix8_o",
   },
   {
     slug: "daily-executive-operations-brief",
@@ -481,8 +493,9 @@ export const demos: Demo[] = [
       notes: "Assumes the agreed sources are already connected. Does not include the decisions themselves.",
     },
     tools: ["n8n", "Gmail", "Google Calendar", "OpenAI"],
-    videoUrl: "",
-    thumbnailUrl: "",
+    videoUrl: "https://www.youtube.com/embed/ls2zzeltX2o",
+    thumbnailUrl: "https://i.ytimg.com/vi/ls2zzeltX2o/hqdefault.jpg",
+    youtubeUrl: "https://youtu.be/ls2zzeltX2o",
   },
 ];
 

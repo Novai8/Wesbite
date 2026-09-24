@@ -189,6 +189,7 @@ export function DemosExplorer({ initial }: { initial: FilterState }) {
           <button
             type="button"
             className="btn btn-primary mt-6"
+            data-cursor="invert"
             onClick={() => update({ ...emptyFilters }, "replace")}
           >
             Clear filters
@@ -268,6 +269,17 @@ export function DemosExplorer({ initial }: { initial: FilterState }) {
                   Open details
                 </Link>
               </Button>
+              {preview.youtubeUrl ? (
+                <a
+                  href={preview.youtubeUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-secondary h-12 px-5 text-[15px]"
+                >
+                  Watch on YouTube
+                  <span className="sr-only"> (opens in a new tab)</span>
+                </a>
+              ) : null}
               <Button asChild variant="secondary">
                 <a href={workflowMailto(preview.title)}>Request this workflow</a>
               </Button>
@@ -390,6 +402,7 @@ function ChipRow({
               aria-pressed={active}
               onClick={() => onToggle(option)}
               className={cn("filter-chip", active && "is-on")}
+              data-cursor={active ? "invert" : undefined}
             >
               {option}
             </button>

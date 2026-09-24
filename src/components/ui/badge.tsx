@@ -18,6 +18,7 @@ export function Badge({
           : "border-line bg-white text-slate-600",
         className,
       )}
+      data-cursor={tone === "accent" ? "invert" : undefined}
     >
       <span className="truncate">{children}</span>
     </span>

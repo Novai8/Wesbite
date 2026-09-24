@@ -47,6 +47,7 @@ export function HeroStage() {
             }}
           >
             <span
+              data-cursor={index === 2 ? "invert" : undefined}
               className={`relative z-10 mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full border text-[11px] font-medium ${
                 index === 2
                   ? "border-accent bg-accent text-white"

@@ -71,6 +71,18 @@ export default async function DemoDetailPage({ params }: Props) {
               videoUrl={demo.videoUrl}
               thumbnailUrl={demo.thumbnailUrl}
             />
+            {demo.youtubeUrl ? (
+              <a
+                href={demo.youtubeUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                data-cursor="invert"
+                className="mt-3 inline-flex text-sm font-medium text-accent-ink underline-offset-4 hover:underline"
+              >
+                Watch on YouTube
+                <span className="sr-only"> (opens in a new tab)</span>
+              </a>
+            ) : null}
           </div>
         </div>
         <aside className="surface h-fit p-5 sm:sticky sm:top-40 sm:p-6">

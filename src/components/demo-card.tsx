@@ -20,6 +20,7 @@ function CardBody({ demo }: { demo: Demo }) {
         title={demo.title}
         videoUrl={demo.videoUrl}
         thumbnailUrl={demo.thumbnailUrl}
+        embed={false}
       />
       <div className="flex min-w-0 flex-1 flex-col px-4 pt-4 pb-4 sm:px-5">
         <div className="flex items-center justify-between gap-3">
@@ -81,7 +82,7 @@ export function DemoCard({
 
   const shared = {
     className: cn("demo-card", className),
-    "data-cursor": "hover",
+    "data-cursor": "hover invert",
     "data-cursor-label": "View",
     onMouseMove: onMove,
     onMouseLeave: onLeave,
