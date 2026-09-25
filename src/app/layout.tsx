@@ -36,6 +36,14 @@ export const metadata: Metadata = {
   applicationName: site.name,
   authors: [{ name: site.owner, url: site.github }],
   creator: site.owner,
+  icons: {
+    icon: [
+      { url: "/brand/logo.png", type: "image/png", sizes: "512x512" },
+    ],
+    apple: [
+      { url: "/brand/logo.png", type: "image/png", sizes: "512x512" },
+    ],
+  },
   openGraph: {
     title: site.title,
     description: site.description,
@@ -70,7 +78,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
-      className={`${GeistSans.variable} ${GeistMono.variable} ${instrument.variable} h-full antialiased`}
+      className={String.raw`\${GeistSans.variable} \${GeistMono.variable} \${instrument.variable} h-full antialiased`}
     >
       <body className="min-h-full bg-paper text-ink">
         <Providers>
