@@ -122,29 +122,6 @@ export function SiteHeader() {
         </div>
       </div>
 
-      <div className="trust-strip">
-        <div className="container-page flex flex-col gap-1 py-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-          <ul className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-medium tracking-wide text-slate-700 uppercase">
-            <li>Independent portfolio prototype</li>
-            <li className="text-slate-300" aria-hidden>
-              ·
-            </li>
-            <li>Fictional data</li>
-            <li className="text-slate-300" aria-hidden>
-              ·
-            </li>
-            <li>Illustrative estimates</li>
-          </ul>
-          <p className="max-w-xl text-[11px] leading-snug text-slate-600">
-            {site.disclaimerTitle}
-            <span className="mx-1 text-slate-300" aria-hidden>
-              ·
-            </span>
-            {site.disclaimerBody}
-          </p>
-        </div>
-      </div>
-
       <Dialog open={open} onOpenChange={(next) => setMenuPath(next ? pathname : null)}>
         <DialogContent variant="drawer">
           <div className="flex items-start justify-between gap-4">
