@@ -31,11 +31,29 @@ const instrument = localFont({
 export const metadata: Metadata = {
   metadataBase: new URL(site.url),
   title: {
-    default: site.title,
-    template: "%s · Rapigents",
+    default: "Rapigents | AI Automation for Growing Businesses",
+    template: "%s | Rapigents",
   },
-  description: site.description,
-  applicationName: site.name,
+  description:
+    "Rapigents helps businesses grow with practical AI automation that reduces repetitive work, connects the tools they already use, and streamlines operations.",
+  applicationName: "Rapigents",
+  keywords: [
+    "AI automation",
+    "business automation",
+    "n8n automation",
+    "AI workflows",
+    "workflow automation",
+    "Rapigents",
+  ],
+  category: "technology",
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/brand/favicon.svg", type: "image/svg+xml" },
+    ],
+    shortcut: ["/icon.svg"],
+    apple: [{ url: "/apple-icon.svg", type: "image/svg+xml" }],
+  },
   authors: [{ name: site.owner, url: site.github }],
   creator: site.owner,
   openGraph: {
@@ -62,8 +80,8 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#F7F7FB",
-  colorScheme: "light",
+  themeColor: "#7C3AED",
+  colorScheme: "light dark",
   width: "device-width",
   initialScale: 1,
 };
