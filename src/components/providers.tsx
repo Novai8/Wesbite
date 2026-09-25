@@ -13,9 +13,9 @@ import {
 import { playClick, setSoundEnabled } from "@/lib/sound";
 
 type ToastItem = { id: number; message: string };
-type PrefSnapshot = { sound: boolean; cursor: boolean };
+type PrefSnapshot = { sound: boolean };
 
-const serverSnapshot: PrefSnapshot = { sound: false, cursor: true };
+const serverSnapshot: PrefSnapshot = { sound: false };
 let snapshot: PrefSnapshot = serverSnapshot;
 const listeners = new Set<() => void>();
 
@@ -40,26 +40,17 @@ function getServerSnapshot() {
 
 function readStoredPrefs(): PrefSnapshot {
   let sound = false;
-  let cursor = true;
   try {
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const storedSound = localStorage.getItem("rapigents-sound");
-    const storedCursor = localStorage.getItem("rapigents-cursor");
-    sound = storedSound === "on";
-    if (storedCursor === "off") cursor = false;
-    else if (storedCursor === "on") cursor = true;
-    else if (reduce) cursor = false;
+    sound = localStorage.getItem("rapigents-sound") === "on";
   } catch {
-    // Storage or matchMedia can be blocked. Keep defaults.
+    // Storage can be blocked. Keep the default off.
   }
-  return { sound, cursor };
+  return { sound };
 }
 
 type Prefs = {
   sound: boolean;
-  cursor: boolean;
   toggleSound: () => void;
-  toggleCursor: () => void;
   toast: (message: string) => void;
 };
 
@@ -80,7 +71,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const stored = readStoredPrefs();
-    if (stored.sound !== snapshot.sound || stored.cursor !== snapshot.cursor) {
+    if (stored.sound !== snapshot.sound) {
       emit(stored);
     } else {
       setSoundEnabled(stored.sound);
@@ -117,33 +108,21 @@ export function Providers({ children }: { children: React.ReactNode }) {
       // Ignore storage failures. The toggle still works for this visit.
     }
     if (next) {
-      emit({ ...snapshot, sound: true });
+      emit({ sound: true });
       playClick();
     } else {
       playClick();
-      emit({ ...snapshot, sound: false });
+      emit({ sound: false });
     }
-  }, []);
-
-  const toggleCursor = useCallback(() => {
-    const next = !snapshot.cursor;
-    try {
-      localStorage.setItem("rapigents-cursor", next ? "on" : "off");
-    } catch {
-      // Ignore storage failures.
-    }
-    emit({ ...snapshot, cursor: next });
   }, []);
 
   const value = useMemo(
     () => ({
       sound: prefs.sound,
-      cursor: prefs.cursor,
       toggleSound,
-      toggleCursor,
       toast,
     }),
-    [prefs.sound, prefs.cursor, toggleSound, toggleCursor, toast],
+    [prefs.sound, toggleSound, toast],
   );
 
   return (

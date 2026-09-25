@@ -1,6 +1,6 @@
 # Rapigents
 
-Portfolio site for **Hussnain Tariq** / **Rapigents**. Twelve niche-specific n8n workflow demos, with human review, audit notes, and fictional data. Purple and white, minimal, with page transitions, a custom cursor, and optional click sound.
+Portfolio site for **Hussnain Tariq** / **Rapigents**. Twelve niche-specific n8n workflow demos, with human review, audit notes, and fictional data. Purple and white, minimal, with page transitions and optional click sound.
 
 This is an independent portfolio prototype. Time-saved figures are illustrative assumptions. Actual results vary.
 
@@ -55,11 +55,10 @@ thumbnailUrl: "/thumbs/lead-qualification.jpg",
 
 Direct `https://` video files also work. YouTube links (`youtube.com/watch?v=` or `youtu.be/`) render as an embed. Do not autoplay. The detail page embeds `videoUrl`. Cards use the poster and open that same video.
 
-## Sound and cursor
+## Sound
 
 - **Sound: Off** by default. The navbar toggle turns on a quiet Web Audio click. The choice is stored in `localStorage` (`rapigents-sound`).
-- **Cursor effects: On** by default on a fine pointer, off when `prefers-reduced-motion` is set and the visitor has not chosen. Stored as `rapigents-cursor`.
-- Touch devices keep the system cursor. On a fine pointer, a smooth hand cursor follows the mouse. The header toggle can turn it off.
+- The pointer is a CSS cursor, not an overlay, so links and buttons stay clickable.
 
 ## Deploy to Vercel
 

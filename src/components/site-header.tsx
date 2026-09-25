@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, MousePointer2, Volume2, VolumeX } from "lucide-react";
+import { Menu, Volume2, VolumeX } from "lucide-react";
 import { Logo } from "@/components/logo";
 import { usePrefs } from "@/components/providers";
 import {
@@ -28,7 +28,7 @@ function isActive(pathname: string, href: string) {
 
 export function SiteHeader() {
   const pathname = usePathname();
-  const { sound, cursor, toggleSound, toggleCursor } = usePrefs();
+  const { sound, toggleSound } = usePrefs();
   const headerRef = useRef<HTMLElement>(null);
   const [menuPath, setMenuPath] = useState<string | null>(null);
   const [scrolled, setScrolled] = useState(false);
@@ -95,17 +95,6 @@ export function SiteHeader() {
               <VolumeX className="h-3.5 w-3.5" aria-hidden />
             )}
             <span className="hidden md:inline">Sound: {sound ? "On" : "Off"}</span>
-          </button>
-          <button
-            type="button"
-            className="toggle-chip"
-            aria-pressed={cursor}
-            aria-label={`Cursor effects: ${cursor ? "On" : "Off"}`}
-            onClick={toggleCursor}
-          >
-            <MousePointer2 className="h-3.5 w-3.5" aria-hidden />
-            <span className="hidden md:inline xl:hidden">Cursor: {cursor ? "On" : "Off"}</span>
-            <span className="hidden xl:inline">Cursor effects: {cursor ? "On" : "Off"}</span>
           </button>
           <button
             type="button"
@@ -185,17 +174,8 @@ export function SiteHeader() {
                 <VolumeX className="h-4 w-4" aria-hidden />
               )}
             </button>
-            <button
-              type="button"
-              className="toggle-chip w-full justify-between"
-              aria-pressed={cursor}
-              onClick={toggleCursor}
-            >
-              <span>Cursor effects: {cursor ? "On" : "Off"}</span>
-              <MousePointer2 className="h-4 w-4" aria-hidden />
-            </button>
             <p className="px-1 text-xs leading-relaxed text-slate-500">
-              Custom cursor is used on desktop. Sound stays off until you turn it on.
+              Sound stays off until you turn it on.
             </p>
           </div>
         </DialogContent>

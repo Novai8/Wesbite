@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { GeistMono } from "geist/font/mono";
 import { GeistSans } from "geist/font/sans";
-import { NewCursor } from "@/components/NewCursor";
 import { PageTransition } from "@/components/page-transition";
 import { Providers } from "@/components/providers";
 import { SiteFooter } from "@/components/site-footer";
@@ -75,7 +74,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     >
       <body className="min-h-full bg-paper text-ink">
         <Providers>
-          <NewCursor />
           <a href="#content" className="skip-link">
             Skip to content
           </a>

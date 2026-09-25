@@ -21,6 +21,7 @@
   color-scheme: light;
   --header-h: 7.25rem;
   --header-offset: calc(var(--header-h) + 1rem);
+  --hand-cursor: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24"><path fill="%23FFF" stroke="%23700073" stroke-width="2" stroke-linejoin="round" d="M10 11V8.99c0-.88.59-1.64 1.44-1.86h.05A1.99 1.99 0 0 1 14 9.05V12v-2c0-.88.6-1.65 1.46-1.87h.05A1.98 1.98 0 0 1 18 10.06V13v-1.94a2 2 0 0 1 1.51-1.94h0A2 2 0 0 1 22 11.06V14c0 .6-.08 1.27-.21 1.97a7.96 7.96 0 0 1-7.55 6.48 54.98 54.98 0 0 1-4.48 0 7.96 7.96 0 0 1-7.55-6.48C2.08 15.27 2 14.59 2 14v-1.49c0-1.11.9-2.01 2.01-2.01h0a2 2 0 0 1 2.01 2.03l-.01.97v-10c0-1.1.9-2 2-2h0a2 2 0 0 1 2 2V11Z"></path></svg>') 12 2;
 }
 
 * {
@@ -317,7 +318,6 @@ li {
   text-align: left;
   padding: 0;
   appearance: none;
-  cursor: pointer;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
   transform: perspective(1000px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
   transition:
@@ -530,12 +530,19 @@ li {
   mask-image: radial-gradient(ellipse at 70% 30%, black, transparent 72%);
 }
 
-@media (hover: hover) and (pointer: fine) {
-  html.custom-cursor,
-  html.custom-cursor body,
-  html.custom-cursor body * {
-    cursor: none !important;
-  }
+html,
+body {
+  cursor: var(--hand-cursor), auto;
+}
+
+a,
+button,
+[role="button"],
+input,
+textarea,
+select,
+label {
+  cursor: var(--hand-cursor), pointer;
 }
 
 @media (prefers-reduced-motion: reduce) {
