@@ -20,6 +20,7 @@ function CardBody({ demo }: { demo: Demo }) {
         title={demo.title}
         videoUrl={demo.videoUrl}
         thumbnailUrl={demo.thumbnailUrl}
+        youtubeUrl={demo.youtubeUrl}
         embed={false}
       />
       <div className="flex min-w-0 flex-1 flex-col px-4 pt-4 pb-4 sm:px-5">
