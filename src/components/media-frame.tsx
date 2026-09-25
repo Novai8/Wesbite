@@ -1,3 +1,5 @@
+"use client";
+
 import { Play } from "lucide-react";
 
 function youtubeId(url: string) {
@@ -11,11 +13,13 @@ export function MediaFrame({
   title,
   videoUrl,
   thumbnailUrl,
+  youtubeUrl,
   embed = true,
 }: {
   title: string;
   videoUrl: string;
   thumbnailUrl: string;
+  youtubeUrl?: string;
   embed?: boolean;
 }) {
   const yt = videoUrl ? youtubeId(videoUrl) : null;
@@ -44,9 +48,22 @@ export function MediaFrame({
     const poster = thumbnailUrl || `https://i.ytimg.com/vi/${yt}/hqdefault.jpg`;
     return (
       <div
-        className="media-frame relative aspect-video overflow-hidden rounded-[1.1rem] bg-ink"
-        role="img"
+        className="media-frame relative aspect-video overflow-hidden rounded-[1.1rem] bg-ink cursor-pointer"
+        role={youtubeUrl ? "link" : "img"}
+        tabIndex={youtubeUrl ? 0 : undefined}
         aria-label={`Watch demo: ${title}`}
+        onClick={(event) => {
+          if (!youtubeUrl) return;
+          event.preventDefault();
+          event.stopPropagation();
+          window.open(youtubeUrl, "_blank", "noopener,noreferrer");
+        }}
+        onKeyDown={(event) => {
+          if (!youtubeUrl || (event.key !== "Enter" && event.key !== " ")) return;
+          event.preventDefault();
+          event.stopPropagation();
+          window.open(youtubeUrl, "_blank", "noopener,noreferrer");
+        }}
       >
         {/* External YouTube poster. Not optimized through next/image. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
