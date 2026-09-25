@@ -854,16 +854,6 @@ body[data-scroll-locked] {
   box-shadow: 0 0 16px rgba(139, 92, 246, 0.72);
 }
 
-.intro-loader__wipe {
-  position: absolute;
-  inset: 0;
-  z-index: 3;
-  transform-origin: right center;
-  background:
-    radial-gradient(circle at 18% 48%, rgba(255,255,255,0.34), transparent 0 14%),
-    linear-gradient(110deg, #f7f7fb 0%, #ffffff 48%, #f7f7fb 100%);
-  pointer-events: none;
-}
 
 @keyframes intro-grain {
   0% { transform: translate3d(0, 0, 0); }
