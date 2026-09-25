@@ -141,7 +141,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       toggleTheme,
       toast,
     }),
-    [prefs.sound, toggleSound, toast],
+    [prefs.sound, prefs.theme, toggleSound, toggleTheme, toast],
   );
 
   return (
