@@ -11,6 +11,16 @@ export function IntroLoader() {
   const [show, setShow] = useState(true);
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    // The cinematic intro is a desktop enhancement. Touch devices go
+    // straight to the actual site so mobile stays fast and reliable.
+    if (window.matchMedia("(pointer: coarse)").matches) {
+      setShow(false);
+      document.body.style.overflow = "";
+      return;
+    }
+
     let active = true;
     const key = "rapigents-intro-seen";
 
