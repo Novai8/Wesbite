@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, Volume2, VolumeX } from "lucide-react";
+import { Menu, Moon, Sun, Volume2, VolumeX } from "lucide-react";
 import { Logo } from "@/components/logo";
 import { usePrefs } from "@/components/providers";
 import {
@@ -28,7 +28,7 @@ function isActive(pathname: string, href: string) {
 
 export function SiteHeader() {
   const pathname = usePathname();
-  const { sound, toggleSound } = usePrefs();
+  const { sound, toggleSound, theme, toggleTheme } = usePrefs();
   const headerRef = useRef<HTMLElement>(null);
   const [menuPath, setMenuPath] = useState<string | null>(null);
   const [scrolled, setScrolled] = useState(false);
@@ -82,6 +82,20 @@ export function SiteHeader() {
         </nav>
 
         <div className="ml-auto flex items-center gap-1.5">
+          <button
+            type="button"
+            className="toggle-chip"
+            aria-pressed={theme === "dark"}
+            aria-label={`Theme: ${theme === "dark" ? "Dark" : "Light"}`}
+            onClick={toggleTheme}
+          >
+            {theme === "dark" ? (
+              <Moon className="h-3.5 w-3.5" aria-hidden />
+            ) : (
+              <Sun className="h-3.5 w-3.5" aria-hidden />
+            )}
+            <span className="hidden md:inline">{theme === "dark" ? "Dark" : "Light"}</span>
+          </button>
           <button
             type="button"
             className="toggle-chip"
@@ -161,6 +175,19 @@ export function SiteHeader() {
             ))}
           </nav>
           <div className="mt-8 flex flex-col gap-2">
+            <button
+              type="button"
+              className="toggle-chip w-full justify-between"
+              aria-pressed={theme === "dark"}
+              onClick={toggleTheme}
+            >
+              <span>Theme: {theme === "dark" ? "Dark" : "Light"}</span>
+              {theme === "dark" ? (
+                <Moon className="h-4 w-4" aria-hidden />
+              ) : (
+                <Sun className="h-4 w-4" aria-hidden />
+              )}
+            </button>
             <button
               type="button"
               className="toggle-chip w-full justify-between"
