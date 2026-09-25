@@ -249,13 +249,6 @@ export function IntroLoader() {
             </motion.div>
           </div>
 
-          <motion.div
-            className="intro-loader__wipe"
-            aria-hidden
-            initial={{ scaleX: 0 }}
-            animate={{ scaleX: 1 }}
-            transition={{ delay: reduce ? 0.15 : 2.9, duration: reduce ? 0.2 : 0.55, ease }}
-          />
         </motion.div>
       ) : null}
     </AnimatePresence>
