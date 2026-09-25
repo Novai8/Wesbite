@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { GithubIcon } from "@/components/github-icon";
 import { Logo } from "@/components/logo";
-import { Disclaimer } from "@/components/disclaimer";
 import { site } from "@/lib/site";
 
 export function SiteFooter() {
@@ -76,7 +75,9 @@ export function SiteFooter() {
       </div>
       <div className="border-t border-line">
         <div className="container-page flex flex-col gap-2 py-5 sm:flex-row sm:items-center sm:justify-between">
-          <Disclaimer />
+          <p className="text-xs text-slate-500">
+            Practical AI automation for growing teams.
+          </p>
           <p className="text-xs text-slate-500">
             {site.owner} · {site.name}
           </p>
