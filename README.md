@@ -59,7 +59,7 @@ Direct `https://` video files also work. YouTube links (`youtube.com/watch?v=` o
 
 - **Sound: Off** by default. The navbar toggle turns on a quiet Web Audio click. The choice is stored in `localStorage` (`rapigents-sound`).
 - **Cursor effects: On** by default on a fine pointer, off when `prefers-reduced-motion` is set and the visitor has not chosen. Stored as `rapigents-cursor`.
-- Touch devices keep the system cursor. The custom cursor is desktop only. It is dark purple, and turns white over purple surfaces marked `data-cursor="invert"`.
+- Touch devices keep the system cursor. On a fine pointer, a smooth hand cursor follows the mouse. The header toggle can turn it off.
 
 ## Deploy to Vercel
 

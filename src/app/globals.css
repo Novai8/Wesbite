@@ -12,7 +12,6 @@
   --color-accent-ink: #5b21b6;
   --color-accent-soft: #f5f3ff;
   --color-accent-line: #ddd6fe;
-  --color-cursor: #4c1d95;
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
   --font-serif: var(--font-instrument), ui-serif, georgia, serif;
@@ -437,13 +436,6 @@ li {
   filter: none !important;
 }
 
-.cursor-glow {
-  pointer-events: none;
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-}
-
 .dialog-overlay {
   position: fixed;
   inset: 0;
@@ -539,8 +531,9 @@ li {
 }
 
 @media (hover: hover) and (pointer: fine) {
-  html.cursor-fx,
-  html.cursor-fx * {
+  html.custom-cursor,
+  html.custom-cursor body,
+  html.custom-cursor body * {
     cursor: none !important;
   }
 }
@@ -633,16 +626,4 @@ li {
 
 body[data-scroll-locked] {
   padding-right: var(--removed-body-scroll-bar-size, 0px) !important;
-}
-
-.cursor-glow {
-  pointer-events: none;
-  position: fixed;
-  inset: 0;
-  z-index: 30;
-  background: radial-gradient(
-    520px circle at var(--cx, 50%) var(--cy, 0%),
-    color-mix(in srgb, var(--color-cursor) 6%, transparent),
-    transparent 62%
-  );
 }

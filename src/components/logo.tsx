@@ -9,7 +9,6 @@ export function Logo({ className }: { className?: string }) {
       viewBox="0 0 128 128"
       className={cn("h-8 w-8 shrink-0", className)}
       aria-hidden="true"
-      data-cursor="invert"
     >
       <rect width="128" height="128" rx="30" fill="var(--color-accent)" />
       <path fill="#FFFFFF" d={MARK_PATH} />

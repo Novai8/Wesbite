@@ -76,7 +76,6 @@ export default async function DemoDetailPage({ params }: Props) {
                 href={demo.youtubeUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                data-cursor="invert"
                 className="mt-3 inline-flex text-sm font-medium text-accent-ink underline-offset-4 hover:underline"
               >
                 Watch on YouTube
@@ -97,7 +96,7 @@ export default async function DemoDetailPage({ params }: Props) {
             sent until you send it.
           </p>
           <Button asChild className="mt-5 w-full">
-            <a href={workflowMailto(demo.title)} data-cursor-label="Open">
+            <a href={workflowMailto(demo.title)}>
               Request this workflow
             </a>
           </Button>

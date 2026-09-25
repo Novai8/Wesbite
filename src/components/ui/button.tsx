@@ -32,12 +32,7 @@ export function Button({
 }: React.ComponentProps<"button"> &
   VariantProps<typeof buttonVariants> & { asChild?: boolean }) {
   const Comp = asChild ? Slot : "button";
-  const isPrimary = (variant ?? "primary") === "primary";
   return (
-    <Comp
-      className={cn(buttonVariants({ variant, size }), className)}
-      {...props}
-      {...(isPrimary ? { "data-cursor": "hover invert" } : {})}
-    />
+    <Comp className={cn(buttonVariants({ variant, size }), className)} {...props} />
   );
 }

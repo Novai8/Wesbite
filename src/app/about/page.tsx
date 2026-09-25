@@ -77,7 +77,7 @@ export default function AboutPage() {
           </div>
           <div className="flex flex-wrap gap-2">
             <Button asChild>
-              <Link href="/demos" data-cursor-label="Open">
+              <Link href="/demos">
                 View demos
               </Link>
             </Button>

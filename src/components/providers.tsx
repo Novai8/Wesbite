@@ -11,7 +11,6 @@ import {
   useSyncExternalStore,
 } from "react";
 import { playClick, setSoundEnabled } from "@/lib/sound";
-import { CustomCursor } from "@/components/custom-cursor";
 
 type ToastItem = { id: number; message: string };
 type PrefSnapshot = { sound: boolean; cursor: boolean };
@@ -150,7 +149,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <PrefsContext.Provider value={value}>
       {children}
-      <CustomCursor />
       <div className="toast-viewport" aria-live="polite" aria-relevant="additions">
         {toasts.map((item) => (
           <div key={item.id} className="toast" role="status">

@@ -189,7 +189,6 @@ export function DemosExplorer({ initial }: { initial: FilterState }) {
           <button
             type="button"
             className="btn btn-primary mt-6"
-            data-cursor="invert"
             onClick={() => update({ ...emptyFilters }, "replace")}
           >
             Clear filters
@@ -265,7 +264,7 @@ export function DemosExplorer({ initial }: { initial: FilterState }) {
             </div>
             <div className="mt-5 flex flex-wrap gap-2">
               <Button asChild>
-                <Link href={`/demos/${preview.slug}`} data-cursor-label="Open">
+                <Link href={`/demos/${preview.slug}`}>
                   Open details
                 </Link>
               </Button>
@@ -402,7 +401,6 @@ function ChipRow({
               aria-pressed={active}
               onClick={() => onToggle(option)}
               className={cn("filter-chip", active && "is-on")}
-              data-cursor={active ? "invert" : undefined}
             >
               {option}
             </button>

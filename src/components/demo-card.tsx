@@ -82,8 +82,6 @@ export function DemoCard({
 
   const shared = {
     className: cn("demo-card", className),
-    "data-cursor": "hover invert",
-    "data-cursor-label": "View",
     onMouseMove: onMove,
     onMouseLeave: onLeave,
   };
