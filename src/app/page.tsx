@@ -10,16 +10,16 @@ import { demos } from "@/data/demos";
 
 const principles = [
   {
-    title: "Held, not sent",
-    body: "A draft is not a message. Anything that leaves the building waits for a person.",
+    title: "Human control",
+    body: "Automations prepare the work while the important decisions stay with your team.",
   },
   {
-    title: "Evidence, not polish",
-    body: "Missing fields stay empty. A failed pull is shown as failed, not filled in.",
+    title: "Clear decisions",
+    body: "Workflows use structured steps, clear routing, and useful signals your team can act on.",
   },
   {
-    title: "Fictional on purpose",
-    body: "Names, volumes, and minutes on this site are invented so the pattern can be shown safely.",
+    title: "Built to improve",
+    body: "Start with one repetitive process, make it smoother, and keep improving from there.",
   },
 ];
 
