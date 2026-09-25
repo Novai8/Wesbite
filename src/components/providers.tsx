@@ -13,9 +13,10 @@ import {
 import { playClick, setSoundEnabled } from "@/lib/sound";
 
 type ToastItem = { id: number; message: string };
-type PrefSnapshot = { sound: boolean };
+type Theme = "light" | "dark";
+type PrefSnapshot = { sound: boolean; theme: Theme };
 
-const serverSnapshot: PrefSnapshot = { sound: false };
+const serverSnapshot: PrefSnapshot = { sound: false, theme: "light" };
 let snapshot: PrefSnapshot = serverSnapshot;
 const listeners = new Set<() => void>();
 
@@ -40,17 +41,21 @@ function getServerSnapshot() {
 
 function readStoredPrefs(): PrefSnapshot {
   let sound = false;
+  let theme: Theme = "light";
   try {
     sound = localStorage.getItem("rapigents-sound") === "on";
+    theme = localStorage.getItem("rapigents-theme") === "dark" ? "dark" : "light";
   } catch {
     // Storage can be blocked. Keep the default off.
   }
-  return { sound };
+  return { sound, theme };
 }
 
 type Prefs = {
   sound: boolean;
   toggleSound: () => void;
+  theme: Theme;
+  toggleTheme: () => void;
   toast: (message: string) => void;
 };
 
@@ -71,7 +76,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const stored = readStoredPrefs();
-    if (stored.sound !== snapshot.sound) {
+    document.documentElement.dataset.theme = stored.theme;
+    if (stored.sound !== snapshot.sound || stored.theme !== snapshot.theme) {
       emit(stored);
     } else {
       setSoundEnabled(stored.sound);
@@ -108,18 +114,31 @@ export function Providers({ children }: { children: React.ReactNode }) {
       // Ignore storage failures. The toggle still works for this visit.
     }
     if (next) {
-      emit({ sound: true });
+      emit({ ...snapshot, sound: true });
       playClick();
     } else {
       playClick();
-      emit({ sound: false });
+      emit({ ...snapshot, sound: false });
     }
+  }, []);
+
+  const toggleTheme = useCallback(() => {
+    const next = snapshot.theme === "dark" ? "light" : "dark";
+    try {
+      localStorage.setItem("rapigents-theme", next);
+    } catch {
+      // Ignore storage failures. The theme still changes for this visit.
+    }
+    document.documentElement.dataset.theme = next;
+    emit({ ...snapshot, theme: next });
   }, []);
 
   const value = useMemo(
     () => ({
       sound: prefs.sound,
       toggleSound,
+      theme: prefs.theme,
+      toggleTheme,
       toast,
     }),
     [prefs.sound, toggleSound, toast],
