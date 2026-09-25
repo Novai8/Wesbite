@@ -5,9 +5,9 @@ export const site = {
   github: "https://github.com/Novai8",
   githubRepo: "https://github.com/Novai8/Wesbite",
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://rapigents.online",
-  title: "Rapigents — AI Workflow Automation Demos",
+  title: "Rapigents | AI Automation for Growing Businesses",
   description:
-    "Niche-specific, before-and-after n8n automation demos with reliability, human review, and audit logs. Independent portfolio prototype. Fictional data.",
+    "Rapigents helps businesses grow with practical AI automation that reduces repetitive work, connects the tools they already use, and streamlines operations.",
   disclaimerTitle: "Independent Portfolio Prototype • Fictional Data",
   disclaimerBody:
     "Time-saved figures are illustrative assumptions. Actual results vary.",
