@@ -264,10 +264,20 @@ li {
   font-size: 0.75rem;
   font-weight: 500;
   color: #0f172a;
+  transition:
+    background-color 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+    color 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .toggle-chip:hover {
   border-color: var(--color-accent-line);
+  transform: translateY(-1px);
+}
+
+.toggle-chip:active {
+  transform: translateY(0) scale(0.97);
 }
 
 .field {
@@ -377,6 +387,11 @@ li {
   box-shadow: 0 16px 36px -28px rgba(15, 23, 42, 0.28);
 }
 
+.niche-tile:active {
+  transform: translateY(-1px) scale(0.99);
+  transition-duration: 0.12s;
+}
+
 .niche-index {
   position: absolute;
   right: 0.5rem;
@@ -400,21 +415,28 @@ li {
   font-size: 0.8125rem;
   line-height: 1.2;
   transition:
-    background-color 0.2s ease,
-    color 0.2s ease,
-    border-color 0.2s ease,
-    transform 0.2s ease;
+    background-color 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    color 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.28s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .filter-chip:hover {
   border-color: var(--color-accent-line);
   color: #0f172a;
+  transform: translateY(-1px);
+}
+
+.filter-chip:active {
+  transform: translateY(0) scale(0.96);
 }
 
 .filter-chip.is-on {
   border-color: var(--color-accent);
   background: var(--color-accent);
   color: #ffffff;
+  box-shadow: 0 6px 16px -8px color-mix(in srgb, var(--color-accent) 70%, transparent);
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -1178,6 +1200,63 @@ body[data-scroll-locked] {
   to { transform: rotate(360deg) scale(1.02); }
 }
 
+/* Custom cursor (purple + white) */
+:root {
+  --cursor-ring: var(--color-accent);
+  --cursor-dot: #ffffff;
+}
+
+html.has-custom-cursor,
+html.has-custom-cursor * {
+  cursor: none !important;
+}
+
+html.has-custom-cursor input,
+html.has-custom-cursor textarea,
+html.has-custom-cursor select,
+html.has-custom-cursor [contenteditable="true"] {
+  cursor: auto !important;
+}
+
+.app-cursor {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  pointer-events: none;
+}
+
+.app-cursor__ring {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 34px;
+  height: 34px;
+  margin: -17px 0 0 -17px;
+  border-radius: 9999px;
+  border: 1.5px solid var(--cursor-ring);
+  background: color-mix(in srgb, var(--cursor-ring) 14%, transparent);
+  will-change: transform;
+}
+
+.app-cursor__dot {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 7px;
+  height: 7px;
+  margin: -3.5px 0 0 -3.5px;
+  border-radius: 9999px;
+  background: var(--cursor-dot);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--cursor-ring) 55%, transparent);
+  will-change: transform;
+}
+
+@media (pointer: coarse) {
+  .app-cursor {
+    display: none;
+  }
+}
+
 /* Theme system */
 html[data-theme="dark"] {
   color-scheme: dark;
@@ -1192,6 +1271,8 @@ html[data-theme="dark"] {
   --color-accent-ink: #c4b5fd;
   --color-accent-soft: #1b1429;
   --color-accent-line: #3b2b5a;
+  --cursor-ring: var(--color-accent-bright);
+  --cursor-dot: #ffffff;
 }
 
 html[data-theme="dark"] body {
@@ -1275,6 +1356,33 @@ html[data-theme="dark"] .hero-stage {
 html[data-theme="dark"] .site-footer {
   background: #0b0b10;
   border-top-color: var(--color-line);
+}
+
+html[data-theme="dark"] .niche-tile {
+  background: var(--color-surface);
+  border-color: var(--color-line);
+}
+
+html[data-theme="dark"] .niche-tile:hover {
+  border-color: color-mix(in srgb, var(--color-accent) 45%, var(--color-surface));
+  box-shadow: 0 16px 36px -28px rgba(0, 0, 0, 0.6);
+}
+
+html[data-theme="dark"] .filter-chip {
+  background: var(--color-surface);
+  border-color: var(--color-line);
+  color: var(--color-muted);
+}
+
+html[data-theme="dark"] .filter-chip:hover {
+  border-color: var(--color-accent-line);
+  color: var(--color-ink);
+}
+
+html[data-theme="dark"] .filter-chip.is-on {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+  color: #ffffff;
 }
 
 html[data-theme="dark"] ::selection {

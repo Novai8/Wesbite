@@ -7,6 +7,7 @@ import { PageTransition } from "@/components/page-transition";
 import { Providers } from "@/components/providers";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { Cursor } from "@/components/ui/inverted-cursor";
 import { site } from "@/lib/site";
 import "./globals.css";
 
@@ -75,6 +76,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     >
       <body className="min-h-full bg-paper text-ink">
         <Providers>
+          <Cursor />
           <IntroLoader />
           <a href="#content" className="skip-link">
             Skip to content
