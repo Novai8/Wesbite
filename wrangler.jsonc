@@ -11,6 +11,16 @@
     "directory": ".open-next/assets",
     "binding": "ASSETS"
   },
+  "routes": [
+    {
+      "pattern": "rapigents.online",
+      "custom_domain": true
+    },
+    {
+      "pattern": "www.rapigents.online",
+      "custom_domain": true
+    }
+  ],
   "observability": {
     "enabled": true
   }
