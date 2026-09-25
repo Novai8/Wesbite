@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useEffect, useState } from "react";
 
@@ -81,9 +82,8 @@ export function IntroLoader() {
               animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
               transition={{ duration: reduce ? 0 : 0.7, ease }}
             >
-              <div className="intro-loader__mark" aria-hidden>
-                <span>R</span>
-                <span className="intro-loader__mark-a">A</span>
+              <div className="intro-loader__mark intro-loader__mark--image" aria-hidden>
+                <Image src="/brand/logo-mark.svg" alt="" width={88} height={53} priority />
               </div>
               <div>
                 <p className="intro-loader__eyebrow">RAPIGENTS</p>
