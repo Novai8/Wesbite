@@ -48,11 +48,10 @@ export const metadata: Metadata = {
   category: "technology",
   icons: {
     icon: [
-      { url: "/icon.svg", type: "image/svg+xml" },
-      { url: "/brand/favicon.svg", type: "image/svg+xml" },
+      { url: "/brand/logo.png", type: "image/png", sizes: "512x512" },
     ],
-    shortcut: ["/icon.svg"],
-    apple: [{ url: "/apple-icon.svg", type: "image/svg+xml" }],
+    shortcut: ["/brand/logo.png"],
+    apple: [{ url: "/brand/logo.png", type: "image/png", sizes: "512x512" }],
   },
   authors: [{ name: site.owner, url: site.github }],
   creator: site.owner,
