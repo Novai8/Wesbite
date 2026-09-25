@@ -883,6 +883,16 @@ body[data-scroll-locked] {
   100% { transform: translate3d(-4%, -2%, 0); }
 }
 
+@media (pointer: coarse) {
+  .cursor-field__orb {
+    display: none;
+  }
+
+  .intro-loader {
+    display: none !important;
+  }
+}
+
 @media (max-width: 640px) {
   .intro-loader__content {
     padding-inline: 1rem;
