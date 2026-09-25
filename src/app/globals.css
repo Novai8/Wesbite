@@ -1362,3 +1362,11 @@ html[data-theme="dark"] ::selection {
     animation: none;
   }
 }
+
+html[data-theme="dark"] .bg-white { background-color: var(--color-surface) !important; }
+html[data-theme="dark"] .text-slate-300 { color: #52525b !important; }
+html[data-theme="dark"] .text-slate-400 { color: #71717a !important; }
+html[data-theme="dark"] .text-slate-500 { color: #a1a1aa !important; }
+html[data-theme="dark"] .text-slate-600 { color: #a1a1aa !important; }
+html[data-theme="dark"] .text-slate-700 { color: #d4d4d8 !important; }
+html[data-theme="dark"] .border-line { border-color: var(--color-line) !important; }
