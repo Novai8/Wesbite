@@ -1363,10 +1363,70 @@ html[data-theme="dark"] ::selection {
   }
 }
 
-html[data-theme="dark"] .bg-white { background-color: var(--color-surface) !important; }
-html[data-theme="dark"] .text-slate-300 { color: #52525b !important; }
-html[data-theme="dark"] .text-slate-400 { color: #71717a !important; }
-html[data-theme="dark"] .text-slate-500 { color: #a1a1aa !important; }
-html[data-theme="dark"] .text-slate-600 { color: #a1a1aa !important; }
-html[data-theme="dark"] .text-slate-700 { color: #d4d4d8 !important; }
-html[data-theme="dark"] .border-line { border-color: var(--color-line) !important; }
+html[data-theme="dark"] .bg-white {
+  background-color: var(--color-surface) !important;
+}
+
+html[data-theme="dark"] .bg-slate-100,
+html[data-theme="dark"] .bg-gray-100,
+html[data-theme="dark"] .bg-zinc-100,
+html[data-theme="dark"] .bg-neutral-100 {
+  background-color: #17171f !important;
+  color: var(--color-ink) !important;
+}
+
+html[data-theme="dark"] .text-slate-300 {
+  color: #71717a !important;
+}
+
+html[data-theme="dark"] .text-slate-400 {
+  color: #a1a1aa !important;
+}
+
+html[data-theme="dark"] .text-slate-500,
+html[data-theme="dark"] .text-slate-600 {
+  color: #b4b4bd !important;
+}
+
+html[data-theme="dark"] .text-slate-700 {
+  color: #e4e4e7 !important;
+}
+
+html[data-theme="dark"] .border-slate-200,
+html[data-theme="dark"] .border-gray-200,
+html[data-theme="dark"] .border-zinc-200,
+html[data-theme="dark"] .border-neutral-200,
+html[data-theme="dark"] .ring-slate-200,
+html[data-theme="dark"] .ring-gray-200,
+html[data-theme="dark"] .ring-zinc-200 {
+  border-color: var(--color-line) !important;
+  --tw-ring-color: var(--color-line) !important;
+}
+
+html[data-theme="dark"] .border-line {
+  border-color: var(--color-line) !important;
+}
+
+html[data-theme="dark"] .btn-ghost {
+  color: var(--color-ink);
+}
+
+html[data-theme="dark"] .field {
+  color-scheme: dark;
+}
+
+html[data-theme="dark"] select,
+html[data-theme="dark"] option {
+  color: var(--color-ink);
+  background-color: var(--color-surface);
+  color-scheme: dark;
+}
+
+html[data-theme="dark"] .media-frame .bg-white {
+  background-color: var(--color-surface) !important;
+  border: 1px solid var(--color-line);
+}
+
+html[data-theme="dark"] .media-frame .text-slate-500 {
+  color: #b4b4bd !important;
+}
