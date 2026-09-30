@@ -13,12 +13,12 @@
   },
   "routes": [
     {
-      "pattern": "rapigents.com/*",
-      "zone_name": "rapigents.com"
+      "pattern": "rapigents.com",
+      "custom_domain": true
     },
     {
-      "pattern": "www.rapigents.com/*",
-      "zone_name": "rapigents.com"
+      "pattern": "www.rapigents.com",
+      "custom_domain": true
     }
   ],
   "observability": {
