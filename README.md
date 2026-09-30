@@ -35,7 +35,7 @@ NEXT_PUBLIC_SITE_URL=https://your-domain.example
 - `/about`
 - `/contact` — opens the visitor’s email app. Nothing is stored, and no mail API key is required.
 
-Contact: [hussnain@rapigents.online](mailto:hussnain@rapigents.online)  
+Contact: [hussnain@rapigents.com](mailto:hussnain@rapigents.com)  
 GitHub: [https://github.com/Novai8](https://github.com/Novai8)
 
 ## Add a video or thumbnail later
@@ -65,7 +65,7 @@ Direct `https://` video files also work. YouTube links (`youtube.com/watch?v=` o
 1. Push this repository to GitHub.
 2. In [Vercel](https://vercel.com), import `Novai8/Wesbite`.
 3. Framework preset: **Next.js**. Install command `npm install`. Build command `npm run build`. Output is handled by Next.js — do not set a static export directory.
-4. Add `NEXT_PUBLIC_SITE_URL` with the production URL (for example `https://rapigents.online`) so Open Graph and the sitemap use the right host.
+4. Add `NEXT_PUBLIC_SITE_URL` with the production URL (for example `https://rapigents.com`) so Open Graph and the sitemap use the right host.
 5. Deploy. No database, no email provider, and no secret keys are required.
 
 `public/brand/logo.png` is the favicon source (also copied to `src/app/icon.png`) and `public/brand/og.png` is the social preview.
