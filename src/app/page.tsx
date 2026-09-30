@@ -34,7 +34,7 @@ export default function HomePage() {
         <div className="container-page relative grid items-center gap-10 py-14 sm:py-20 lg:grid-cols-[1.15fr_0.85fr] lg:py-24">
           <div className="min-w-0">
             <p className="text-xs font-medium tracking-[0.18em] text-accent-ink uppercase">
-              Rapid Agents · AI automation
+              Rapigents · AI automation
             </p>
             <h1 className="mt-4 max-w-4xl text-[clamp(2.5rem,6.4vw,5.35rem)] leading-[0.96] font-medium tracking-[-0.045em] text-balance">
               Help your business grow with{" "}
