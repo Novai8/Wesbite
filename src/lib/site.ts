@@ -1,10 +1,10 @@
 export const site = {
   name: "Rapigents",
   owner: "Hussnain Tariq",
-  email: "hussnain@rapigents.online",
+  email: "hussnain@rapigents.com",
   github: "https://github.com/Novai8",
   githubRepo: "https://github.com/Novai8/Wesbite",
-  url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://rapigents.online",
+  url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://rapigents.com",
   title: "Rapigents | AI Automation for Growing Businesses",
   description:
     "Rapigents helps businesses grow with practical AI automation that reduces repetitive work, connects the tools they already use, and streamlines operations.",
