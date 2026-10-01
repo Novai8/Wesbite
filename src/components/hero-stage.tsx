@@ -1,124 +1,125 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 
-const nodes = [
-  { x: "12%", y: "72%", label: "Inbox" },
-  { x: "34%", y: "54%", label: "AI" },
-  { x: "56%", y: "43%", label: "Decision" },
-  { x: "78%", y: "24%", label: "CRM" },
+const steps = [
+  { key: "inbox", label: "Inbox", detail: "New enquiry received", metric: "1 message" },
+  { key: "ai", label: "AI", detail: "Classifying the request", metric: "Analyzing" },
+  { key: "decision", label: "Decision", detail: "Routing the next action", metric: "Matched" },
+  { key: "crm", label: "CRM", detail: "Updating the record", metric: "Synced" },
+  { key: "handoff", label: "Handoff", detail: "Ready for human review", metric: "Ready" },
 ];
 
 export function HeroStage() {
   const reduce = useReducedMotion();
+  const [active, setActive] = useState(0);
+  const [paused, setPaused] = useState(false);
+
+  useEffect(() => {
+    if (reduce || paused) return;
+    const timer = window.setInterval(() => {
+      setActive((current) => (current + 1) % steps.length);
+    }, 1500);
+    return () => window.clearInterval(timer);
+  }, [paused, reduce]);
+
+  const current = steps[active];
 
   return (
-    <div className="hero-stage relative overflow-hidden">
+    <div
+      className="hero-stage relative overflow-hidden"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+    >
       <div className="hero-stage__top">
-        <span>Automation layer</span>
+        <div className="hero-stage__title">
+          <span className="hero-stage__live-dot" />
+          Automation layer
+        </div>
         <span className="hero-stage__status">
           <i />
-          Active
+          {paused ? "Paused" : "Running"}
         </span>
       </div>
 
-      <div className="hero-stage__canvas" aria-hidden="true">
-        <div className="hero-stage__rings" />
-        <motion.div className="hero-stage__live-pill" animate={reduce ? undefined : { opacity: [0.6, 1, 0.6] }} transition={reduce ? undefined : { duration: 2.2, repeat: Infinity }}><span /> LIVE WORKFLOW</motion.div>
-        <motion.div className="hero-stage__packet" animate={reduce ? undefined : { x: [0, 155, 310, 465, 600], y: [0, -38, -10, -62, -118] }} transition={reduce ? undefined : { duration: 5, repeat: Infinity, ease: "linear" }} />
-        <svg viewBox="0 0 720 420" className="hero-stage__svg" fill="none">
-          <defs>
-            <linearGradient id="heroGraph" x1="45" y1="370" x2="665" y2="55" gradientUnits="userSpaceOnUse">
-              <stop stopColor="#6D28D9" />
-              <stop offset="0.55" stopColor="#8B5CF6" />
-              <stop offset="1" stopColor="#C4B5FD" />
-            </linearGradient>
-            <linearGradient id="heroFill" x1="0" y1="420" x2="0" y2="30" gradientUnits="userSpaceOnUse">
-              <stop stopColor="#7C3AED" stopOpacity="0" />
-              <stop offset="1" stopColor="#7C3AED" stopOpacity="0.18" />
-            </linearGradient>
-          </defs>
+      <div className="hero-stage__canvas">
+        <div className="hero-stage__ambient" />
+        <div className="hero-stage__grid" />
 
-          <g opacity="0.2">
-            {[80, 160, 240, 320, 400].map((y) => (
-              <line key={y} x1="35" x2="685" y1={y} y2={y} stroke="currentColor" strokeDasharray="3 10" />
-            ))}
-            {[110, 250, 390, 530, 670].map((x) => (
-              <line key={x} y1="38" y2="382" x1={x} x2={x} stroke="currentColor" strokeDasharray="2 12" />
-            ))}
-          </g>
-
-          <motion.path
-            d="M 40 368 C 96 360, 126 335, 176 342 C 242 351, 265 289, 328 281 C 392 273, 418 252, 474 244 C 530 236, 548 168, 604 144 C 635 130, 662 95, 684 52"
-            stroke="url(#heroGraph)"
-            strokeWidth="4"
-            strokeLinecap="round"
-            initial={{ pathLength: 0, opacity: 0 }}
-            animate={{ pathLength: 1, opacity: 1 }}
-            transition={{ duration: reduce ? 0 : 1.7, ease: [0.22, 1, 0.36, 1] }}
+        <div className="hero-stage__flow">
+          <div className="hero-stage__flow-line" />
+          <motion.div
+            className="hero-stage__data-packet"
+            animate={reduce ? undefined : { left: ["3%", "24%", "48%", "72%", "96%"] }}
+            transition={reduce ? undefined : { duration: 7.5, repeat: Infinity, ease: "linear" }}
           />
-          <motion.path
-            d="M 40 368 C 96 360, 126 335, 176 342 C 242 351, 265 289, 328 281 C 392 273, 418 252, 474 244 C 530 236, 548 168, 604 144 C 635 130, 662 95, 684 52 L 684 382 L 40 382 Z"
-            fill="url(#heroFill)"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: reduce ? 0 : 0.7, duration: 1.1 }}
-          />
-          {[{cx:176,cy:342},{cx:328,cy:281},{cx:474,cy:244},{cx:604,cy:144},{cx:684,cy:52}].map((p, i) => (
-            <motion.g
-              key={p.cx}
-              initial={{ opacity: 0, scale: 0.5 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: reduce ? 0 : 0.35 + i * 0.3, duration: 0.35 }}
-              style={{ originX: p.cx, originY: p.cy }}
-            >
-              <circle cx={p.cx} cy={p.cy} r="10" fill="#8B5CF6" fillOpacity="0.16" />
-              <circle cx={p.cx} cy={p.cy} r="4" fill="#EDE9FE" />
-            </motion.g>
-          ))}
-        </svg>
+          {steps.map((step, index) => {
+            const isActive = index === active;
+            const isDone = index < active;
+            return (
+              <button
+                key={step.key}
+                type="button"
+                className={`hero-stage__node ${isActive ? "is-active" : ""} ${isDone ? "is-done" : ""}`}
+                onClick={() => setActive(index)}
+                aria-label={`Show ${step.label} automation step`}
+              >
+                <span className="hero-stage__node-ring">
+                  <span>{String(index + 1).padStart(2, "0")}</span>
+                </span>
+                <strong>{step.label}</strong>
+              </button>
+            );
+          })}
+        </div>
 
         <motion.div
-          className="hero-stage__signal hero-stage__signal--capture"
-          animate={reduce ? undefined : { y: [0, -5, 0] }}
-          transition={reduce ? undefined : { duration: 3.4, repeat: Infinity, ease: "easeInOut" }}
+          key={current.key}
+          className="hero-stage__activity"
+          initial={reduce ? false : { opacity: 0, y: 8, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.3 }}
         >
-          <span className="hero-stage__signal-dot" />
-          Lead captured
+          <div className="hero-stage__activity-head">
+            <span>NOW PROCESSING</span>
+            <b>{current.metric}</b>
+          </div>
+          <div className="hero-stage__activity-main">
+            <span className="hero-stage__activity-icon">{String(active + 1).padStart(2, "0")}</span>
+            <div>
+              <strong>{current.detail}</strong>
+              <small>Human review remains in control</small>
+            </div>
+          </div>
+          <div className="hero-stage__activity-bar">
+            <motion.span
+              animate={{ width: `${Math.max(18, ((active + 1) / steps.length) * 100)}%` }}
+              transition={{ duration: 0.45 }}
+            />
+          </div>
         </motion.div>
 
-        <motion.div
-          className="hero-stage__signal hero-stage__signal--route"
-          animate={reduce ? undefined : { y: [0, 5, 0] }}
-          transition={reduce ? undefined : { duration: 4.1, repeat: Infinity, ease: "easeInOut" }}
-        >
-          <span className="hero-stage__signal-dot" />
-          AI routes the next step
-        </motion.div>
-
-        <motion.div
-          className="hero-stage__signal hero-stage__signal--review"
-          animate={reduce ? undefined : { y: [0, -4, 0] }}
-          transition={reduce ? undefined : { duration: 3.7, repeat: Infinity, ease: "easeInOut" }}
-        >
-          <span className="hero-stage__signal-dot" />
-          Human review stays in control
-        </motion.div>
+        <div className="hero-stage__microcopy">
+          <span>Trigger</span>
+          <span>→</span>
+          <span>AI decision</span>
+          <span>→</span>
+          <span>Integration</span>
+          <span>→</span>
+          <span>Review</span>
+        </div>
       </div>
 
       <div className="hero-stage__legend">
-        {nodes.map((point, index) => (
-          <motion.div
-            key={point.label}
-            className="hero-stage__legend-item"
-            initial={reduce ? false : { opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: reduce ? 0 : 0.35 + index * 0.12, duration: 0.35 }}
-          >
-            <span>{String(index + 1).padStart(2, "0")}</span>
-            <b>{point.label}</b>
-          </motion.div>
-        ))}
+        <div>
+          <span>LIVE WORKFLOW</span>
+          <b>Click a node to inspect the flow</b>
+        </div>
+        <div className="hero-stage__legend-state">
+          <i />
+          {paused ? "Interaction mode" : "Auto-running"}
+        </div>
       </div>
     </div>
   );
