@@ -1131,3 +1131,39 @@ html[data-theme="dark"] .media-frame .text-slate-500 {
 }
 
 
+
+
+/* Cleaner motion-first intro */
+.intro-loader__content { width: min(94vw, 1180px); }
+.intro-loader__brand { justify-content: center; }
+.intro-loader__brand-name { color: #f8fafc; font-size: .72rem; font-weight: 800; letter-spacing: .24em; }
+.intro-loader__scene { min-height: 30rem; margin-top: 1rem; }
+.intro-loader__scene-inner { display: block; padding: 0; }
+.intro-loader__scene-visual--full { position: absolute; inset: 0; min-height: 0; }
+.intro-loader__scene-visual--full .intro-loader__network { inset: 4% 3%; }
+.intro-loader__window--large { left: 9%; bottom: 12%; width: min(23rem, 42%); }
+.intro-loader__workflow--large { position: absolute; left: 13%; right: 13%; top: 42%; display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+.intro-loader__workflow--large .intro-loader__workflow-node { justify-content: center; min-height: 5.5rem; border-color: rgba(196,181,253,.22); background: rgba(20,14,34,.72); backdrop-filter: blur(12px); }
+.intro-loader__connection-map { position: absolute; left: 11%; right: 11%; top: 40%; display: flex; align-items: center; justify-content: center; gap: 1rem; }
+.intro-loader__connection-map > div { display: flex; align-items: center; gap: 1rem; }
+.intro-loader__connection-map span { min-width: 7rem; padding: .9rem 1rem; text-align: center; border: 1px solid rgba(196,181,253,.2); border-radius: 1rem; background: rgba(20,14,34,.72); color: #f8fafc; font-size: .8rem; font-weight: 600; backdrop-filter: blur(12px); }
+.intro-loader__connection-map i { width: 2.5rem; height: 1px; background: #8b5cf6; box-shadow: 0 0 14px rgba(139,92,246,.7); }
+.intro-loader__handoff--large { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); padding: 1.25rem 1.5rem; border: 1px solid rgba(196,181,253,.24); border-radius: 1.2rem; background: rgba(20,14,34,.78); box-shadow: 0 20px 70px rgba(124,58,237,.25); }
+.intro-loader__footer { margin-top: 1rem; }
+.intro-loader__footer span:first-child { min-width: 4.5rem; }
+@media (max-width: 700px) {
+  .intro-loader__scene { min-height: 24rem; }
+  .intro-loader__workflow--large { left: 7%; right: 7%; gap: .45rem; }
+  .intro-loader__workflow--large .intro-loader__workflow-node { min-height: 4.5rem; font-size: .68rem; }
+  .intro-loader__connection-map { left: 5%; right: 5%; gap: .35rem; }
+  .intro-loader__connection-map > div { gap: .35rem; }
+  .intro-loader__connection-map span { min-width: 4.4rem; padding: .65rem .4rem; font-size: .65rem; }
+  .intro-loader__connection-map i { width: .7rem; }
+  .intro-loader__window--large { left: 6%; width: 62%; }
+}
+
+/* Remove secondary instructional copy from the live hero. */
+.hero-stage__legend { justify-content: center; gap: .7rem; }
+.hero-stage__legend span { font-size: .65rem; font-weight: 600; color: #64748b; }
+.hero-stage__legend i { width: .22rem; height: .22rem; border-radius: 999px; background: var(--color-accent); opacity: .6; }
+.hero-stage__activity-main small { display: none; }
