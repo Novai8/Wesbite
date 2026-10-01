@@ -77,3 +77,15 @@ export function contactBody(fields: {
     fields.message,
   ].join("\n");
 }
+
+export function contactGmailCompose(fields: {
+  name: string;
+  email: string;
+  company: string;
+  interest: string;
+  message: string;
+}) {
+  const subject = `[Contact] ${fields.name}`;
+  const body = contactBody(fields);
+  return `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(site.email)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
