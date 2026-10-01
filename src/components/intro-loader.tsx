@@ -1,55 +1,51 @@
 "use client";
 
-import Image from "next/image";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useEffect, useState } from "react";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
+const stages = [
+  { number: "01", label: "Client enquiry", title: "You send the problem", detail: "Email lands with the process, tools, and bottleneck." },
+  { number: "02", label: "Workflow build", title: "Rapigents builds the flow", detail: "Triggers, AI decisions, routing, integrations, review gates." },
+  { number: "03", label: "Client handoff", title: "You receive the workflow", detail: "A tested workflow, walkthrough, and clear handoff." },
+];
+
 export function IntroLoader() {
   const reduce = useReducedMotion();
   const [show, setShow] = useState(true);
+  const [stage, setStage] = useState(0);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    // The cinematic intro is a desktop enhancement. Touch devices go
-    // straight to the actual site so mobile stays fast and reliable.
-    if (window.matchMedia("(pointer: coarse)").matches) {
-      setShow(false);
-      document.body.style.overflow = "";
-      return;
-    }
-
     let active = true;
     const key = "rapigents-intro-seen";
-
     try {
       if (sessionStorage.getItem(key) === "1") {
         setShow(false);
         return;
       }
       sessionStorage.setItem(key, "1");
-    } catch {
-      // If storage is unavailable, still show the intro once for this render.
-    }
+    } catch {}
 
     document.body.style.overflow = "hidden";
-    const timer = window.setTimeout(() => {
-      if (active) setShow(false);
-    }, reduce ? 900 : 3650);
+    const duration = reduce ? 900 : 4050;
+    const timers = reduce
+      ? [window.setTimeout(() => active && setShow(false), duration)]
+      : [
+          window.setTimeout(() => active && setStage(1), 1250),
+          window.setTimeout(() => active && setStage(2), 2500),
+          window.setTimeout(() => active && setShow(false), duration),
+        ];
 
     return () => {
       active = false;
-      window.clearTimeout(timer);
+      timers.forEach(window.clearTimeout);
       document.body.style.overflow = "";
     };
   }, [reduce]);
 
   useEffect(() => {
-    if (!show) {
-      document.body.style.overflow = "";
-    }
+    if (!show) document.body.style.overflow = "";
   }, [show]);
 
   return (
@@ -58,209 +54,102 @@ export function IntroLoader() {
         <motion.div
           className="intro-loader"
           role="status"
-          aria-label="Loading Rapigents"
+          aria-label="Rapigents workflow introduction"
           initial={{ opacity: 1 }}
-          animate={{ opacity: 1 }}
-          exit={{
-            opacity: 0,
-            scale: reduce ? 1 : 1.025,
-            filter: reduce ? "none" : "blur(10px)",
-          }}
-          transition={{ duration: reduce ? 0.18 : 0.62, ease }}
+          exit={{ opacity: 0, scale: reduce ? 1 : 1.035, filter: reduce ? "none" : "blur(12px)" }}
+          transition={{ duration: reduce ? 0.18 : 0.6, ease }}
         >
           <div className="intro-loader__grain" aria-hidden />
-          <motion.div
-            className="intro-loader__halo"
-            aria-hidden
-            initial={{ scale: 0.7, opacity: 0 }}
-            animate={
-              reduce
-                ? { scale: 1, opacity: 0.22 }
-                : { scale: 1, opacity: [0, 0.32, 0.18, 0.24] }
-            }
-            transition={{
-              duration: reduce ? 0.2 : 2.4,
-              ease,
-              times: reduce ? undefined : [0, 0.32, 0.68, 1],
-            }}
-          />
+          <div className="intro-loader__aurora intro-loader__aurora--one" aria-hidden />
+          <div className="intro-loader__aurora intro-loader__aurora--two" aria-hidden />
 
           <div className="intro-loader__content">
-            <motion.div
-              className="intro-loader__brand"
-              initial={reduce ? { opacity: 1 } : { opacity: 0, y: 12, filter: "blur(7px)" }}
-              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-              transition={{ duration: reduce ? 0 : 0.7, ease }}
-            >
-              <div className="intro-loader__mark intro-loader__mark--image" aria-hidden>
-                <Image src="/brand/logo-mark.svg" alt="" width={88} height={53} priority />
-              </div>
+            <motion.div className="intro-loader__brand" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, ease }}>
+              <div className="intro-loader__mini-mark" aria-hidden>RA</div>
               <div>
                 <p className="intro-loader__eyebrow">RAPIGENTS</p>
-                <p className="intro-loader__tag">AI workflow automation</p>
+                <p className="intro-loader__tag">From problem → workflow → handoff</p>
               </div>
             </motion.div>
 
-            <div className="intro-loader__visual" aria-hidden>
-              <svg
-                viewBox="0 0 1100 520"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                className="intro-loader__graph"
-                preserveAspectRatio="none"
-              >
-                <defs>
-                  <linearGradient id="introLine" x1="90" y1="460" x2="990" y2="70" gradientUnits="userSpaceOnUse">
-                    <stop stopColor="#6D28D9" />
-                    <stop offset="0.52" stopColor="#8B5CF6" />
-                    <stop offset="1" stopColor="#C4B5FD" />
-                  </linearGradient>
-                  <linearGradient id="introFill" x1="0" y1="520" x2="0" y2="40" gradientUnits="userSpaceOnUse">
-                    <stop stopColor="#7C3AED" stopOpacity="0" />
-                    <stop offset="1" stopColor="#7C3AED" stopOpacity="0.18" />
-                  </linearGradient>
-                  <filter id="introGlow" x="-30%" y="-30%" width="160%" height="160%">
-                    <feGaussianBlur stdDeviation="12" result="blur" />
-                    <feMerge>
-                      <feMergeNode in="blur" />
-                      <feMergeNode in="SourceGraphic" />
-                    </feMerge>
-                  </filter>
-                </defs>
-
-                <g opacity="0.18">
-                  {[90, 170, 250, 330, 410].map((y) => (
-                    <line
-                      key={y}
-                      x1="50"
-                      x2="1050"
-                      y1={y}
-                      y2={y}
-                      stroke="#C4B5FD"
-                      strokeDasharray="3 12"
-                    />
-                  ))}
-                  {[140, 300, 460, 620, 780, 940].map((x) => (
-                    <line
-                      key={x}
-                      y1="52"
-                      y2="448"
-                      x1={x}
-                      x2={x}
-                      stroke="#A78BFA"
-                      strokeDasharray="2 14"
-                    />
-                  ))}
-                </g>
-
-                <motion.path
-                  d="M 58 440 C 150 436, 188 425, 246 402 C 320 372, 354 405, 432 344 C 516 277, 555 298, 626 254 C 709 202, 762 228, 835 152 C 910 74, 969 116, 1040 58"
-                  stroke="url(#introLine)"
-                  strokeWidth="5"
-                  strokeLinecap="round"
-                  filter="url(#introGlow)"
-                  initial={{ pathLength: 0, opacity: 0.9 }}
-                  animate={{ pathLength: 1, opacity: 1 }}
-                  transition={{ duration: reduce ? 0.01 : 2.1, ease }}
-                />
-
-                <motion.path
-                  d="M 58 440 C 150 436, 188 425, 246 402 C 320 372, 354 405, 432 344 C 516 277, 555 298, 626 254 C 709 202, 762 228, 835 152 C 910 74, 969 116, 1040 58 L 1040 470 L 58 470 Z"
-                  fill="url(#introFill)"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: reduce ? 0.08 : 1 }}
-                  transition={{ delay: reduce ? 0 : 1.2, duration: 1.2, ease }}
-                />
-
-                {[
-                  { cx: 246, cy: 402, delay: 1.1 },
-                  { cx: 432, cy: 344, delay: 1.45 },
-                  { cx: 626, cy: 254, delay: 1.8 },
-                  { cx: 835, cy: 152, delay: 2.1 },
-                  { cx: 1040, cy: 58, delay: 2.35 },
-                ].map((point) => (
-                  <motion.g
-                    key={point.cx}
-                    initial={{ opacity: 0, scale: 0.4 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: reduce ? 0 : point.delay, duration: reduce ? 0 : 0.45, ease }}
-                    style={{ originX: point.cx, originY: point.cy }}
-                  >
-                    <circle cx={point.cx} cy={point.cy} r="12" fill="#7C3AED" fillOpacity="0.15" />
-                    <circle cx={point.cx} cy={point.cy} r="5" fill="#EDE9FE" />
-                  </motion.g>
-                ))}
-              </svg>
-
-              <motion.div
-                className="intro-loader__metric intro-loader__metric--left"
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: reduce ? 0 : 1, duration: 0.45, ease }}
-              >
-                <span className="intro-loader__metric-label">REPETITIVE WORK</span>
-                <strong>↓</strong>
-              </motion.div>
-
-              <motion.div
-                className="intro-loader__metric intro-loader__metric--right"
-                initial={{ opacity: 0, x: 10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: reduce ? 0 : 2.05, duration: 0.45, ease }}
-              >
-                <span className="intro-loader__metric-label">ROOM TO GROW</span>
-                <strong>↑</strong>
-              </motion.div>
-
-              <div className="intro-loader__chat intro-loader__chat--one">
-                <motion.span
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: reduce ? 0 : 1.35, duration: 0.4, ease }}
-                >
-                  Lead captured
-                </motion.span>
-              </div>
-              <div className="intro-loader__chat intro-loader__chat--two">
-                <motion.span
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: reduce ? 0 : 1.75, duration: 0.4, ease }}
-                >
-                  AI decision
-                </motion.span>
-              </div>
-              <div className="intro-loader__chat intro-loader__chat--three">
-                <motion.span
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: reduce ? 0 : 2.12, duration: 0.4, ease }}
-                >
-                  Workflow complete
-                </motion.span>
-              </div>
+            <div className="intro-loader__timeline" aria-hidden>
+              <motion.div className="intro-loader__timeline-line" initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 3.25, ease }} />
+              {stages.map((item, index) => (
+                <motion.div key={item.number} className="intro-loader__node" animate={stage >= index ? { opacity: 1, scale: 1 } : { opacity: 0.38, scale: 0.9 }} transition={{ duration: 0.35, ease }}>
+                  <motion.span
+                    className="intro-loader__node-dot"
+                    animate={stage === index && !reduce ? { scale: [1, 1.35, 1], boxShadow: ["0 0 0 rgba(139,92,246,0)", "0 0 28px rgba(139,92,246,.75)", "0 0 0 rgba(139,92,246,0)"] } : undefined}
+                    transition={{ duration: 1.25, repeat: Infinity, ease: "easeInOut" }}
+                  />
+                  <span className="intro-loader__node-number">{item.number}</span>
+                </motion.div>
+              ))}
             </div>
 
-            <motion.div
-              className="intro-loader__footer"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: reduce ? 0 : 2.45, duration: 0.5, ease }}
-            >
-              <span>01</span>
-              <div className="intro-loader__progress">
-                <motion.div
-                  initial={{ scaleX: 0 }}
-                  animate={{ scaleX: 1 }}
-                  transition={{ duration: reduce ? 0.1 : 2.8, ease }}
-                />
-              </div>
-              <span>BUILD → REVIEW → GROW</span>
-            </motion.div>
-          </div>
+            <div className="intro-loader__scene">
+              <AnimatePresence mode="wait">
+                <motion.div key={stage} className="intro-loader__scene-inner" initial={{ opacity: 0, y: 16, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -12, scale: 1.01 }} transition={{ duration: 0.38, ease }}>
+                  <div className="intro-loader__scene-copy">
+                    <p className="intro-loader__scene-label">{stages[stage].number} · {stages[stage].label}</p>
+                    <h1>{stages[stage].title}</h1>
+                    <p>{stages[stage].detail}</p>
+                  </div>
+                  <SceneVisual stage={stage} reduce={Boolean(reduce)} />
+                </motion.div>
+              </AnimatePresence>
+            </div>
 
+            <div className="intro-loader__footer">
+              <span>BUILDING AUTOMATION</span>
+              <div className="intro-loader__progress"><motion.div initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 3.6, ease }} /></div>
+              <span>{String(stage + 1).padStart(2, "0")} / 03</span>
+            </div>
+          </div>
         </motion.div>
       ) : null}
     </AnimatePresence>
+  );
+}
+
+function SceneVisual({ stage, reduce }: { stage: number; reduce: boolean }) {
+  return (
+    <div className="intro-loader__scene-visual">
+      <div className="intro-loader__network">
+        <svg viewBox="0 0 560 300" fill="none" aria-hidden>
+          <defs><linearGradient id="introFlow" x1="40" y1="150" x2="520" y2="150" gradientUnits="userSpaceOnUse"><stop stopColor="#A78BFA" /><stop offset=".5" stopColor="#8B5CF6" /><stop offset="1" stopColor="#DDD6FE" /></linearGradient></defs>
+          <path d="M70 150 C160 150 160 70 280 70 S400 150 490 150" stroke="#6D28D9" strokeOpacity=".25" strokeWidth="2" />
+          <path d="M70 150 C160 150 160 230 280 230 S400 150 490 150" stroke="#6D28D9" strokeOpacity=".25" strokeWidth="2" />
+          <motion.path d="M70 150 C160 150 160 70 280 70 S400 150 490 150" stroke="url(#introFlow)" strokeWidth="3" strokeLinecap="round" strokeDasharray="10 16" animate={reduce ? undefined : { strokeDashoffset: [0, -52] }} transition={{ duration: .8, repeat: Infinity, ease: "linear" }} />
+          <motion.path d="M70 150 C160 150 160 230 280 230 S400 150 490 150" stroke="url(#introFlow)" strokeWidth="3" strokeLinecap="round" strokeDasharray="10 16" animate={reduce ? undefined : { strokeDashoffset: [0, -52] }} transition={{ duration: .95, repeat: Infinity, ease: "linear" }} />
+        </svg>
+        {[["14%", "50%", "MAIL"], ["50%", "24%", "AI"], ["86%", "50%", "HANDOFF"]].map(([left, top, label], index) => (
+          <motion.div key={label} className="intro-loader__process-node" style={{ left, top }} animate={reduce ? undefined : { y: [0, index === 1 ? -5 : 4, 0] }} transition={{ duration: 2.2 + index * .25, repeat: Infinity, ease: "easeInOut" }}>
+            <span className="intro-loader__process-pulse" /><b>{label}</b>
+          </motion.div>
+        ))}
+        <motion.div className="intro-loader__packet" animate={reduce ? { opacity: 1 } : { left: ["13%", "49%", "85%"] }} transition={{ duration: 2.6, ease, times: [0, .48, 1], repeat: Infinity }}><span /></motion.div>
+      </div>
+
+      {stage === 0 ? (
+        <motion.div className="intro-loader__window" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: .45, ease }}>
+          <span className="intro-loader__window-top">INBOX · NEW MESSAGE</span>
+          <strong>Need to automate our lead follow-up</strong>
+          <small>“Can you connect our form, AI qualification and CRM?”</small>
+        </motion.div>
+      ) : stage === 1 ? (
+        <motion.div className="intro-loader__workflow">
+          {["Trigger", "AI decision", "Route", "Review", "CRM"].map((label, index) => (
+            <motion.div key={label} className="intro-loader__workflow-node" initial={{ opacity: 0, scale: .8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: index * .09, duration: .3, ease }}>
+              <span />{label}
+            </motion.div>
+          ))}
+        </motion.div>
+      ) : (
+        <motion.div className="intro-loader__handoff" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: .45, ease }}>
+          <span className="intro-loader__handoff-check">✓</span>
+          <div><strong>Workflow ready</strong><small>Tested · documented · handed off</small></div>
+        </motion.div>
+      )}
+    </div>
   );
 }
