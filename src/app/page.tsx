@@ -105,44 +105,6 @@ export default function HomePage() {
         </Reveal>
       </section>
 
-      <section className="container-page py-16 sm:py-20">
-        <Reveal>
-          <div className="surface p-6 sm:p-8">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <p className="text-xs font-medium tracking-[0.16em] text-accent-ink uppercase">
-                  03 — Client feedback
-                </p>
-                <h2 className="mt-2 text-3xl font-medium tracking-tight text-balance">
-                  Real projects. Real feedback.
-                </h2>
-              </div>
-              <p className="max-w-sm text-sm leading-relaxed text-muted">
-                Honest feedback from real client projects will be added here as projects go live.
-              </p>
-            </div>
-            <div className="mt-8 grid gap-4 sm:grid-cols-2">
-              <div className="rounded-2xl border border-line bg-paper p-5">
-                <p className="text-sm leading-relaxed text-muted">
-                  Client reviews will appear here after completed projects. No invented testimonials, no mystery CEOs.
-                </p>
-                <p className="mt-5 text-xs font-medium tracking-[0.12em] text-slate-500 uppercase">
-                  Building the first case studies
-                </p>
-              </div>
-              <div className="rounded-2xl border border-line bg-paper p-5">
-                <p className="text-sm leading-relaxed text-muted">
-                  Want to discuss a workflow or a pilot project? Get in touch directly and see the automation demos first.
-                </p>
-                <Button asChild variant="secondary" className="mt-5">
-                  <Link href="/contact">Start a project</Link>
-                </Button>
-              </div>
-            </div>
-          </div>
-        </Reveal>
-      </section>
-
       <section className="container-page pb-16 sm:pb-24">
         <Reveal>
           <div className="surface grid gap-8 p-6 sm:p-8 lg:grid-cols-[0.8fr_1.2fr]">
