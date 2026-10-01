@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { CursorField } from "@/components/cursor-field";
-import { FocusRotator } from "@/components/focus-rotator";
 import { DemoCard } from "@/components/demo-card";
 import { HeroStage } from "@/components/hero-stage";
 import { NicheTiles } from "@/components/niche-tiles";
@@ -33,9 +32,6 @@ export default function HomePage() {
         <div className="hero-grid pointer-events-none absolute inset-0" aria-hidden />
         <div className="container-page relative grid items-center gap-10 py-14 sm:py-20 lg:grid-cols-[1.15fr_0.85fr] lg:py-24">
           <div className="min-w-0">
-            <p className="text-xs font-medium tracking-[0.18em] text-accent-ink uppercase">
-              Rapigents · AI automation
-            </p>
             <h1 className="mt-4 max-w-4xl text-[clamp(2.5rem,6.4vw,5.35rem)] leading-[0.96] font-medium tracking-[-0.045em] text-balance">
               Help your business grow with{" "}
               <span className="font-serif font-normal text-accent italic">automation.</span>
@@ -43,9 +39,6 @@ export default function HomePage() {
             <p className="mt-5 max-w-xl text-lg leading-relaxed text-muted text-pretty">
               Automate repetitive work, connect the tools you already use, and give your team more time to do work that actually moves the business forward.
             </p>
-            <div className="mt-7 text-[clamp(1.05rem,2.5vw,1.45rem)] font-medium tracking-tight">
-              Keep your team focused on <FocusRotator /><span className="text-accent">.</span>
-            </div>
             <div className="mt-8 flex flex-wrap gap-3">
               <Button asChild>
                 <Link href="/demos">
@@ -67,16 +60,10 @@ export default function HomePage() {
         <Reveal>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div className="min-w-0">
-              <p className="text-xs font-medium tracking-[0.16em] text-accent-ink uppercase">
-                01 — What automation does
-              </p>
               <h2 className="mt-2 text-3xl font-medium tracking-tight text-balance">
                 More momentum. Less repetitive work.
               </h2>
             </div>
-            <p className="max-w-sm text-sm leading-relaxed text-muted">
-              Capture the work, make the decision, route the next step, and keep people in control.
-            </p>
           </div>
           <div className="mt-8">
             <NicheTiles />
@@ -88,9 +75,6 @@ export default function HomePage() {
         <Reveal>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-xs font-medium tracking-[0.16em] text-accent-ink uppercase">
-                02 — Workflow library
-              </p>
               <h2 className="mt-2 text-3xl font-medium tracking-tight">Built around business friction</h2>
             </div>
             <Button asChild variant="secondary" size="sm">
@@ -109,9 +93,6 @@ export default function HomePage() {
         <Reveal>
           <div className="surface grid gap-8 p-6 sm:p-8 lg:grid-cols-[0.8fr_1.2fr]">
             <div>
-              <p className="text-xs font-medium tracking-[0.16em] text-accent-ink uppercase">
-                03 — The approach
-              </p>
               <h2 className="mt-2 text-3xl font-medium tracking-tight text-balance">
                 Automate the busywork. Keep the important decisions human.
               </h2>
