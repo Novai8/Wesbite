@@ -2,11 +2,11 @@
 
 import { motion, useReducedMotion } from "framer-motion";
 
-const points = [
-  { x: "12%", y: "72%", label: "Capture" },
-  { x: "34%", y: "54%", label: "Qualify" },
-  { x: "56%", y: "43%", label: "Route" },
-  { x: "78%", y: "24%", label: "Follow up" },
+const nodes = [
+  { x: "12%", y: "72%", label: "Inbox" },
+  { x: "34%", y: "54%", label: "AI" },
+  { x: "56%", y: "43%", label: "Decision" },
+  { x: "78%", y: "24%", label: "CRM" },
 ];
 
 export function HeroStage() {
@@ -24,6 +24,8 @@ export function HeroStage() {
 
       <div className="hero-stage__canvas" aria-hidden="true">
         <div className="hero-stage__rings" />
+        <motion.div className="hero-stage__live-pill" animate={reduce ? undefined : { opacity: [0.6, 1, 0.6] }} transition={reduce ? undefined : { duration: 2.2, repeat: Infinity }}><span /> LIVE WORKFLOW</motion.div>
+        <motion.div className="hero-stage__packet" animate={reduce ? undefined : { x: [0, 155, 310, 465, 600], y: [0, -38, -10, -62, -118] }} transition={reduce ? undefined : { duration: 5, repeat: Infinity, ease: "linear" }} />
         <svg viewBox="0 0 720 420" className="hero-stage__svg" fill="none">
           <defs>
             <linearGradient id="heroGraph" x1="45" y1="370" x2="665" y2="55" gradientUnits="userSpaceOnUse">
@@ -105,7 +107,7 @@ export function HeroStage() {
       </div>
 
       <div className="hero-stage__legend">
-        {points.map((point, index) => (
+        {nodes.map((point, index) => (
           <motion.div
             key={point.label}
             className="hero-stage__legend-item"
