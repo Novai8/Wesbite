@@ -61,6 +61,16 @@ export function SiteFooter() {
                 </a>
               </li>
               <li>
+                <a
+                  href={site.linkedin}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  LinkedIn
+                  <span className="sr-only"> (opens in a new tab)</span>
+                </a>
+              </li>
+              <li>
                 <a href={`mailto:${site.email}`}>Email Hussnain</a>
               </li>
               <li>
