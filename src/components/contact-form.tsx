@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { demos } from "@/data/demos";
-import { contactBody, contactMailto, site } from "@/lib/site";
+import { contactBody, contactGmailCompose, site } from "@/lib/site";
 
 type Fields = {
   name: string;
@@ -94,9 +94,9 @@ export function ContactForm() {
       message: fields.message.trim(),
     };
     const body = contactBody(payload);
-    const href = contactMailto(payload);
+    const href = contactGmailCompose(payload);
     setComposed(body);
-    window.location.href = href;
+    window.location.assign(href);
     toast("Opening your email app. If it does not open, copy the message below.");
   }
 
@@ -221,7 +221,7 @@ export function ContactForm() {
         </div>
         <div className="mt-5 flex flex-wrap items-center gap-3">
           <Button type="submit">Email Hussnain</Button>
-          <p className="text-xs text-slate-500">Opens your mail app. Nothing is stored here.</p>
+          <p className="text-xs text-slate-500">Opens Gmail with the recipient, subject, and message filled in.</p>
         </div>
         {composed ? (
           <div className="mt-5 rounded-2xl border border-line bg-paper p-4">
