@@ -48,10 +48,10 @@ export const metadata: Metadata = {
   category: "technology",
   icons: {
     icon: [
-      { url: "/brand/logo.png", type: "image/png", sizes: "512x512" },
+      { url: "/brand/rapigents-title-logo.svg", type: "image/svg+xml" },
     ],
-    shortcut: ["/brand/logo.png"],
-    apple: [{ url: "/brand/logo.png", type: "image/png", sizes: "512x512" }],
+    shortcut: ["/brand/rapigents-title-logo.svg"],
+    apple: [{ url: "/brand/rapigents-title-logo.svg", type: "image/svg+xml" }],
   },
   authors: [{ name: site.owner, url: site.github }],
   creator: site.owner,
