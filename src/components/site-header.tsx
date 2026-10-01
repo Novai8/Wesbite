@@ -179,9 +179,6 @@ export function SiteHeader() {
                 <VolumeX className="h-4 w-4" aria-hidden />
               )}
             </button>
-            <p className="px-1 text-xs leading-relaxed text-slate-500">
-              Sound stays off until you turn it on.
-            </p>
           </div>
         </DialogContent>
       </Dialog>
