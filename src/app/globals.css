@@ -1265,3 +1265,10 @@ html[data-theme="dark"] .media-frame .bg-white {
 html[data-theme="dark"] .media-frame .text-slate-500 {
   color: #b4b4bd !important;
 }
+
+
+/* Live automation layer */
+.hero-stage__live-pill{position:absolute;top:14px;left:14px;z-index:3;display:flex;align-items:center;gap:7px;border:1px solid rgba(139,92,246,.22);border-radius:999px;background:rgba(255,255,255,.82);padding:6px 9px;font-size:9px;font-weight:700;letter-spacing:.12em;color:#6d28d9;backdrop-filter:blur(8px)}
+.hero-stage__live-pill span{width:6px;height:6px;border-radius:50%;background:#7c3aed;box-shadow:0 0 0 4px rgba(124,58,237,.1)}
+.hero-stage__packet{position:absolute;left:7%;top:66%;width:10px;height:10px;border-radius:50%;background:#fff;box-shadow:0 0 0 5px rgba(139,92,246,.16),0 0 22px rgba(139,92,246,.8);z-index:2;pointer-events:none}
+.hero-stage__packet:after{content:"";position:absolute;left:-22px;top:4px;width:22px;height:2px;background:linear-gradient(90deg,transparent,rgba(139,92,246,.65));transform-origin:right}
