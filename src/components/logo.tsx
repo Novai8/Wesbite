@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 export function Logo({ className }: { className?: string }) {
   return (
     <Image
-      src="/brand/logo-mark.svg"
+      src="/brand/rapigents-logo.svg"
       alt="Rapigents"
       width={128}
       height={77}
