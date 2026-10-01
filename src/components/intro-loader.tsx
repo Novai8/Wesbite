@@ -6,9 +6,10 @@ import { useEffect, useState } from "react";
 const ease = [0.22, 1, 0.36, 1] as const;
 
 const stages = [
-  { number: "01", label: "Client enquiry", title: "You send the problem", detail: "Email lands with the process, tools, and bottleneck." },
-  { number: "02", label: "Workflow build", title: "Rapigents builds the flow", detail: "Triggers, AI decisions, routing, integrations, review gates." },
-  { number: "03", label: "Client handoff", title: "You receive the workflow", detail: "A tested workflow, walkthrough, and clear handoff." },
+  { number: "01", label: "Enquiry" },
+  { number: "02", label: "Build" },
+  { number: "03", label: "Connect" },
+  { number: "04", label: "Handoff" },
 ];
 
 export function IntroLoader() {
@@ -28,12 +29,13 @@ export function IntroLoader() {
     } catch {}
 
     document.body.style.overflow = "hidden";
-    const duration = reduce ? 900 : 4050;
+    const duration = reduce ? 900 : 10000;
     const timers = reduce
       ? [window.setTimeout(() => active && setShow(false), duration)]
       : [
-          window.setTimeout(() => active && setStage(1), 1250),
-          window.setTimeout(() => active && setStage(2), 2500),
+          window.setTimeout(() => active && setStage(1), 2500),
+          window.setTimeout(() => active && setStage(2), 5000),
+          window.setTimeout(() => active && setStage(3), 7500),
           window.setTimeout(() => active && setShow(false), duration),
         ];
 
@@ -54,32 +56,44 @@ export function IntroLoader() {
         <motion.div
           className="intro-loader"
           role="status"
-          aria-label="Rapigents workflow introduction"
+          aria-label="Rapigents introduction"
           initial={{ opacity: 1 }}
-          exit={{ opacity: 0, scale: reduce ? 1 : 1.035, filter: reduce ? "none" : "blur(12px)" }}
-          transition={{ duration: reduce ? 0.18 : 0.6, ease }}
+          exit={{ opacity: 0, scale: reduce ? 1 : 1.025, filter: reduce ? "none" : "blur(10px)" }}
+          transition={{ duration: reduce ? 0.18 : 0.7, ease }}
         >
           <div className="intro-loader__grain" aria-hidden />
           <div className="intro-loader__aurora intro-loader__aurora--one" aria-hidden />
           <div className="intro-loader__aurora intro-loader__aurora--two" aria-hidden />
 
           <div className="intro-loader__content">
-            <motion.div className="intro-loader__brand" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, ease }}>
+            <motion.div
+              className="intro-loader__brand"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, ease }}
+            >
               <div className="intro-loader__mini-mark" aria-hidden>RA</div>
-              <div>
-                <p className="intro-loader__eyebrow">RAPIGENTS</p>
-                <p className="intro-loader__tag">From problem → workflow → handoff</p>
-              </div>
+              <span className="intro-loader__brand-name">RAPIGENTS</span>
             </motion.div>
 
             <div className="intro-loader__timeline" aria-hidden>
-              <motion.div className="intro-loader__timeline-line" initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 3.25, ease }} />
+              <motion.div
+                className="intro-loader__timeline-line"
+                initial={{ scaleX: 0 }}
+                animate={{ scaleX: 1 }}
+                transition={{ duration: 8.8, ease }}
+              />
               {stages.map((item, index) => (
-                <motion.div key={item.number} className="intro-loader__node" animate={stage >= index ? { opacity: 1, scale: 1 } : { opacity: 0.38, scale: 0.9 }} transition={{ duration: 0.35, ease }}>
+                <motion.div
+                  key={item.number}
+                  className="intro-loader__node"
+                  animate={stage >= index ? { opacity: 1, scale: 1 } : { opacity: 0.3, scale: 0.88 }}
+                  transition={{ duration: 0.4, ease }}
+                >
                   <motion.span
                     className="intro-loader__node-dot"
-                    animate={stage === index && !reduce ? { scale: [1, 1.35, 1], boxShadow: ["0 0 0 rgba(139,92,246,0)", "0 0 28px rgba(139,92,246,.75)", "0 0 0 rgba(139,92,246,0)"] } : undefined}
-                    transition={{ duration: 1.25, repeat: Infinity, ease: "easeInOut" }}
+                    animate={stage === index && !reduce ? { scale: [1, 1.45, 1] } : undefined}
+                    transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
                   />
                   <span className="intro-loader__node-number">{item.number}</span>
                 </motion.div>
@@ -88,21 +102,29 @@ export function IntroLoader() {
 
             <div className="intro-loader__scene">
               <AnimatePresence mode="wait">
-                <motion.div key={stage} className="intro-loader__scene-inner" initial={{ opacity: 0, y: 16, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -12, scale: 1.01 }} transition={{ duration: 0.38, ease }}>
-                  <div className="intro-loader__scene-copy">
-                    <p className="intro-loader__scene-label">{stages[stage].number} · {stages[stage].label}</p>
-                    <h1>{stages[stage].title}</h1>
-                    <p>{stages[stage].detail}</p>
-                  </div>
+                <motion.div
+                  key={stage}
+                  className="intro-loader__scene-inner"
+                  initial={{ opacity: 0, scale: 0.97, filter: "blur(6px)" }}
+                  animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+                  exit={{ opacity: 0, scale: 1.03, filter: "blur(5px)" }}
+                  transition={{ duration: 0.65, ease }}
+                >
                   <SceneVisual stage={stage} reduce={Boolean(reduce)} />
                 </motion.div>
               </AnimatePresence>
             </div>
 
             <div className="intro-loader__footer">
-              <span>BUILDING AUTOMATION</span>
-              <div className="intro-loader__progress"><motion.div initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 3.6, ease }} /></div>
-              <span>{String(stage + 1).padStart(2, "0")} / 03</span>
+              <span>{stages[stage].label}</span>
+              <div className="intro-loader__progress">
+                <motion.div
+                  initial={{ scaleX: 0 }}
+                  animate={{ scaleX: (stage + 1) / stages.length }}
+                  transition={{ duration: 0.6, ease }}
+                />
+              </div>
+              <span>{String(stage + 1).padStart(2, "0")} / 04</span>
             </div>
           </div>
         </motion.div>
@@ -112,42 +134,87 @@ export function IntroLoader() {
 }
 
 function SceneVisual({ stage, reduce }: { stage: number; reduce: boolean }) {
+  const packet = reduce
+    ? { opacity: 1 }
+    : { left: stage === 0 ? ["8%", "28%"] : stage === 1 ? ["28%", "50%"] : stage === 2 ? ["50%", "74%"] : ["74%", "94%"] };
+
   return (
-    <div className="intro-loader__scene-visual">
+    <div className="intro-loader__scene-visual intro-loader__scene-visual--full">
       <div className="intro-loader__network">
-        <svg viewBox="0 0 560 300" fill="none" aria-hidden>
-          <defs><linearGradient id="introFlow" x1="40" y1="150" x2="520" y2="150" gradientUnits="userSpaceOnUse"><stop stopColor="#A78BFA" /><stop offset=".5" stopColor="#8B5CF6" /><stop offset="1" stopColor="#DDD6FE" /></linearGradient></defs>
-          <path d="M70 150 C160 150 160 70 280 70 S400 150 490 150" stroke="#6D28D9" strokeOpacity=".25" strokeWidth="2" />
-          <path d="M70 150 C160 150 160 230 280 230 S400 150 490 150" stroke="#6D28D9" strokeOpacity=".25" strokeWidth="2" />
-          <motion.path d="M70 150 C160 150 160 70 280 70 S400 150 490 150" stroke="url(#introFlow)" strokeWidth="3" strokeLinecap="round" strokeDasharray="10 16" animate={reduce ? undefined : { strokeDashoffset: [0, -52] }} transition={{ duration: .8, repeat: Infinity, ease: "linear" }} />
-          <motion.path d="M70 150 C160 150 160 230 280 230 S400 150 490 150" stroke="url(#introFlow)" strokeWidth="3" strokeLinecap="round" strokeDasharray="10 16" animate={reduce ? undefined : { strokeDashoffset: [0, -52] }} transition={{ duration: .95, repeat: Infinity, ease: "linear" }} />
+        <svg viewBox="0 0 900 420" fill="none" aria-hidden>
+          <defs>
+            <linearGradient id="introFlow" x1="70" y1="210" x2="830" y2="210" gradientUnits="userSpaceOnUse">
+              <stop stopColor="#A78BFA" />
+              <stop offset=".5" stopColor="#8B5CF6" />
+              <stop offset="1" stopColor="#DDD6FE" />
+            </linearGradient>
+          </defs>
+          <path d="M80 210 C190 210 190 90 330 90 S500 210 610 210 S710 330 820 210" stroke="#8B5CF6" strokeOpacity=".18" strokeWidth="2" />
+          <path d="M80 210 C190 210 190 330 330 330 S500 210 610 210 S710 90 820 210" stroke="#8B5CF6" strokeOpacity=".18" strokeWidth="2" />
+          <motion.path d="M80 210 C190 210 190 90 330 90 S500 210 610 210 S710 330 820 210" stroke="url(#introFlow)" strokeWidth="4" strokeLinecap="round" strokeDasharray="12 18" animate={reduce ? undefined : { strokeDashoffset: [0, -60] }} transition={{ duration: .8, repeat: Infinity, ease: "linear" }} />
+          <motion.path d="M80 210 C190 210 190 330 330 330 S500 210 610 210 S710 90 820 210" stroke="url(#introFlow)" strokeWidth="4" strokeLinecap="round" strokeDasharray="12 18" animate={reduce ? undefined : { strokeDashoffset: [0, -60] }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }} />
         </svg>
-        {[["14%", "50%", "MAIL"], ["50%", "24%", "AI"], ["86%", "50%", "HANDOFF"]].map(([left, top, label], index) => (
-          <motion.div key={label} className="intro-loader__process-node" style={{ left, top }} animate={reduce ? undefined : { y: [0, index === 1 ? -5 : 4, 0] }} transition={{ duration: 2.2 + index * .25, repeat: Infinity, ease: "easeInOut" }}>
-            <span className="intro-loader__process-pulse" /><b>{label}</b>
+
+        {[
+          ["10%", "50%", "MAIL"],
+          ["37%", "22%", "AI"],
+          ["67%", "50%", "CRM"],
+          ["91%", "50%", "READY"],
+        ].map(([left, top, label], index) => (
+          <motion.div
+            key={label}
+            className="intro-loader__process-node"
+            style={{ left, top }}
+            animate={reduce ? undefined : { y: [0, index % 2 ? -7 : 5, 0] }}
+            transition={{ duration: 2 + index * .2, repeat: Infinity, ease: "easeInOut" }}
+          >
+            <span className="intro-loader__process-pulse" />
+            <b>{label}</b>
           </motion.div>
         ))}
-        <motion.div className="intro-loader__packet" animate={reduce ? { opacity: 1 } : { left: ["13%", "49%", "85%"] }} transition={{ duration: 2.6, ease, times: [0, .48, 1], repeat: Infinity }}><span /></motion.div>
+
+        <motion.div
+          className="intro-loader__packet"
+          animate={packet}
+          transition={{ duration: 1.7, ease, repeat: Infinity, repeatType: "mirror" }}
+        >
+          <span />
+        </motion.div>
       </div>
 
-      {stage === 0 ? (
-        <motion.div className="intro-loader__window" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: .45, ease }}>
-          <span className="intro-loader__window-top">INBOX · NEW MESSAGE</span>
-          <strong>Need to automate our lead follow-up</strong>
-          <small>“Can you connect our form, AI qualification and CRM?”</small>
+      {stage === 0 && (
+        <motion.div className="intro-loader__window intro-loader__window--large" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .55, ease }}>
+          <span className="intro-loader__window-top">INCOMING</span>
+          <strong>New client request</strong>
+          <div className="intro-loader__fake-lines"><i /><i /><i /></div>
         </motion.div>
-      ) : stage === 1 ? (
-        <motion.div className="intro-loader__workflow">
-          {["Trigger", "AI decision", "Route", "Review", "CRM"].map((label, index) => (
-            <motion.div key={label} className="intro-loader__workflow-node" initial={{ opacity: 0, scale: .8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: index * .09, duration: .3, ease }}>
+      )}
+
+      {stage === 1 && (
+        <div className="intro-loader__workflow intro-loader__workflow--large">
+          {["Trigger", "AI", "Decision", "Route"].map((label, index) => (
+            <motion.div key={label} className="intro-loader__workflow-node" initial={{ opacity: 0, scale: .7 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: index * .16, duration: .45, ease }}>
               <span />{label}
             </motion.div>
           ))}
-        </motion.div>
-      ) : (
-        <motion.div className="intro-loader__handoff" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: .45, ease }}>
+        </div>
+      )}
+
+      {stage === 2 && (
+        <div className="intro-loader__connection-map">
+          {["Gmail", "n8n", "OpenAI", "CRM"].map((label, index) => (
+            <motion.div key={label} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * .14, duration: .4, ease }}>
+              <span>{label}</span>
+              {index < 3 && <i />}
+            </motion.div>
+          ))}
+        </div>
+      )}
+
+      {stage === 3 && (
+        <motion.div className="intro-loader__handoff intro-loader__handoff--large" initial={{ opacity: 0, scale: .86 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: .65, ease }}>
           <span className="intro-loader__handoff-check">✓</span>
-          <div><strong>Workflow ready</strong><small>Tested · documented · handed off</small></div>
+          <strong>Workflow ready</strong>
         </motion.div>
       )}
     </div>
