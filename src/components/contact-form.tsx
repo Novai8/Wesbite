@@ -96,12 +96,7 @@ export function ContactForm() {
     const body = contactBody(payload);
     const href = contactMailto(payload);
     setComposed(body);
-    const link = document.createElement("a");
-    link.href = href;
-    link.rel = "noreferrer";
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
+    window.location.href = href;
     toast("Opening your email app. If it does not open, copy the message below.");
   }
 
