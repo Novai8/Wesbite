@@ -6,9 +6,9 @@ export const site = {
   githubRepo: "https://github.com/Novai8/Wesbite",
   linkedin: "https://www.linkedin.com/in/spell-automation/",
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://rapigents.com",
-  title: "Rapigents | Business Operations, Built Around the Problem",
+  title: "Rapigents | Turn messy work into clear operations",
   description:
-    "Rapigents turns repetitive business problems into visible, reviewable AI operations. Prototype-first, human-approved, and built around the work itself.",
+    "Rapigents decodes repetitive business work into clear, reviewable operations. Start with the leak, simulate the sequence, then build the fix.",
   disclaimerTitle: "Independent Portfolio Prototype • Fictional Data",
   disclaimerBody: "Time and outcome figures are illustrative assumptions, not measured client results.",
 } as const;
