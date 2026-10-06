@@ -1,30 +1,15 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { ContactForm } from "@/components/contact-form";
 import { Disclaimer } from "@/components/disclaimer";
 import { site } from "@/lib/site";
 
-export const metadata: Metadata = {
-  title: "Contact",
-  description: `Contact ${site.owner} at ${site.email} about an n8n workflow demo.`,
-};
+export const metadata: Metadata = { title: "Describe a problem", description: "Tell Rapigents about the business process that keeps falling through the cracks." };
 
 export default function ContactPage() {
-  return (
-    <main className="container-page py-14 sm:py-20">
-      <p className="text-xs font-medium tracking-[0.18em] text-accent-ink uppercase">
-        Contact
-      </p>
-      <h1 className="mt-3 max-w-3xl text-[clamp(2.4rem,5vw,4.4rem)] leading-[0.98] font-medium tracking-[-0.04em] text-balance">
-        Request a workflow, or just write.
-      </h1>
-      <p className="mt-4 max-w-2xl text-lg leading-relaxed text-muted">
-        {site.owner} reads {site.email}. Tell me the niche, the step that should
-        stay manual, and what a person needs to see before anything is sent.
-      </p>
-      <div className="mt-10">
-        <ContactForm />
-      </div>
-      <Disclaimer className="mt-8" />
-    </main>
-  );
+  return <main id="content">
+    <section className="page-hero"><div className="container-page page-hero-grid"><div><Link href="/#analyze" className="back-link"><ArrowLeft className="h-3.5 w-3.5" aria-hidden /> Back to the prototype</Link><h1>What keeps falling through the cracks?</h1><p>Describe the repetitive work, missed follow-up, scheduling mess or customer handoff that your team keeps dealing with. The current form opens Gmail. Nothing is stored here.</p><div className="contact-side-note"><span>Direct</span><a href={"mailto:" + site.email}>{site.email}</a><Link href="/demos">See existing patterns <ArrowRight className="h-3.5 w-3.5" aria-hidden /></Link></div></div><div className="page-hero-aside problem-aside"><span className="page-stat-number">START SMALL</span><p>One repetitive process is enough to begin.</p><span className="page-stat-number">SHOW THE LEAK</span><p>Tell us where time, leads or attention disappear.</p></div></div></section>
+    <section className="container-page pb-20"><ContactForm /><Disclaimer className="mt-8" /></section>
+  </main>;
 }
