@@ -1,0 +1,94 @@
+"use client";
+
+import Link from "next/link";
+import { useEffect, useState, type CSSProperties } from "react";
+import { signals } from "@/lib/signals";
+import { playClick } from "@/lib/sound";
+
+export function HorizonSignals() {
+  const [selected, setSelected] = useState<string | null>(null);
+  const [step, setStep] = useState(-1);
+  const [running, setRunning] = useState(false);
+  const current = signals.find((s) => s.id === selected) ?? null;
+
+  useEffect(() => {
+    if (!running || !current) return;
+    const total = current.steps.length;
+    let i = 0;
+    const id = window.setInterval(() => {
+      i += 1;
+      setStep(i);
+      if (i >= total - 1) {
+        window.clearInterval(id);
+        setRunning(false);
+      }
+    }, 520);
+    return () => window.clearInterval(id);
+  }, [running, current]);
+
+  function select(id: string) {
+    playClick();
+    setRunning(false);
+    setStep(-1);
+    setSelected((prev) => (prev === id ? null : id));
+  }
+
+  function run() {
+    playClick();
+    setStep(0);
+    setRunning(true);
+  }
+
+  const total = current?.steps.length ?? 1;
+  const progress = step < 0 ? 0 : (step + 1) / total;
+  const done = current !== null && step === total - 1 && !running;
+
+  return (
+    <div className="container-page horizon-signals" id="signals">
+      <ul className="signal-list" aria-label="Signals on the horizon">
+        {signals.map((s) => (
+          <li key={s.id}>
+            <button type="button" className="horizon-signal" style={{ "--drop": `${s.drop}px` } as CSSProperties} aria-expanded={selected === s.id} aria-controls="signal-preview" onClick={() => select(s.id)}>
+              <span className="signal-n">{s.n}</span>
+              <span className="signal-label">{s.label}</span>
+            </button>
+          </li>
+        ))}
+      </ul>
+      <div id="signal-preview" className="signal-panel" aria-live="polite">
+        {current ? (
+          <>
+            <div className="signal-panel-head">
+              <span className="signal-kicker">PROTOTYPE PATTERN · {current.n}</span>
+              <h2>{current.label}</h2>
+              <p>{current.trigger}</p>
+            </div>
+            <div className="tide-track" aria-hidden="true">
+              <div className="tide-fill" style={{ "--p": progress } as CSSProperties} />
+            </div>
+            <ol className="signal-steps">
+              {current.steps.map((name, i) => (
+                <li key={name} className={i <= step ? (i === step && running ? "is-active" : "is-done") : ""} aria-current={i === step && running ? "step" : undefined}>
+                  <span>{String(i + 1).padStart(2, "0")}</span>
+                  {name}
+                </li>
+              ))}
+            </ol>
+            <p className="signal-human"><strong>HUMAN CHECKPOINT</strong> {current.human}</p>
+            <div className="signal-actions">
+              <button type="button" className="sea-btn sea-btn-small" onClick={run} disabled={running}>{running ? "Running…" : done ? "Replay" : "Run the sequence"}</button>
+              <button type="button" className="sea-btn sea-btn-small" onClick={() => { setRunning(false); setStep(-1); }} disabled={step < 0 && !running}>Reset</button>
+              <Link href="/demos" className="signal-link">Open the pattern library →</Link>
+            </div>
+            {done ? <p className="signal-done">Sequence complete. This is a simulation: nothing was sent or stored.</p> : null}
+          </>
+        ) : (
+          <div className="signal-empty">
+            <strong>NO PATTERN SELECTED</strong>
+            <span>Choose a signal on the horizon.</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

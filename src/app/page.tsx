@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowDownRight, ArrowRight, CircleCheck, MousePointer2, ScanLine, Workflow } from "lucide-react";
+import { ArrowRight, CircleCheck, MousePointer2, ScanLine, Workflow } from "lucide-react";
+import { HorizonSignals } from "@/components/horizon-signals";
+import { OceanEnvironment } from "@/components/ocean-environment";
 import { OperationLab } from "@/components/operation-lab";
 
 export const metadata: Metadata = {
@@ -17,15 +19,16 @@ const principles = [
 
 export default function HomePage() {
   return <main id="content">
-    <section className="home-hero"><div className="hero-noise" aria-hidden/><div className="hero-orb hero-orb-one" aria-hidden/><div className="hero-orb hero-orb-two" aria-hidden/>
-      <div className="container-page hero-inner"><div className="hero-copy">
-        <div className="micro-label"><span className="live-dot" /> RAPIGENTS / OPERATION STUDIO</div>
-        <h1>Make the work<br/><em>stop slipping.</em></h1>
-        <p className="hero-lede">Describe the repetitive thing your team keeps missing. We turn the messy sentence into a visible operation you can inspect before it ever touches a live system.</p>
-        <div className="hero-buttons"><Link href="#lab" className="magnetic-button magnetic-button-dark">Explore an operation <ArrowDownRight aria-hidden/></Link><Link href="/demos" className="text-button">Browse working patterns <ArrowRight aria-hidden/></Link></div>
-        <div className="hero-metrics"><div><strong>01</strong><span>Problem → map</span></div><div><strong>02</strong><span>Map → simulation</span></div><div><strong>03</strong><span>Simulation → build</span></div></div>
+    <section className="sea-hero">
+      <OceanEnvironment/>
+      <div className="container-page sea-copy">
+        <div className="micro-label"><span className="sun-dot" aria-hidden/> RAPIGENTS / WORK, MADE VISIBLE</div>
+        <h1>Make the work<br/><em>stop disappearing.</em></h1>
+        <p className="hero-lede">Every business has work that gets buried between the message, the decision and the next action. Rapigents turns that invisible work into a clear operation.</p>
+        <div className="sea-actions"><Link href="/contact" className="sea-btn sea-btn-primary"><span>Describe the leak</span></Link><Link href="/demos" className="sea-btn"><span>Explore the patterns</span></Link></div>
       </div>
-      <div className="hero-visual" aria-label="Animated operation preview"><div className="orbit orbit-a" aria-hidden/><div className="orbit orbit-b" aria-hidden/><div className="orbit-core"><span className="core-ring"/><span className="core-mark">R/</span><span className="core-caption">PROCESS<br/>FOUND</span></div><div className="floating-node node-one"><span/> Inbox</div><div className="floating-node node-two"><span/> Decision</div><div className="floating-node node-three"><span/> Approval</div><div className="floating-node node-four"><span/> Output</div></div></div>
+      <div data-horizon className="sea-horizon" aria-hidden/>
+      <HorizonSignals/>
     </section>
     <section className="signal-strip"><div className="signal-track">{[...signals,...signals].map(([a,b],i)=><span key={i}><b>{a}</b> {b} <i>✦</i></span>)}</div></section>
     <section className="lab-section"><div className="container-page"><div className="section-intro"><div><span className="section-kicker">01 / TRY THE IDEA</span><h2>Bring the messy sentence.</h2></div><p>You do not need an automation diagram. You need to explain what keeps going wrong. The prototype does the diagramming part.</p></div><OperationLab/></div></section>

@@ -47,7 +47,7 @@ export function Cursor() {
     if (window.matchMedia("(pointer: coarse)").matches) return;
     if (reduce) return;
 
-    setReady(true);
+    const readyFrame = requestAnimationFrame(() => setReady(true));
     document.documentElement.classList.add("has-custom-cursor");
 
     const onMove = (event: PointerEvent) => {
@@ -74,6 +74,7 @@ export function Cursor() {
     document.documentElement.addEventListener("mouseenter", onEnterWindow);
 
     return () => {
+      cancelAnimationFrame(readyFrame);
       document.documentElement.classList.remove("has-custom-cursor");
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerdown", onDown);
