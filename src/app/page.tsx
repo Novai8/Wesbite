@@ -36,7 +36,20 @@ export default function HomePage() {
       </div><div id="analyze" className="hero-console-wrap"><ProblemConsole/></div></div>
     </section>
     <section className="section-block problem-section"><div className="container-page"><Reveal><div className="section-heading"><div><span className="section-number">01 / BUSINESS PROBLEMS</span><h2>Start with the leak, not the AI.</h2></div><p>The owner usually knows the pain already. The useful part is turning that sentence into a process that can be inspected.</p></div></Reveal>
-      <div className="problem-grid">{problems.map((item,index)=><Reveal key={item.number} delay={index*.03}><article className="problem-card"><span className="problem-number">{item.number}</span><h3>{item.title}</h3><p>{item.body}</p><span className="card-arrow" aria-hidden>↗</span></article></Reveal>})}</div>
+      <div className="problem-grid">
+        {problems.map((item, index) => {
+          return (
+            <Reveal key={item.number} delay={index * 0.03}>
+              <article className="problem-card">
+                <span className="problem-number">{item.number}</span>
+                <h3>{item.title}</h3>
+                <p>{item.body}</p>
+                <span className="card-arrow" aria-hidden>↗</span>
+              </article>
+            </Reveal>
+          );
+        })}
+      </div>
     </div></section>
     <section className="section-block operation-section"><div className="container-page"><Reveal><div className="split-heading"><div><span className="section-number">02 / HOW IT WORKS</span><h2>Describe work. See the operation.</h2></div><p>No agent-builder setup maze. The first version is a clear map of what should happen and where a person stays responsible.</p></div></Reveal>
       <div className="operation-story"><div className="story-card story-card-dark"><div className="story-label">01 · Explain</div><div className="story-big-quote">“Every new enquiry gets copied into a spreadsheet and some never get followed up.”</div><div className="story-meta"><span>Business owner input</span><span>Unstructured</span></div></div>
