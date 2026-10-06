@@ -2,31 +2,24 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ArrowRight, Check, ShieldCheck } from "lucide-react";
-import { AssumptionsPanel } from "@/components/assumptions-panel";
-import { Disclaimer } from "@/components/disclaimer";
-import { MediaFrame } from "@/components/media-frame";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { demos, getDemo, nicheIdFor, relatedDemos } from "@/data/demos";
+import { demos, getDemo, relatedDemos } from "@/data/demos";
 import { toolLinks, workflowMailto } from "@/lib/site";
 
-type Props = { params: Promise<{ slug: string }> };
-export function generateStaticParams() { return demos.map((demo) => ({ slug: demo.slug })); }
-export const dynamicParams = false;
-export async function generateMetadata({ params }: Props): Promise<Metadata> { const { slug } = await params; const demo = getDemo(slug); return demo ? { title: demo.title, description: demo.shortProblem } : { title: "Demo" }; }
+type Props={params:Promise<{slug:string}>};
+export function generateStaticParams(){return demos.map(demo=>({slug:demo.slug}));}
+export const dynamicParams=false;
+export async function generateMetadata({params}:Props):Promise<Metadata>{const demo=getDemo((await params).slug);return demo?{title:demo.title,description:demo.shortProblem}:{title:"Pattern"};}
 
-export default async function DemoDetailPage({ params }: Props) {
-  const { slug } = await params; const demo = getDemo(slug); if (!demo) notFound(); const related = relatedDemos(demo.slug);
-  return <main id="content" className="container-page py-10 sm:py-14">
-    <Link href={"/demos?niche=" + nicheIdFor(demo.niche)} className="back-link"><ArrowLeft className="h-3.5 w-3.5" aria-hidden /> Back to the library</Link>
-    <div className="mt-6 grid items-start gap-8 lg:grid-cols-[1.18fr_.82fr]">
-      <div className="min-w-0"><div className="flex flex-wrap gap-1.5"><Badge tone="accent">{demo.niche}</Badge>{demo.workflowTypeTags.map(tag=><Badge key={tag}>{tag}</Badge>)}</div><h1 className="mt-4 text-[clamp(2.5rem,5.5vw,5rem)] leading-[.92] font-medium tracking-[-.06em] text-balance">{demo.title}</h1><p className="mt-5 max-w-2xl text-lg leading-relaxed text-muted">{demo.shortProblem}</p><div className="mt-7"><MediaFrame title={demo.title} videoUrl={demo.videoUrl} thumbnailUrl={demo.thumbnailUrl} />{demo.youtubeUrl ? <a href={demo.youtubeUrl} target="_blank" rel="noopener noreferrer" className="page-hero-links">Watch the walkthrough <ArrowRight className="h-3.5 w-3.5" aria-hidden /></a> : null}</div></div>
-      <aside className="surface h-fit p-5 sm:sticky sm:top-28 sm:p-6"><span className="section-number">OPERATION STATUS</span><h2 className="mt-2 text-2xl font-medium tracking-tight">Prototype, not deployment.</h2><p className="mt-2 text-sm leading-relaxed text-muted">This page shows the pattern and its control points. Live credentials, inboxes and calendars are not connected by the portfolio site.</p><div className="mt-5 grid gap-2"><div className="flex items-center gap-2 rounded-xl border border-line bg-paper p-3 text-sm"><Check className="h-4 w-4 text-accent" aria-hidden /> Review points are explicit</div><div className="flex items-center gap-2 rounded-xl border border-line bg-paper p-3 text-sm"><ShieldCheck className="h-4 w-4 text-accent" aria-hidden /> Sensitive actions can be held</div></div><Button asChild className="mt-5 w-full"><a href={workflowMailto(demo.title)}>Adapt this operation <ArrowRight className="h-4 w-4" aria-hidden /></a></Button><div className="mt-4 flex flex-wrap gap-1.5">{demo.reliabilityFeatures.map(item=><Badge key={item}>{item}</Badge>)}</div><Disclaimer className="mt-4" /></aside>
-    </div>
-    <div className="mt-10 grid gap-4 md:grid-cols-2"><section className="surface p-5 sm:p-6"><span className="section-number">01 / THE PROBLEM</span><h2 className="mt-2 text-2xl font-medium tracking-tight">Before</h2><p className="mt-3 text-sm leading-relaxed text-muted">{demo.beforeSummary}</p></section><section className="surface p-5 sm:p-6"><span className="section-number">02 / THE OPERATION</span><h2 className="mt-2 text-2xl font-medium tracking-tight">After</h2><p className="mt-3 text-sm leading-relaxed text-muted">{demo.afterSummary}</p></section></div>
-    <div className="mt-4 grid gap-4 lg:grid-cols-2"><section className="surface p-5 sm:p-6"><span className="section-number">03 / OUTPUT</span><h2 className="mt-2 text-xl font-medium tracking-tight">What a person gets</h2><ul className="mt-4 space-y-3">{demo.whatClientSees.map(item=><li key={item} className="flex gap-3 text-sm leading-relaxed"><span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" aria-hidden /><span>{item}</span></li>)}</ul></section><section className="surface p-5 sm:p-6"><span className="section-number">04 / CONTROL POINTS</span><h2 className="mt-2 text-xl font-medium tracking-tight">Where it can stop</h2><ul className="mt-4 space-y-3">{demo.reliability.map(item=><li key={item} className="flex gap-3 text-sm leading-relaxed"><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-accent" aria-hidden /><span>{item}</span></li>)}</ul></section></div>
-    <div className="mt-4"><AssumptionsPanel assumptions={demo.assumptions} /></div>
-    <section className="surface mt-4 p-5 sm:p-6"><span className="section-number">05 / IMPLEMENTATION</span><h2 className="mt-2 text-xl font-medium tracking-tight">Tools in this prototype</h2><ul className="mt-4 flex flex-wrap gap-2">{demo.tools.map(tool=>{const href=toolLinks[tool];return <li key={tool}>{href?<a href={href} target="_blank" rel="noopener noreferrer" className="inline-flex h-10 items-center rounded-full border border-line bg-white px-3.5 text-sm font-medium no-underline hover:border-accent-line">{tool}</a>:<span className="inline-flex h-10 items-center rounded-full border border-dashed border-line bg-paper px-3.5 text-sm text-slate-600">{tool}</span>}</li>})}</ul></section>
-    {related.length ? <section className="mt-10 pb-10"><div className="flex items-end justify-between gap-4"><div><span className="section-number">MORE PATTERNS</span><h2 className="mt-2 text-2xl font-medium tracking-tight">Related operations</h2></div><Link href="/demos" className="page-hero-links">All demos <ArrowRight className="h-3.5 w-3.5" aria-hidden /></Link></div><div className="mt-4 grid gap-3 sm:grid-cols-2">{related.map(item=><Link key={item.slug} href={"/demos/" + item.slug} className="surface block p-4 no-underline transition-transform duration-300 hover:-translate-y-1"><span className="text-xs text-slate-500">{item.niche}</span><p className="mt-1 font-medium tracking-tight">{item.title}</p><p className="mt-1 text-sm text-muted">{item.shortProblem}</p></Link>)}</div></section> : null}
-  </main>;
+export default async function DemoDetailPage({params}:Props){
+ const demo=getDemo((await params).slug); if(!demo)notFound(); const related=relatedDemos(demo.slug);
+ return <main id="content"><section className="page-hero-clean detail-hero"><div className="container-page"><Link href="/demos" className="back-link"><ArrowLeft aria-hidden/> Pattern library</Link><span className="section-kicker">{demo.niche}</span><h1>{demo.title}</h1><p>{demo.shortProblem}</p><a className="magnetic-button magnetic-button-dark" href={workflowMailto(demo.title)}>Adapt this pattern <ArrowRight aria-hidden/></a></div></section>
+ <section className="section-block"><div className="container-page detail-grid">
+ <article className="detail-card"><span>01 / BEFORE</span><h2>The leak</h2><p>{demo.beforeSummary}</p></article>
+ <article className="detail-card"><span>02 / AFTER</span><h2>The operation</h2><p>{demo.afterSummary}</p></article>
+ <article className="detail-card"><span>03 / OUTPUT</span><h2>What the person receives</h2><ul>{demo.whatClientSees.map(item=><li key={item}><Check aria-hidden/>{item}</li>)}</ul></article>
+ <article className="detail-card"><span>04 / CONTROL</span><h2>Where it can stop</h2><ul>{demo.reliability.map(item=><li key={item}><ShieldCheck aria-hidden/>{item}</li>)}</ul></article>
+ <article className="detail-card detail-wide"><span>05 / BUILD NOTES</span><h2>Prototype stack</h2><div className="tool-pills">{demo.tools.map(tool=>toolLinks[tool]?<a key={tool} href={toolLinks[tool]} target="_blank" rel="noopener noreferrer">{tool}</a>:<span key={tool}>{tool}</span>)}</div><p className="assumption-note">Illustrative assumption: {demo.assumptions.weeklyVolume} {demo.assumptions.unit} / week. This is not measured client performance.</p></article>
+ </div></section>
+ {related.length?<section className="section-block related-section"><div className="container-page"><span className="section-kicker">MORE PATTERNS</span><div className="pattern-grid">{related.map(item=><Link key={item.slug} href={"/demos/"+item.slug} className="pattern-card"><span>→</span><h3>{item.title}</h3><p>{item.shortProblem}</p></Link>)}</div></div></section>:null}
+ </main>;
 }
