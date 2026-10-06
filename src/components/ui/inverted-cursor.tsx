@@ -47,7 +47,7 @@ export function Cursor() {
     if (window.matchMedia("(pointer: coarse)").matches) return;
     if (reduce) return;
 
-    setReady(true);
+    const readyFrame = requestAnimationFrame(() => setReady(true));
     document.documentElement.classList.add("has-custom-cursor");
 
     const onMove = (event: PointerEvent) => {
