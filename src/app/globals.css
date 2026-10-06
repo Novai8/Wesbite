@@ -1601,3 +1601,56 @@ html[data-theme="dark"] .media-frame .text-slate-500 {
 .problem-aside p{margin:-.35rem 0 .8rem;color:#6a675f;font-size:.78rem;line-height:1.5}.contact-layout{display:grid;gap:1rem}@media (min-width:980px){.contact-layout{grid-template-columns:.62fr 1.38fr;align-items:start}}.contact-info-card,.contact-form-card{border:1px solid #dedcd4;border-radius:1.35rem;background:#fff;padding:1.25rem}@media (min-width:640px){.contact-info-card,.contact-form-card{padding:1.6rem}}.contact-info-card{position:sticky;top:7rem}.contact-email{display:block;margin-top:.7rem;font-size:1.4rem;font-weight:620;letter-spacing:-.03em;overflow-wrap:anywhere;text-decoration:none}.contact-info-card p{margin:.8rem 0 0;color:#6d6961;font-size:.8rem;line-height:1.6}.contact-info-card .btn{margin-top:1.1rem}.contact-form-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem}.contact-form-heading h2{margin-top:.45rem;font-size:1.6rem;letter-spacing:-.04em}.form-prototype-label{border:1px solid #d8d5cc;background:#fbfaf7;color:#8a877e;border-radius:999px;padding:.4rem .55rem;font-size:.58rem;font-weight:750;letter-spacing:.08em;text-transform:uppercase}
 
 @media (prefers-reduced-motion:reduce){.hero-section{min-height:auto}.problem-card:hover,.niche-tile:hover{transform:none}.run-button,.console-example{transition:none}}
+
+
+html[data-theme="dark"] .problem-console,
+html[data-theme="dark"] .console-result,
+html[data-theme="dark"] .problem-card,
+html[data-theme="dark"] .principle-card,
+html[data-theme="dark"] .about-principle,
+html[data-theme="dark"] .contact-info-card,
+html[data-theme="dark"] .contact-form-card,
+html[data-theme="dark"] .story-card-light,
+html[data-theme="dark"] .console-input,
+html[data-theme="dark"] .operation-node {
+  background: var(--color-surface);
+  color: var(--color-ink);
+  border-color: var(--color-line);
+}
+html[data-theme="dark"] .console-input { color: var(--color-ink); }
+html[data-theme="dark"] .story-card-accent { background: #1b1429; border-color: var(--color-accent-line); color: var(--color-ink); }
+html[data-theme="dark"] .story-card-dark,
+html[data-theme="dark"] .cta-panel { background: #0b0b10; color: var(--color-ink); border-color: var(--color-line); }
+html[data-theme="dark"] .story-card-light .story-meta,
+html[data-theme="dark"] .story-card-accent .story-meta,
+html[data-theme="dark"] .approval-row { border-color: var(--color-line); }
+html[data-theme="dark"] .mini-flow > div,
+html[data-theme="dark"] .console-input,
+html[data-theme="dark"] .console-result,
+html[data-theme="dark"] .operation-node { background: #0b0b10; }
+html[data-theme="dark"] .hero-lede,
+html[data-theme="dark"] .problem-card p,
+html[data-theme="dark"] .principle-card p,
+html[data-theme="dark"] .about-principle p,
+html[data-theme="dark"] .page-hero p,
+html[data-theme="dark"] .contact-info-card p,
+html[data-theme="dark"] .result-problem,
+html[data-theme="dark"] .result-outcome,
+html[data-theme="dark"] .console-caption,
+html[data-theme="dark"] .page-stat,
+html[data-theme="dark"] .story-card-light,
+html[data-theme="dark"] .approval-row { color: var(--color-muted); }
+html[data-theme="dark"] .console-example,
+html[data-theme="dark"] .contact-side-note { color: var(--color-muted); border-color: var(--color-line); }
+html[data-theme="dark"] .console-example { background: var(--color-surface); }
+html[data-theme="dark"] .run-button { background: var(--color-ink); color: var(--color-paper); }
+html[data-theme="dark"] .result-eyebrow,
+html[data-theme="dark"] .console-label,
+html[data-theme="dark"] .section-number,
+html[data-theme="dark"] .problem-number,
+html[data-theme="dark"] .principle-index,
+html[data-theme="dark"] .page-stat-number { color: var(--color-muted); }
+html[data-theme="dark"] .serif-accent,
+html[data-theme="dark"] .page-hero-links,
+html[data-theme="dark"] .contact-side-note > a:last-child { color: var(--color-accent-ink); }
+html[data-theme="dark"] .header-status { background: rgba(16,16,22,.6); border-color: var(--color-line); }
