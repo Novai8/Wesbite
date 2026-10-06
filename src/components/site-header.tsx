@@ -3,28 +3,22 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, Moon, Sun, Volume2, VolumeX } from "lucide-react";
+import { ArrowRight, Menu, Moon, Sun, Volume2, VolumeX } from "lucide-react";
 import { Logo } from "@/components/logo";
 import { usePrefs } from "@/components/providers";
-import {
-  Dialog,
-  DialogCloseButton,
-  DialogContent,
-  DialogDescription,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogCloseButton, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { site } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
 const links = [
   { href: "/demos", label: "Demos" },
   { href: "/reviews", label: "Reviews" },
-  { href: "/about", label: "About" },
+  { href: "/about", label: "How it works" },
   { href: "/contact", label: "Contact" },
 ];
 
 function isActive(pathname: string, href: string) {
-  return pathname === href || pathname.startsWith(`${href}/`);
+  return pathname === href || pathname.startsWith(href + "/");
 }
 
 export function SiteHeader() {
@@ -38,9 +32,7 @@ export function SiteHeader() {
   useEffect(() => {
     const el = headerRef.current;
     if (!el) return;
-    const apply = () => {
-      document.documentElement.style.setProperty("--header-h", `${el.offsetHeight}px`);
-    };
+    const apply = () => document.documentElement.style.setProperty("--header-h", el.offsetHeight + "px");
     apply();
     const observer = new ResizeObserver(apply);
     observer.observe(el);
@@ -48,7 +40,7 @@ export function SiteHeader() {
   }, []);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 6);
+    const onScroll = () => setScrolled(window.scrollY > 8);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
@@ -57,128 +49,39 @@ export function SiteHeader() {
   return (
     <header ref={headerRef} className={cn("site-header", scrolled && "is-scrolled")}>
       <div className="container-page flex h-16 items-center gap-3">
-        <Link
-          href="/"
-          className="flex min-w-0 items-center gap-2.5 rounded-md"
-          aria-label="Rapigents home"
-        >
+        <Link href="/" className="flex min-w-0 items-center gap-2.5 rounded-md" aria-label="Rapigents home">
           <Logo />
-          <span className="hidden truncate text-[15px] font-medium tracking-tight min-[380px]:inline">
-            Rapigents
-          </span>
+          <span className="truncate text-[15px] font-semibold tracking-tight">Rapigents</span>
         </Link>
 
-        <nav className="ml-6 hidden items-center gap-6 md:flex" aria-label="Primary">
-          {links.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              data-active={isActive(pathname, link.href)}
-              className="nav-link"
-              aria-current={isActive(pathname, link.href) ? "page" : undefined}
-            >
-              {link.label}
-            </Link>
-          ))}
+        <nav className="ml-8 hidden items-center gap-7 md:flex" aria-label="Primary">
+          {links.map((link) => <Link key={link.href} href={link.href} data-active={isActive(pathname, link.href)} className="nav-link" aria-current={isActive(pathname, link.href) ? "page" : undefined}>{link.label}</Link>)}
         </nav>
 
-        <div className="ml-auto flex items-center gap-1.5">
-          <button
-            type="button"
-            className="toggle-chip"
-            aria-pressed={theme === "dark"}
-            aria-label={`Theme: ${theme === "dark" ? "Dark" : "Light"}`}
-            onClick={toggleTheme}
-          >
-            {theme === "dark" ? (
-              <Moon className="h-3.5 w-3.5" aria-hidden />
-            ) : (
-              <Sun className="h-3.5 w-3.5" aria-hidden />
-            )}
-            <span className="hidden md:inline">{theme === "dark" ? "Dark" : "Light"}</span>
-          </button>
-          <button
-            type="button"
-            className="toggle-chip"
-            aria-pressed={sound}
-            aria-label={`Sound: ${sound ? "On" : "Off"}`}
-            onClick={toggleSound}
-          >
-            {sound ? (
-              <Volume2 className="h-3.5 w-3.5" aria-hidden />
-            ) : (
-              <VolumeX className="h-3.5 w-3.5" aria-hidden />
-            )}
-            <span className="hidden md:inline">Sound: {sound ? "On" : "Off"}</span>
-          </button>
-          <button
-            type="button"
-            className="btn btn-ghost h-10 w-10 px-0 md:hidden"
-            aria-label="Open menu"
-            aria-expanded={open}
-            onClick={() => setMenuPath(pathname)}
-          >
-            <Menu className="h-4 w-4" aria-hidden />
-          </button>
+        <div className="ml-auto flex items-center gap-2">
+          <Link href="/#analyze" className="hidden h-10 items-center gap-1.5 rounded-full bg-ink px-4 text-sm font-medium text-white no-underline transition-transform hover:-translate-y-0.5 sm:inline-flex">Describe a problem <ArrowRight className="h-3.5 w-3.5" aria-hidden /></Link>
+          <button type="button" className="toggle-chip hidden lg:inline-flex" aria-pressed={theme === "dark"} aria-label="Toggle theme" onClick={toggleTheme}>{theme === "dark" ? <Moon className="h-3.5 w-3.5" /> : <Sun className="h-3.5 w-3.5" />}<span>{theme === "dark" ? "Dark" : "Light"}</span></button>
+          <button type="button" className="toggle-chip hidden lg:inline-flex" aria-pressed={sound} aria-label="Toggle sound" onClick={toggleSound}>{sound ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}<span>Sound</span></button>
+          <button type="button" className="btn btn-ghost h-10 w-10 px-0 md:hidden" aria-label="Open menu" aria-expanded={open} onClick={() => setMenuPath(pathname)}><Menu className="h-5 w-5" aria-hidden /></button>
         </div>
       </div>
+
+      <div className="header-status"><div className="container-page header-status-inner"><span>Problem-first AI operations</span><span className="hidden sm:inline">Prototype mode · Human review by default · Fictional data</span></div></div>
 
       <Dialog open={open} onOpenChange={(next) => setMenuPath(next ? pathname : null)}>
         <DialogContent variant="drawer">
           <div className="flex items-start justify-between gap-4">
-            <div>
-              <DialogTitle className="text-lg font-medium tracking-tight">
-                Menu
-              </DialogTitle>
-              <DialogDescription className="mt-1 text-sm text-muted">
-                {site.owner} · {site.name}
-              </DialogDescription>
-            </div>
+            <div><DialogTitle className="text-lg font-medium tracking-tight">Rapigents</DialogTitle><DialogDescription className="mt-1 text-sm text-muted">Describe the work. See the operation.</DialogDescription></div>
             <DialogCloseButton />
           </div>
           <nav className="mt-8 flex flex-col gap-1" aria-label="Mobile">
-            <Link href="/" className="drawer-link" onClick={() => setMenuPath(null)}>
-              Home
-            </Link>
-            {links.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="drawer-link"
-                aria-current={isActive(pathname, link.href) ? "page" : undefined}
-                onClick={() => setMenuPath(null)}
-              >
-                {link.label}
-              </Link>
-            ))}
+            <Link href="/" className="drawer-link" onClick={() => setMenuPath(null)}>Home</Link>
+            {links.map((link) => <Link key={link.href} href={link.href} className="drawer-link" aria-current={isActive(pathname, link.href) ? "page" : undefined} onClick={() => setMenuPath(null)}>{link.label}</Link>)}
           </nav>
-          <div className="mt-8 flex flex-col gap-2">
-            <button
-              type="button"
-              className="toggle-chip w-full justify-between"
-              aria-pressed={theme === "dark"}
-              onClick={toggleTheme}
-            >
-              <span>Theme: {theme === "dark" ? "Dark" : "Light"}</span>
-              {theme === "dark" ? (
-                <Moon className="h-4 w-4" aria-hidden />
-              ) : (
-                <Sun className="h-4 w-4" aria-hidden />
-              )}
-            </button>
-            <button
-              type="button"
-              className="toggle-chip w-full justify-between"
-              aria-pressed={sound}
-              onClick={toggleSound}
-            >
-              <span>Sound: {sound ? "On" : "Off"}</span>
-              {sound ? (
-                <Volume2 className="h-4 w-4" aria-hidden />
-              ) : (
-                <VolumeX className="h-4 w-4" aria-hidden />
-              )}
-            </button>
+          <Link href="/#analyze" className="btn btn-primary mt-8 h-12 w-full" onClick={() => setMenuPath(null)}>Describe a problem <ArrowRight className="h-4 w-4" aria-hidden /></Link>
+          <div className="mt-4 flex gap-2">
+            <button type="button" className="toggle-chip flex-1 justify-center" aria-pressed={theme === "dark"} onClick={toggleTheme}>{theme === "dark" ? "Dark" : "Light"}</button>
+            <button type="button" className="toggle-chip flex-1 justify-center" aria-pressed={sound} onClick={toggleSound}>{sound ? "Sound on" : "Sound off"}</button>
           </div>
         </DialogContent>
       </Dialog>
