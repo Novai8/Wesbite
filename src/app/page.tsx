@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, CircleCheck, Eye, GitBranch, ShieldCheck } from "lucide-react";
+import { ArrowRight, Eye, GitBranch, ShieldCheck } from "lucide-react";
 import { HorizonSignals } from "@/components/horizon-signals";
 import { OceanEnvironment } from "@/components/ocean-environment";
 import { OperationLab } from "@/components/operation-lab";

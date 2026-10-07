@@ -16,7 +16,7 @@ export default function Error({
   }, [error]);
 
   return (
-    <main className="container-page py-24">
+    <main id="content" className="container-page py-24">
       <h1 className="text-4xl font-medium tracking-tight">Something went wrong.</h1>
       <p className="mt-3 max-w-md text-muted">
         The page failed to render. You can try again, or go back to a working page.

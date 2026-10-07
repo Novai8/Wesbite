@@ -30,18 +30,27 @@ export function workflowMailto(title: string) {
   return "mailto:" + site.email + "?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(body);
 }
 
-export function contactMailto(fields: { name: string; email: string; company: string; interest: string; message: string }) {
-  const subject = "[Rapigents] Problem — " + fields.name;
-  const body = ["Name: " + fields.name, "Email: " + fields.email, "Company: " + (fields.company || "—"), "Problem type: " + (fields.interest || "General"), "", "What keeps falling through the cracks:", "", fields.message].join("\n");
-  return "mailto:" + site.email + "?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(body);
+type ContactFields = { name: string; email: string; company: string; interest: string; message: string };
+
+function contactMessage(fields: ContactFields) {
+  return ["Name: " + fields.name, "Email: " + fields.email, "Company: " + (fields.company || "—"), "Problem type: " + (fields.interest || "General"), "", "What keeps falling through the cracks:", "", fields.message].join("\n");
 }
 
-export function contactBody(fields: { name: string; email: string; company: string; interest: string; message: string }) {
-  return ["To: " + site.email, "Subject: [Rapigents] Problem — " + fields.name, "", "Name: " + fields.name, "Email: " + fields.email, "Company: " + (fields.company || "—"), "Problem type: " + (fields.interest || "General"), "", "What keeps falling through the cracks:", fields.message].join("\n");
+function contactSubject(fields: ContactFields) {
+  return "[Rapigents] Problem — " + fields.name;
 }
 
-export function contactGmailCompose(fields: { name: string; email: string; company: string; interest: string; message: string }) {
-  const subject = "[Rapigents] Problem — " + fields.name;
-  const body = contactBody(fields);
-  return "https://mail.google.com/mail/?view=cm&fs=1&to=" + encodeURIComponent(site.email) + "&su=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(body);
+/** mailto: link for visitors who do not use Gmail. */
+export function contactMailto(fields: ContactFields) {
+  return "mailto:" + site.email + "?subject=" + encodeURIComponent(contactSubject(fields)) + "&body=" + encodeURIComponent(contactMessage(fields));
+}
+
+/** Full text (with To / Subject header) shown in the "ready to paste" box. */
+export function contactBody(fields: ContactFields) {
+  return ["To: " + site.email, "Subject: " + contactSubject(fields), "", contactMessage(fields)].join("\n");
+}
+
+/** Gmail compose URL. To and Subject are separate fields, so the body carries only the message. */
+export function contactGmailCompose(fields: ContactFields) {
+  return "https://mail.google.com/mail/?view=cm&fs=1&to=" + encodeURIComponent(site.email) + "&su=" + encodeURIComponent(contactSubject(fields)) + "&body=" + encodeURIComponent(contactMessage(fields));
 }

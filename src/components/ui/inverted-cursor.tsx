@@ -74,6 +74,7 @@ export function Cursor() {
     document.documentElement.addEventListener("mouseenter", onEnterWindow);
 
     return () => {
+      cancelAnimationFrame(readyFrame);
       document.documentElement.classList.remove("has-custom-cursor");
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerdown", onDown);

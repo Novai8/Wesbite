@@ -7,10 +7,14 @@ type Ripple = { x: number; y: number; born: number };
 export function OceanEnvironment() {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
-    const canvas = ref.current, host = canvas?.parentElement;
-    if (!canvas || !host) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+    const canvasEl = ref.current, hostEl = canvasEl?.parentElement;
+    if (!canvasEl || !hostEl) return;
+    const ctx2d = canvasEl.getContext("2d");
+    if (!ctx2d) return;
+    // Re-bind with explicit non-null types so the nested draw/measure functions type-check.
+    const canvas: HTMLCanvasElement = canvasEl;
+    const host: HTMLElement = hostEl;
+    const ctx: CanvasRenderingContext2D = ctx2d;
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const coarse = window.matchMedia("(pointer: coarse)").matches;
     const step = coarse ? 6 : 3;
@@ -32,15 +36,15 @@ export function OceanEnvironment() {
       glow.addColorStop(0,deep?"rgba(243,217,154,.4)":"rgba(243,217,154,.6)");glow.addColorStop(.35,"rgba(231,185,94,.12)");glow.addColorStop(1,"rgba(231,185,94,0)");
       ctx.fillStyle=glow;ctx.fillRect(0,0,w,h);
       ctx.lineWidth=1;
-      for(let i=1;i<=5;i++){const y0=horizon+Math.pow(i,1.7)*9;if(y0>h)break;ctx.beginPath();for(let x=0;x<=w;x+=24){const y=y0+Math.sin(x*.008+t*(.12+i*.03)+i)*(1+i*.9);x===0?ctx.moveTo(x,y):ctx.lineTo(x,y)}ctx.strokeStyle="rgba(201,216,207,"+(.05+i*.008)+")";ctx.stroke()}
+      for(let i=1;i<=5;i++){const y0=horizon+Math.pow(i,1.7)*9;if(y0>h)break;ctx.beginPath();for(let x=0;x<=w;x+=24){const y=y0+Math.sin(x*.008+t*(.12+i*.03)+i)*(1+i*.9);if(x===0)ctx.moveTo(x,y);else ctx.lineTo(x,y)}ctx.strokeStyle="rgba(201,216,207,"+(.05+i*.008)+")";ctx.stroke()}
       const depth=Math.max(1,h-horizon);
       for(let y=horizon+2;y<h;y+=step){const d=(y-horizon)/depth,spread=14+d*Math.min(w*.18,220);for(let k=0;k<3;k++){const off=Math.sin(y*.045+t*(.5+k*.17)+k*2.1)*spread*.5+Math.sin(y*.013+t*.21+k)*spread*.35;const len=spread*(.25+.5*Math.abs(Math.sin(y*.09+t*.8+k*1.7)));const a=(1-d*.75)*(.16+.22*Math.abs(Math.sin(y*.21-t*.6+k)));ctx.fillStyle=rgba(243,217,154,a);ctx.fillRect(sx+off-len/2,y,len,step>3?2:1.5)}}
-      for(let i=ripples.length-1;i>=0;i--){const r=ripples[i],age=t-r.born;if(age>2.2){ripples.splice(i,1);continue}const rad=age*58;ctx.beginPath();ctx.ellipse(r.x,r.y,rad,rad*.28,0,0,Math.PI*2);ctx.strokeStyle=rgba(243,217,154,(1-age/2.2)*.32);ctx.stroke()}
+      for(let i=ripples.length-1;i>=0;i--){const r=ripples[i],age=Math.max(0,t-r.born);if(age>2.2){ripples.splice(i,1);continue}const rad=age*58;ctx.beginPath();ctx.ellipse(r.x,r.y,rad,rad*.28,0,0,Math.PI*2);ctx.strokeStyle=rgba(243,217,154,(1-age/2.2)*.32);ctx.stroke()}
       const haze=ctx.createLinearGradient(0,horizon-70,0,horizon);haze.addColorStop(0,"rgba(247,245,237,0)");haze.addColorStop(1,deep?"rgba(247,245,237,.06)":"rgba(247,245,237,.22)");ctx.fillStyle=haze;ctx.fillRect(0,horizon-70,w,70);
       const line=ctx.createLinearGradient(0,0,w,0);line.addColorStop(0,"rgba(243,217,154,0)");line.addColorStop(Math.min(.98,Math.max(.02,sunX)),"rgba(243,217,154,.95)");line.addColorStop(1,"rgba(243,217,154,0)");ctx.fillStyle=line;ctx.fillRect(0,horizon-.5,w,1.5);
     }
     function measure(){const r=host.getBoundingClientRect();w=r.width;h=r.height;const dpr=Math.min(window.devicePixelRatio||1,coarse?1.5:2);canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);const hz=host.querySelector<HTMLElement>("[data-horizon]");horizon=hz?hz.getBoundingClientRect().top-r.top:h*.58;if(!running)draw(performance.now()/1000)}
-    function frame(now:number){if(!inView||document.hidden){running=false;return}tick++;if(!coarse||tick%2===0){sunX+=(sunTarget-sunX)*.05;draw(now/1000)}raf=requestAnimationFrame(frame)}
+    function frame(now:number){if(!inView||document.hidden){running=false;return}tick++;if(!coarse||tick%2===0){sunX+=(sunTarget-sunX)*.05;try{draw(now/1000)}catch{/* one bad frame must never freeze the animation */}}raf=requestAnimationFrame(frame)}
     function start(){if(reduce||running||!inView||document.hidden)return;running=true;raf=requestAnimationFrame(frame)}
     function onMove(e:PointerEvent){if(reduce||e.pointerType==="touch")return;const r=host.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;if(y<0||y>h||x<0||x>w)return;sunTarget=.68+(x/w-.5)*.14;if(y>horizon&&Math.hypot(x-last.x,y-last.y)>70){last={x,y};ripples.push({x,y,born:performance.now()/1000});if(ripples.length>8)ripples.shift()}}
     const ro=new ResizeObserver(measure),io=new IntersectionObserver(([entry])=>{inView=entry.isIntersecting;if(inView)start()}),mo=new MutationObserver(()=>{if(!running)draw(performance.now()/1000)});

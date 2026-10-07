@@ -1,11 +1,11 @@
 @import "tailwindcss";
 
 @theme inline{
- --color-paper:#E9E3D2;--color-surface:#F7F5ED;--color-ink:#102022;--color-muted:#4A5A57;--color-line:#CBC4B0;--color-accent:#2F7470;--font-sans:var(--font-geist-sans),ui-sans-serif,system-ui,sans-serif;--font-mono:var(--font-geist-mono),ui-monospace,monospace;--font-serif:var(--font-instrument),Georgia,serif;
+ --color-paper:var(--paper);--color-surface:var(--surface);--color-ink:var(--ink);--color-muted:var(--muted);--color-line:var(--line);--color-accent:var(--accent);--color-accent-ink:var(--accent-ink);--color-accent-soft:var(--accent-soft);--color-accent-line:var(--accent-line);--font-sans:var(--font-geist-sans),ui-sans-serif,system-ui,sans-serif;--font-mono:var(--font-geist-mono),ui-monospace,monospace;--font-serif:var(--font-instrument),Georgia,serif;
 }
-:root{color-scheme:light;--header-h:72px;--abyss:#071417;--deep-water:#0B2527;--sea-glass:#16484A;--tide:#2F7470;--mist:#C9D8CF;--shell:#E9E3D2;--sun:#E7B95E;--sunlight:#F3D99A;--stone:#A69F8E;--paper:#E9E3D2;--surface:#F7F5ED;--ink:#102022;--muted:#4A5A57;--line:#CBC4B0;--accent:#2F7470;--accent-dark:#16484A}
+:root{color-scheme:light;--header-h:72px;--accent-ink:#16484A;--accent-soft:rgba(47,116,112,.12);--accent-line:rgba(47,116,112,.35);--abyss:#071417;--deep-water:#0B2527;--sea-glass:#16484A;--tide:#2F7470;--mist:#C9D8CF;--shell:#E9E3D2;--sun:#E7B95E;--sunlight:#F3D99A;--stone:#A69F8E;--paper:#E9E3D2;--surface:#F7F5ED;--ink:#102022;--muted:#4A5A57;--line:#CBC4B0;--accent:#2F7470;--accent-dark:#16484A}
 html{scroll-behavior:smooth;scroll-padding-top:90px}
-html[data-theme="dark"]{color-scheme:dark;--paper:#071417;--surface:#0B2527;--ink:#F7F5ED;--muted:#A9BDB4;--line:#1E3E3F;--accent:#7DB8AE;--accent-dark:#2F7470}
+html[data-theme="dark"]{color-scheme:dark;--accent-ink:#7DB8AE;--accent-soft:rgba(125,184,174,.14);--accent-line:rgba(125,184,174,.4);--paper:#071417;--surface:#0B2527;--ink:#F7F5ED;--muted:#A9BDB4;--line:#1E3E3F;--accent:#7DB8AE;--accent-dark:#2F7470}
 *{box-sizing:border-box}
 body{margin:0;min-height:100%;background:var(--paper);color:var(--ink);font-family:var(--font-sans);text-rendering:optimizeLegibility;overflow-x:clip}
 body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;background:radial-gradient(800px 500px at 85% 0%,rgba(47,116,112,.07),transparent 65%),radial-gradient(700px 500px at 0% 40%,rgba(0,0,0,.035),transparent 65%)}
@@ -53,3 +53,34 @@ body:has(.cursor-field.is-hover){--paper:#f0edff}
 @media(max-width:900px){.sea-copy{padding-bottom:430px}.signal-list{overflow-x:auto;justify-content:flex-start;padding-bottom:6px;scrollbar-width:none}.signal-list::-webkit-scrollbar{display:none}.horizon-signal{min-width:155px}.signal-panel{width:100%;margin-top:10px}.sequence-river{grid-template-columns:1fr}.sequence-stage{border-right:0;border-bottom:1px solid var(--line);min-height:150px}.sequence-stage strong{margin-top:25px}.signal-steps{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:680px){.container-page{padding-inline:17px}.desktop-nav,.header-cta{display:none}.header-inner{height:64px}.mobile-menu-button{display:inline-flex}.mobile-menu{display:block}.mobile-menu-row{display:block;width:100%}.sea-hero{min-height:900px}.sea-copy{padding-top:65px;padding-bottom:460px}.sea-copy h1{font-size:clamp(3.5rem,17vw,5.5rem)}.sea-copy .hero-lede{font-size:16px}.sea-proof{gap:12px}.horizon-signals{bottom:18px}.signal-panel{padding:15px}.signal-steps{grid-template-columns:repeat(2,1fr)}.signal-actions{align-items:stretch}.signal-link{margin-left:0;width:100%;padding-top:5px}}
 @media(prefers-reduced-motion:reduce){.sea-canvas{display:block}.sunrise-glow,.sunrise-line{animation:none}.sunline-progress{animation:none}}
+
+.btn-ghost{background:transparent;border-color:var(--line);color:var(--ink)}.btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+.btn-outline{background:transparent;border-color:var(--ink);color:var(--ink)}
+.btn:disabled{opacity:.55;cursor:not-allowed;transform:none}
+.field[aria-invalid="true"]{border-color:#B4452F}
+html[data-theme="dark"] .field[aria-invalid="true"]{border-color:#E88A73}
+.field-error{color:#B4452F}
+html[data-theme="dark"] .field-error{color:#E88A73}
+.skeleton{background:var(--accent-soft);animation:skeleton-pulse 1.4s ease-in-out infinite}
+@keyframes skeleton-pulse{0%,100%{opacity:.55}50%{opacity:1}}
+@media(prefers-reduced-motion:reduce){.skeleton{animation:none}}
+
+/* ===== Hero fixes =====
+   1) hanging signal labels are translated down by --drop (max 56px); reserve that room inside the list
+      so they never slide under the panel and are not clipped by the mobile scroll container.
+   2) when a signal is opened the hero grows by the panel's extra height (set from HorizonSignals)
+      instead of letting the panel cover the call-to-action buttons. */
+.signal-list{padding-bottom:58px}
+.sea-hero{padding-bottom:var(--signals-extra,0px);min-height:calc(100vh - 72px + var(--signals-extra,0px));transition:padding-bottom .3s ease,min-height .3s ease}
+@media(max-width:680px){.sea-hero{min-height:calc(900px + var(--signals-extra,0px))}}
+@media(prefers-reduced-motion:reduce){.sea-hero{transition:none}}
+/* light theme: the sky is pale, so hero copy needs dark ink (it was cream-on-cream and unreadable) */
+html:not([data-theme="dark"]) .sea-copy .micro-label{color:#16484A}
+html:not([data-theme="dark"]) .sea-copy h1{color:var(--ink)}
+html:not([data-theme="dark"]) .sea-copy h1 em{color:#7A4E08}
+html:not([data-theme="dark"]) .sea-copy .hero-lede{color:#2C3E3B}
+html:not([data-theme="dark"]) .sea-actions .sea-btn:not(.sea-btn-primary){background:rgba(247,245,237,.66);border-color:rgba(16,32,34,.38);color:var(--ink)}
+html:not([data-theme="dark"]) .sea-actions .sea-btn:not(.sea-btn-primary):hover{background:rgba(247,245,237,.92);border-color:#16484A}
+html:not([data-theme="dark"]) .sea-proof span{background:rgba(7,20,23,.62);color:#E9E3D2;padding:5px 10px;border-radius:999px;backdrop-filter:blur(6px)}
+
+.sea-horizon{pointer-events:none}
