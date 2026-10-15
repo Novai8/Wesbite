@@ -33,10 +33,11 @@ const palettes: Record<string, string> = {
 export function ToolLaunchVisual({ tool }: { tool: ToolItem }) {
   const kind = visualKind(tool);
   const accent = palettes[tool.category] || "#d8ff63";
+  const hash = [...tool.id].reduce((sum, char) => sum + char.charCodeAt(0), 0);
   const Icon = kind === "timeline" ? Clapperboard : kind === "wave" ? AudioLines : kind === "image" ? Image : kind === "document" ? FileText : kind === "data" ? ChartNoAxesCombined : kind === "nodes" ? Workflow : kind === "cards" ? GraduationCap : kind === "writing" ? MessageCircle : kind === "scan" ? FileSearch : WandSparkles;
   const bars = Array.from({ length: kind === "wave" ? 27 : 13 }, (_, index) => index);
   return (
-    <div className={"tool-motion-visual visual-" + kind} style={{ "--tool-accent": accent } as CSSProperties} aria-hidden="true">
+    <div className={"tool-motion-visual visual-" + kind + " variant-" + (hash % 11)} style={{ "--tool-accent": accent, "--tool-orbit-speed": (9 + hash % 13) + "s", "--tool-pulse-speed": (1.1 + (hash % 9) * .15) + "s", "--tool-tilt": ((hash % 29) - 14) + "deg", "--tool-delay": ((hash % 11) / 10) + "s" } as CSSProperties} aria-hidden="true">
       <div className="tool-motion-orbit orbit-one" /><div className="tool-motion-orbit orbit-two" />
       <div className="tool-motion-core"><Icon size={25} strokeWidth={1.5}/></div>
       {kind === "timeline" ? <>
