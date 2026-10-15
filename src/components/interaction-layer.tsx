@@ -56,8 +56,8 @@ export function InteractionLayer() {
   }, []);
 
   useEffect(() => {
-    let navigateTimer: ReturnType<typeof setTimeout> | undefined;
-    let finishTimer: ReturnType<typeof setTimeout> | undefined;
+    let navigateTimer: number | undefined;
+    let finishTimer: number | undefined;
     const onClick = (event: MouseEvent) => {
       if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
       const link = event.target instanceof Element ? event.target.closest("a") : null;
@@ -80,8 +80,8 @@ export function InteractionLayer() {
     document.addEventListener("click", onClick, true);
     return () => {
       document.removeEventListener("click", onClick, true);
-      if (navigateTimer) clearTimeout(navigateTimer);
-      if (finishTimer) clearTimeout(finishTimer);
+      if (navigateTimer) window.clearTimeout(navigateTimer);
+      if (finishTimer) window.clearTimeout(finishTimer);
     };
   }, [router]);
 
