@@ -49,6 +49,9 @@ export async function GET(request: Request) {
     const clips = Array.isArray(data.clips) ? data.clips.filter(isRecord).map((clip) => ({
       id: String(clip.id || ""), title: String(clip.title || "Generated clip"), hook: String(clip.hook || ""),
       start: Number(clip.start || 0), end: Number(clip.end || 0),
+      potentialScore: Number.isFinite(Number(clip.potentialScore)) ? Number(clip.potentialScore) : undefined,
+      reachOutlook: typeof clip.reachOutlook === "string" ? clip.reachOutlook : undefined,
+      effects: Array.isArray(clip.effects) ? clip.effects.filter((effect): effect is string => typeof effect === "string") : [],
       url: typeof clip.url === "string" && clip.url.startsWith("/") ? worker.base + clip.url : String(clip.url || ""),
     })).filter((clip: { url: string }) => /^https?:\/\//i.test(clip.url)) : [];
     return NextResponse.json({ status: data.status, clips, message: typeof data.message === "string" ? data.message : "Worker status updated.", error: data.status === "failed" ? data.message : undefined });
