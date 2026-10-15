@@ -31,13 +31,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Choose a supported video under 10 MB." }, { status: 413 });
   }
   const duration = Number(data.duration);
-  if (!Number.isFinite(duration) || duration <= 0 || duration > 180) return NextResponse.json({ error: "The first version supports videos up to 3 minutes long." }, { status: 400 });
+  if (!Number.isFinite(duration) || duration <= 0 || duration > 600) return NextResponse.json({ error: "This version supports uploaded videos up to 10 minutes long." }, { status: 400 });
 
   const prompt = [
-    "Analyze the supplied short video and propose 3 distinct, compelling short-form clips suitable for vertical social video.",
+    "Analyze the supplied video and propose 2 to 5 distinct, compelling short-form clips suitable for vertical social video. Adapt clip length to the source duration instead of forcing every clip to the same length.",
     "Return ONLY valid JSON, no markdown, with this exact shape:",
     '{"clips":[{"start":0,"end":25,"title":"Short editorial title","hook":"Why this moment works in one sentence","captions":[{"start":0,"end":3,"text":"spoken words or a concise faithful caption"}]}]}',
-    "Rules: all timestamps are seconds on the ORIGINAL video timeline; each clip must be 15 to 60 seconds and remain within the supplied duration; clips must not overlap; captions must use plausible timings within that clip; use concise phrases, ideally 2-7 words per caption; do not invent speech or claim exact transcription when audio is unclear; prioritize a clear hook, complete thought, and payoff; if the video is too short, propose the best possible non-overlapping segments. Return 2 or 3 clips only.",
+    "Length policy: for source videos up to 60 seconds, target 8–20 second clips; for 61–180 seconds, target 12–40 second clips; for 181–360 seconds, target 15–50 second clips; for 361–600 seconds, target 20–60 second clips. These are targets, not rigid rules: preserve a complete thought and payoff, and never extend beyond the source. Rules: all timestamps are seconds on the ORIGINAL video timeline; clips must remain within the supplied duration and not overlap; captions must have plausible timings within each clip; use concise phrases, ideally 2–7 words per caption; do not invent speech or claim exact transcription when audio is unclear; prioritize a clear hook, complete thought, and payoff; if the video is too short, propose the best possible non-overlapping segments. Return 2 to 5 clips depending on how many distinct strong moments the source contains.",
     "Source duration in seconds: " + Math.floor(duration),
   ].join("\n");
 

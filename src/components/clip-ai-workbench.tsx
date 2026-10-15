@@ -6,6 +6,7 @@ import { Captions, Check, Clapperboard, Download, FileVideo, LoaderCircle, Sciss
 type Caption = { start: number; end: number; text: string };
 type Clip = { start: number; end: number; title: string; hook: string; captions: Caption[] };
 const MAX_BYTES = 10 * 1024 * 1024;
+const MAX_DURATION_SECONDS = 10 * 60;
 
 function formatTime(seconds: number) {
   const safe = Math.max(0, Math.floor(seconds || 0));
@@ -51,7 +52,7 @@ export function ClipAIWorkbench() {
 
   const analyze = async () => {
     if (!file || !videoRef.current) { setError("Upload a video first."); return; }
-    if (duration > 180) { setError("The first version supports videos up to 3 minutes long."); return; }
+    if (duration > MAX_DURATION_SECONDS) { setError("This version supports uploaded videos up to 10 minutes long. Longer sources need a dedicated media-processing backend."); return; }
     setBusy(true); setError(""); setClips([]); setOutputUrl("");
     try {
       const videoData = await readAsDataUrl(file);
@@ -163,17 +164,17 @@ export function ClipAIWorkbench() {
 
   return <section className="clip-workbench" id="clip-workbench">
     <div className="clip-workbench-shell">
-      <div className="clip-workbench-heading"><div><span className="clip-workbench-kicker"><WandSparkles size={14}/> CLIP AI / WORKBENCH</span><h2>Make your first <em>short.</em></h2><p>Upload a short source video, let AI suggest the strongest moments, then render a vertical clip with captions. The source stays in this browser except for the analysis request.</p></div><span className="clip-workbench-version">MVP / 01</span></div>
+      <div className="clip-workbench-heading"><div><span className="clip-workbench-kicker"><WandSparkles size={14}/> CLIP AI / WORKBENCH</span><h2>Make your first <em>short.</em></h2><p>Upload a video up to 10 minutes, let AI adapt highlight lengths to the source, then render a vertical clip with captions. The source stays in this browser except for the analysis request.</p></div><span className="clip-workbench-version">MVP / 01</span></div>
       <div className="clip-workbench-grid">
         <div className="clip-source-panel">
           <label className="clip-upload-zone" htmlFor="clip-source-file">
-            <span className="clip-upload-icon"><Upload size={22}/></span><strong>{file ? file.name : "Drop your video into the edit"}</strong><span>{file ? (file.size / (1024 * 1024)).toFixed(1) + " MB · " + formatTime(duration) : "MP4 or WebM · up to 10 MB · 3 minutes"}</span><span className="clip-upload-cta"><FileVideo size={15}/> {file ? "Choose another video" : "Choose video"}</span>
+            <span className="clip-upload-icon"><Upload size={22}/></span><strong>{file ? file.name : "Drop your video into the edit"}</strong><span>{file ? (file.size / (1024 * 1024)).toFixed(1) + " MB · " + formatTime(duration) : "MP4 or WebM · up to 10 MB · 10 minutes max"}</span><span className="clip-upload-cta"><FileVideo size={15}/> {file ? "Choose another video" : "Choose video"}</span>
           </label>
           <input id="clip-source-file" type="file" accept="video/mp4,video/webm,video/quicktime,video/*" className="clip-file-input" onChange={event => chooseFile(event.target.files?.[0] || null)}/>
           {fileUrl && <video ref={videoRef} className="clip-source-video" src={fileUrl} controls playsInline onLoadedMetadata={event => setDuration(event.currentTarget.duration || 0)} />}
           {!fileUrl && <div className="clip-empty-preview"><Clapperboard size={34}/><span>YOUR SOURCE VIDEO</span><small>Upload a video to begin</small></div>}
           <div className="clip-source-foot"><span><Check size={13}/> No account needed</span><span>Local preview + export</span></div>
-          <button className="clip-analyze-button" type="button" onClick={analyze} disabled={!file || busy || duration <= 0 || duration > 180}>{busy ? <><LoaderCircle className="clip-spin" size={17}/> Finding the best moments…</> : <><WandSparkles size={17}/> Find my best clips <span>↗</span></>}</button>
+          <button className="clip-analyze-button" type="button" onClick={analyze} disabled={!file || busy || duration <= 0 || duration > MAX_DURATION_SECONDS}>{busy ? <><LoaderCircle className="clip-spin" size={17}/> Finding the best moments…</> : <><WandSparkles size={17}/> Find my best clips <span>↗</span></>}</button>
           {busy && <div className="clip-analysis-note">Sending this video for multimodal analysis. Free-model availability can vary.</div>}
         </div>
         <div className="clip-results-panel">
@@ -184,7 +185,7 @@ export function ClipAIWorkbench() {
         </div>
       </div>
       {error && <div className="clip-workbench-error" role="alert">{error}</div>}
-      <p className="clip-workbench-disclaimer">MVP limits: uploads up to 10 MB and 3 minutes; exports WebM in supported desktop browsers. AI-generated cut points and captions are suggestions, so preview the result before publishing.</p>
+      <p className="clip-workbench-disclaimer">MVP limits: uploads up to 10 MB and 10 minutes; exports WebM in supported desktop browsers. AI-generated cut points and captions are suggestions, so preview the result before publishing.</p>
       <canvas ref={canvasRef} className="clip-render-canvas" aria-hidden="true"/>
     </div>
   </section>;
