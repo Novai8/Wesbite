@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
-import { ArrowDownRight, ArrowRight, ArrowUpRight, Bot, Braces, Check, Command, GitBranch, Layers3, ScanLine, Sparkles, Workflow, Zap } from "lucide-react";
+import { ArrowDownRight, ArrowRight, ArrowUpRight, Bot, Braces, Check, Command, GitBranch, Layers3, ScanLine, Workflow, Zap } from "lucide-react";
 import { useRef } from "react";
 
 const ease = [0.22, 1, 0.36, 1] as const;
