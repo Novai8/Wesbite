@@ -318,3 +318,179 @@
 .rg-clip-launch-caption{width:max-content;max-width:100%;margin:16px auto 0;padding:7px 9px;background:#ff9c82;color:#19110e;font:700 7px var(--font-geist-mono),monospace;letter-spacing:.09em;text-align:center}
 .rg-clip-launch-card>strong,.rg-clip-launch-card>span:last-child{display:block}.rg-clip-launch-card>strong{margin-top:17px;font-size:20px;letter-spacing:-.045em}.rg-clip-launch-card>span:last-child{margin-top:6px;color:#8e9788;font-size:11px}
 @media(prefers-reduced-motion:reduce){.rg-clip-launch-card *{animation:none!important;transition:none!important}}
+
+
+/* ===== Light theme refinement ===== */
+html[data-theme="light"] .sea-hero {
+  background: linear-gradient(180deg, #e9e3d2 0%, #f7f5ed 62%, #e3e9df 100%);
+  color: #102022;
+  border-bottom-color: #cbc4b0;
+}
+html[data-theme="light"] .sea-canvas { opacity: .26; mix-blend-mode: multiply; }
+html[data-theme="light"] .sea-vignette {
+  background: radial-gradient(circle at 50% 42%, transparent 15%, rgba(247,245,237,.14) 65%, rgba(233,227,210,.4) 100%);
+}
+html[data-theme="light"] .sea-copy .micro-label { color: #315d58; }
+html[data-theme="light"] .sea-copy h1 { color: #102022; }
+html[data-theme="light"] .sea-copy h1 em { color: #81541a; }
+html[data-theme="light"] .sea-copy .hero-lede { color: #334946; }
+html[data-theme="light"] .sea-proof { color: #315d58; }
+html[data-theme="light"] .sea-proof span {
+  background: rgba(247,245,237,.8);
+  color: #16484a;
+  border: 1px solid rgba(22,72,74,.15);
+}
+html[data-theme="light"] .horizon-signal { color: #102022; }
+html[data-theme="light"] .horizon-signal:before {
+  background: linear-gradient(#9c6b20, rgba(156,107,32,.08));
+}
+html[data-theme="light"] .signal-panel {
+  background: rgba(247,245,237,.94);
+  border-color: rgba(22,72,74,.2);
+  box-shadow: 0 25px 70px rgba(16,32,34,.12);
+}
+html[data-theme="light"] .signal-panel-head h2 { color: #16484a; }
+html[data-theme="light"] .signal-panel-head p,
+html[data-theme="light"] .signal-human,
+html[data-theme="light"] .signal-steps li { color: #4a5a57; }
+html[data-theme="light"] .signal-steps li { border-color: #cbc4b0; }
+html[data-theme="light"] .signal-steps li.is-active { color: #102022; }
+html[data-theme="light"] .signal-empty span { color: #4a5a57; }
+html[data-theme="light"] .signal-list { scrollbar-color: #b6b09f transparent; }
+
+/* The Clip AI page and workbench follow the selected theme, not a permanently dark palette. */
+html[data-theme="light"] .rg-clip-page {
+  --clip-accent: #9c4b30;
+  background: #f7f5ed;
+  color: #172526;
+}
+html[data-theme="light"] .rg-clip-hero {
+  background:
+    radial-gradient(ellipse at 77% 28%, rgba(255,145,110,.18), transparent 34%),
+    radial-gradient(ellipse at 10% 65%, rgba(155,104,255,.10), transparent 32%),
+    #eeeadd;
+  border-bottom-color: #d3cbb9;
+}
+html[data-theme="light"] .rg-clip-grid {
+  background-image: linear-gradient(rgba(22,72,74,.055) 1px,transparent 1px),linear-gradient(90deg,rgba(22,72,74,.055) 1px,transparent 1px);
+}
+html[data-theme="light"] .rg-clip-back,
+html[data-theme="light"] .rg-clip-kicker,
+html[data-theme="light"] .rg-clip-copy>p,
+html[data-theme="light"] .rg-clip-section-head>p,
+html[data-theme="light"] .rg-clip-feature-layout>div:first-child>p,
+html[data-theme="light"] .rg-clip-feature-list p,
+html[data-theme="light"] .rg-clip-final p { color: #4a5a57; }
+html[data-theme="light"] .rg-clip-copy h1,
+html[data-theme="light"] .rg-clip-section-head h2,
+html[data-theme="light"] .rg-clip-feature-layout h2,
+html[data-theme="light"] .rg-clip-final h2 { color: #102022; }
+html[data-theme="light"] .rg-clip-copy h1 em,
+html[data-theme="light"] .rg-clip-section-head h2 em,
+html[data-theme="light"] .rg-clip-feature-layout h2 em,
+html[data-theme="light"] .rg-clip-final h2 em { color: #8b4a31; }
+html[data-theme="light"] .rg-clip-copy>p strong { color: #102022; }
+html[data-theme="light"] .rg-clip-secondary {
+  border-color: rgba(16,32,34,.22);
+  background: rgba(255,255,255,.45);
+  color: #172526;
+}
+html[data-theme="light"] .rg-clip-preview {
+  background: linear-gradient(140deg,rgba(255,255,255,.82),rgba(255,255,255,.48));
+  border-color: rgba(16,32,34,.18);
+  box-shadow: 0 30px 90px rgba(16,32,34,.12), inset 0 1px rgba(255,255,255,.9);
+}
+html[data-theme="light"] .rg-clip-preview-top,
+html[data-theme="light"] .rg-clip-timeline-head { color: #4a5a57; }
+html[data-theme="light"] .rg-clip-preview-note,
+html[data-theme="light"] .rg-clip-platforms { color: #52645f; }
+html[data-theme="light"] .rg-clip-marquee {
+  background: #e4e9df;
+  color: #315d58;
+  border-color: #d3cbb9;
+}
+html[data-theme="light"] .rg-clip-how { background: #e9e3d2; }
+html[data-theme="light"] .rg-clip-steps { color: #172526; }
+html[data-theme="light"] .rg-clip-step {
+  background: linear-gradient(145deg,rgba(255,255,255,.86),rgba(255,255,255,.52));
+  border-color: #d3cbb9;
+}
+html[data-theme="light"] .rg-clip-step-top,
+html[data-theme="light"] .rg-clip-step p { color: #52645f; }
+html[data-theme="light"] .rg-clip-features { background: #f7f5ed; }
+html[data-theme="light"] .rg-clip-feature-list,
+html[data-theme="light"] .rg-clip-feature-list>div { border-color: #d3cbb9; }
+html[data-theme="light"] .rg-clip-final {
+  background: linear-gradient(115deg,#e2e8dc,#f1ead9 58%,#f4e3da);
+  border-color: #d3cbb9;
+}
+html[data-theme="light"] .clip-workbench {
+  background:
+    radial-gradient(ellipse at 8% 20%,rgba(255,122,84,.11),transparent 40%),
+    radial-gradient(ellipse at 88% 85%,rgba(156,140,255,.11),transparent 45%),
+    #f0eee5;
+  color: #172526;
+  border-color: #d3cbb9;
+}
+html[data-theme="light"] .clip-workbench-heading p,
+html[data-theme="light"] .clip-workbench-version,
+html[data-theme="light"] .clip-upload-zone>span:not(.clip-upload-icon):not(.clip-upload-cta),
+html[data-theme="light"] .clip-source-foot,
+html[data-theme="light"] .clip-analysis-note,
+html[data-theme="light"] .clip-results-empty p,
+html[data-theme="light"] .clip-pick>span:nth-of-type(2),
+html[data-theme="light"] .clip-render-card p,
+html[data-theme="light"] .clip-workbench-disclaimer { color: #52615e; }
+html[data-theme="light"] .clip-workbench-version { border-color: #d3cbb9; }
+html[data-theme="light"] .clip-source-panel,
+html[data-theme="light"] .clip-results-panel {
+  background: rgba(255,255,255,.72);
+  border-color: #d3cbb9;
+  box-shadow: 0 24px 60px rgba(16,32,34,.07);
+}
+html[data-theme="light"] .clip-upload-zone {
+  border-color: rgba(156,75,48,.4);
+  background: radial-gradient(ellipse at 50% 0%,rgba(255,122,84,.09),transparent 72%);
+}
+html[data-theme="light"] .clip-upload-cta { background: #e6e2d7; color: #172526; }
+html[data-theme="light"] .clip-empty-preview {
+  background: radial-gradient(ellipse at 50% 40%,rgba(156,140,255,.12),transparent 60%),#e7e6df;
+  border-color: #d3cbb9;
+  color: #52615e;
+}
+html[data-theme="light"] .clip-empty-preview small { color: #68746f; }
+html[data-theme="light"] .clip-results-top { color: #52615e; border-color: #d3cbb9; }
+html[data-theme="light"] .clip-pick {
+  background: rgba(255,255,255,.78);
+  color: #172526;
+  border-color: #ded8c9;
+}
+html[data-theme="light"] .clip-pick.is-selected {
+  background: linear-gradient(100deg,rgba(255,122,84,.12),rgba(156,140,255,.08));
+  border-color: #b76c52;
+}
+html[data-theme="light"] .clip-pick-time { color: #52702b; }
+html[data-theme="light"] .clip-pick-select { color: #9c4b30; }
+html[data-theme="light"] .clip-render-card,
+html[data-theme="light"] .clip-download-card {
+  background: rgba(119,150,57,.08);
+  border-color: rgba(82,112,43,.28);
+}
+html[data-theme="light"] .clip-download-card>div>div { color: #52702b; }
+html[data-theme="light"] .clip-workbench-error { color: #9b3028; }
+html[data-theme="light"] .rg-home-clip {
+  background: radial-gradient(ellipse at 82% 42%,rgba(255,122,84,.12),transparent 33%),radial-gradient(ellipse at 15% 80%,rgba(174,110,255,.08),transparent 35%),#eeeadd;
+  border-color: #d3cbb9;
+}
+html[data-theme="light"] .rg-home-clip-copy h2,
+html[data-theme="light"] .rg-home-clip-copy>p { color: #172526; }
+html[data-theme="light"] .rg-home-clip-copy h2 em { color: #8b4a31; }
+html[data-theme="light"] .rg-home-clip-kicker,
+html[data-theme="light"] .rg-home-clip-chips { color: #52615e; }
+html[data-theme="light"] .rg-home-clip-frame {
+  border-color: rgba(16,32,34,.18);
+  box-shadow: 0 30px 80px rgba(16,32,34,.14),inset 0 1px rgba(255,255,255,.6);
+}
+@media(prefers-reduced-motion:reduce){
+  html[data-theme="light"] .sea-canvas { opacity:.18; }
+}
