@@ -25,19 +25,19 @@ export const toolLinks: Record<string, string> = {
 };
 
 export function workflowMailto(title: string) {
-  const subject = "[Rapigents] Adapt this operation — " + title;
-  const body = ["Hello Hussnain,", "", "I want to adapt this Rapigents operation:", title, "", "The current process / problem:", "", "What should remain under human approval:", ""].join("\n");
+  const subject = "[Rapigents] Tool feedback — " + title;
+  const body = ["Hello Hussnain,", "", "I have feedback or a question about this Rapigents tool:", title, "", "Details:", ""].join("\n");
   return "mailto:" + site.email + "?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(body);
 }
 
 type ContactFields = { name: string; email: string; company: string; interest: string; message: string };
 
 function contactMessage(fields: ContactFields) {
-  return ["Name: " + fields.name, "Email: " + fields.email, "Company: " + (fields.company || "—"), "Problem type: " + (fields.interest || "General"), "", "What keeps falling through the cracks:", "", fields.message].join("\n");
+  return ["Name: " + fields.name, "Email: " + fields.email, "Company: " + (fields.company || "—"), "Topic: " + (fields.interest || "General"), "", "Message:", "", fields.message].join("\n");
 }
 
 function contactSubject(fields: ContactFields) {
-  return "[Rapigents] Problem — " + fields.name;
+  return "[Rapigents] Tool feedback — " + fields.name;
 }
 
 /** mailto: link for visitors who do not use Gmail. */
