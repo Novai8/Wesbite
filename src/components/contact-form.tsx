@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { contactBody, contactGmailCompose, contactMailto, site } from "@/lib/site";
 
-const interests = ["Missed calls / enquiries", "Quote follow-up", "Lead capture", "Appointment scheduling", "Customer support", "Admin / data entry", "Something else"];
+const interests = ["AI tool feedback", "Tool not working", "Feature request", "Writing and research", "Data and developer utilities", "Other question"];
 type Fields = { name: string; email: string; company: string; interest: string; message: string };
 const empty: Fields = { name:"", email:"", company:"", interest:interests[0], message:"" };
 
@@ -25,7 +25,7 @@ export function ContactForm() {
   const [copiedMessage,setCopiedMessage] = useState(false);
 
   function set<K extends keyof Fields>(key:K,value:Fields[K]) { setFields(current=>({...current,[key]:value})); setErrors(current=>({...current,[key]:undefined})); }
-  function validate(next:Fields) { const errors:Partial<Record<keyof Fields,string>>={}; if(!next.name.trim()) errors.name="Add your name."; if(!next.email.trim()) errors.email="Add an email so Hussnain can reply."; else if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(next.email.trim())) errors.email="That email does not look complete."; if(next.message.trim().length===0) errors.message="Describe the repetitive problem."; else if(next.message.trim().length>2000) errors.message="Keep the note under 2000 characters."; return errors; }
+  function validate(next:Fields) { const errors:Partial<Record<keyof Fields,string>>={}; if(!next.name.trim()) errors.name="Add your name."; if(!next.email.trim()) errors.email="Add an email so Hussnain can reply."; else if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(next.email.trim())) errors.email="That email does not look complete."; if(next.message.trim().length===0) errors.message="Add a message so we know how to help."; else if(next.message.trim().length>2000) errors.message="Keep the note under 2000 characters."; return errors; }
   function submit(e:FormEvent) {
     e.preventDefault();
     const nextErrors=validate(fields);
@@ -44,7 +44,7 @@ export function ContactForm() {
     const gmailWindow=window.open(contactGmailCompose(payload),"_blank");
     if(gmailWindow){
       gmailWindow.opener=null;
-      toast("Gmail opened in a new tab. Nothing was stored here.");
+      toast("Gmail opened in a new tab.");
     } else {
       toast("Popup blocked. Use the buttons below instead.");
     }
@@ -53,12 +53,12 @@ export function ContactForm() {
   async function copyMessage(){const ok=await copyText(composed);if(!ok){toast("Could not copy automatically.");return;}setCopiedMessage(true);toast("Message copied.");window.setTimeout(()=>setCopiedMessage(false),1800);}
 
   return <div className="contact-layout">
-    <div className="contact-info-card"><span className="section-number">DIRECT</span><a href={"mailto:" + site.email} className="contact-email">{site.email}</a><p>The prototype does not store enquiries. Use the form to compose a problem report in Gmail.</p><Button type="button" variant="secondary" onClick={copyEmail}>{copiedEmail?<Check className="h-4 w-4"/>:<Copy className="h-4 w-4"/>}{copiedEmail?"Copied":"Copy email"}</Button></div>
-    <form ref={formRef} className="contact-form-card" onSubmit={submit} noValidate><div className="contact-form-heading"><div><span className="section-number">DESCRIBE THE LEAK</span><h2>Give us one process.</h2></div><span className="form-prototype-label">Prototype intake</span></div>
+    <div className="contact-info-card"><span className="section-number">DIRECT</span><a href={"mailto:" + site.email} className="contact-email">{site.email}</a><p>Questions, feedback, and ideas for making the toolbox more useful are welcome.</p><Button type="button" variant="secondary" onClick={copyEmail}>{copiedEmail?<Check className="h-4 w-4"/>:<Copy className="h-4 w-4"/>}{copiedEmail?"Copied":"Copy email"}</Button></div>
+    <form ref={formRef} className="contact-form-card" onSubmit={submit} noValidate><div className="contact-form-heading"><div><span className="section-number">SEND FEEDBACK</span><h2>What’s on your mind?</h2></div><span className="form-prototype-label">Contact form</span></div>
       <div className="grid gap-4 sm:grid-cols-2 mt-6"><Field label="Name" htmlFor="name" error={errors.name}><Input id="name" autoComplete="name" aria-invalid={errors.name?true:undefined} aria-describedby={errors.name?"name-error":undefined} value={fields.name} onChange={e=>set("name",e.target.value)} /></Field><Field label="Email" htmlFor="email" error={errors.email}><Input id="email" type="email" inputMode="email" autoComplete="email" aria-invalid={errors.email?true:undefined} aria-describedby={errors.email?"email-error":undefined} value={fields.email} onChange={e=>set("email",e.target.value)} /></Field></div>
       <div className="grid gap-4 sm:grid-cols-2 mt-4"><Field label="Company" htmlFor="company" optional><Input id="company" autoComplete="organization" value={fields.company} onChange={e=>set("company",e.target.value)} /></Field><Field label="Problem type" htmlFor="interest"><select id="interest" className="field" value={fields.interest} onChange={e=>set("interest",e.target.value)}>{interests.map(item=><option key={item}>{item}</option>)}</select></Field></div>
-      <div className="mt-4"><Field label="What keeps falling through the cracks?" htmlFor="message" error={errors.message}><Textarea id="message" maxLength={2000} aria-invalid={errors.message?true:undefined} aria-describedby={errors.message?"message-error":undefined} value={fields.message} onChange={e=>set("message",e.target.value)} /></Field></div>
-      <div className="mt-5 flex flex-wrap items-center gap-3"><Button type="submit">Compose the email <Check className="h-4 w-4" aria-hidden /></Button><p className="text-xs text-muted">No message database. No automated send.</p></div>
+      <div className="mt-4"><Field label="Your message" htmlFor="message" error={errors.message}><Textarea id="message" maxLength={2000} aria-invalid={errors.message?true:undefined} aria-describedby={errors.message?"message-error":undefined} value={fields.message} onChange={e=>set("message",e.target.value)} /></Field></div>
+      <div className="mt-5 flex flex-wrap items-center gap-3"><Button type="submit">Compose the email <Check className="h-4 w-4" aria-hidden /></Button><p className="text-xs text-muted">Your email app opens with a draft. Nothing is sent automatically.</p></div>
       {composed?<div className="mt-5 rounded-2xl border border-line bg-paper p-4"><div className="flex items-center justify-between gap-3"><p className="text-sm font-medium">Ready to paste</p><button type="button" className="btn btn-ghost h-9 px-3 text-sm" onClick={copyMessage}>{copiedMessage?"Copied":"Copy message"}</button></div><p className="mt-2 text-xs text-muted">Not a Gmail user? <a className="underline" href={mailtoHref}>Open in your email app</a> or copy the message below.</p><pre className="mt-3 whitespace-pre-wrap break-anywhere text-sm leading-relaxed text-ink">{composed}</pre></div>:null}
     </form>
   </div>;
