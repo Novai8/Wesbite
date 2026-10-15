@@ -6,9 +6,9 @@ export const site = {
   githubRepo: "https://github.com/Novai8/Wesbite",
   linkedin: "https://www.linkedin.com/in/spell-automation/",
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://rapigents.com",
-  title: "Rapigents | AI tools for everyday work",
+  title: "Rapigents | Free AI Tools, Image Analyzer & Video Clipper",
   description:
-    "Rapigents is a practical collection of AI-powered helpers and browser utilities for writing, research, study, data cleanup, and everyday tasks.",
+    "Explore free AI tools for writing, research, productivity, image analysis, audio and video insights, plus Clip AI for turning long videos into vertical shorts with captions.",
   disclaimerTitle: "Rapigents AI Tools",
   disclaimerBody: "Practical AI helpers and browser-based utilities for everyday tasks.",
 } as const;
