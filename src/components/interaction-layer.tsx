@@ -9,6 +9,7 @@ const accents: Record<string, string> = {
   "/tools": "#a99aff",
   "/about": "#65e4d0",
   "/contact": "#ff8fbd",
+  "/clip-ai": "#ff7a54",
 };
 
 export function InteractionLayer() {
@@ -75,7 +76,7 @@ export function InteractionLayer() {
       finishTimer = window.setTimeout(() => {
         setTransition(null);
         navigating.current = false;
-      }, 850);
+      }, 1350);
     };
     document.addEventListener("click", onClick, true);
     return () => {
