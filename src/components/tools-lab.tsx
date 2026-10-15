@@ -17,10 +17,10 @@ function supportsAttachments(tool: ToolItem) {
 function attachmentAccept(tool: ToolItem) {
   const name = tool.name.toLowerCase();
   if (/image|photo|visual|thumbnail|handwritten|logo|poster/.test(name)) return "image/*";
-  if (/audio|podcast|speech|voice|pronunciation|filler-word|transcri/.test(name)) return "audio/*";
+  if (/audio|podcast|speech|voice|pronunciation|filler-word|transcri/.test(name)) return "audio/mpeg,audio/wav,.mp3,.wav";
   if (/video|subtitle|shorts|scene|shot/.test(name)) return "video/*";
   if (/pdf|document|invoice|receipt|resume|spreadsheet|file/.test(name)) return "application/pdf,image/*,audio/*,video/*";
-  return "image/*,audio/*,video/*,application/pdf";
+  return "image/*,audio/mpeg,audio/wav,video/*,application/pdf,.mp3,.wav";
 }
 function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -419,7 +419,7 @@ export function ToolsLab() {
                 if (picked.length + attachments.length > 3) { setError("Attach up to 3 files per request."); event.target.value = ""; return; }
                 if (picked.some(file => file.size > 8 * 1024 * 1024)) { setError("Each attachment must be smaller than 8 MB."); event.target.value = ""; return; }
                 setError(""); setAttachments(current => [...current, ...picked].slice(0, 3)); event.target.value = "";
-              }}/><FileImage size={17}/><FileAudio size={17}/><FileVideo size={17}/><span>Choose image, audio, video, or PDF</span><b>Browse</b></label>
+              }}/><FileImage size={17}/><FileAudio size={17}/><FileVideo size={17}/><span>Choose image, MP3/WAV, video, or PDF</span><b>Browse</b></label>
               {attachments.length > 0 && <div className="tool-attachment-list">{attachments.map((file, index) => <div key={file.name + file.size + index}><span>{file.type.startsWith("image/") ? <FileImage size={14}/> : file.type.startsWith("audio/") ? <FileAudio size={14}/> : file.type.startsWith("video/") ? <FileVideo size={14}/> : <FileText size={14}/>}</span><span>{file.name}<small>{(file.size / (1024 * 1024)).toFixed(1)} MB</small></span><button type="button" onClick={() => setAttachments(current => current.filter((_, i) => i !== index))} aria-label={"Remove " + file.name}><X size={14}/></button></div>)}</div>}
               <p>Files are sent with your prompt to the AI service for analysis. Avoid private or sensitive material.</p>
             </div>}
