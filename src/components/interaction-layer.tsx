@@ -61,8 +61,8 @@ export function InteractionLayer() {
       const targetEl = event.target instanceof Element ? event.target.closest("a") : null;
       if (!(targetEl instanceof HTMLAnchorElement)) return;
       const url = new URL(targetEl.href, window.location.href);
-      if (url.origin !== window.location.origin || targetEl.target === "_blank" || targetEl.hasAttribute("download") || url.pathname === pathname && url.hash) return;
-      if (url.pathname === pathname && !url.search) return;
+      if (url.origin !== window.location.origin || targetEl.target === "_blank" || targetEl.hasAttribute("download") || url.pathname === window.location.pathname && url.hash) return;
+      if (url.pathname === window.location.pathname && !url.search) return;
       event.preventDefault();
       if (transitioning.current) return;
       transitioning.current = true;
