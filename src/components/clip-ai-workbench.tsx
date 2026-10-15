@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { Captions, Check, Clapperboard, Download, FileVideo, Film, LoaderCircle, Scissors, Upload, WandSparkles } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Captions, Check, Clapperboard, Download, FileVideo, LoaderCircle, Scissors, Upload, WandSparkles } from "lucide-react";
 
 type Caption = { start: number; end: number; text: string };
 type Clip = { start: number; end: number; title: string; hook: string; captions: Caption[] };
@@ -41,7 +41,6 @@ export function ClipAIWorkbench() {
   const [linkError, setLinkError] = useState("");
   const [linkProjectId, setLinkProjectId] = useState("");
   const [remoteClips, setRemoteClips] = useState<Array<{ id: string; title: string; url: string; thumbnail?: string; hook?: string; start?: number; end?: number }>>([]);
-  const [linkProvider, setLinkProvider] = useState("");
 
   useEffect(() => () => { if (fileUrl) URL.revokeObjectURL(fileUrl); }, [fileUrl]);
   useEffect(() => () => { if (outputUrl) URL.revokeObjectURL(outputUrl); }, [outputUrl]);
@@ -90,7 +89,6 @@ export function ClipAIWorkbench() {
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload.error || "This source could not be submitted.");
       setLinkProjectId(String(payload.projectId || ""));
-      setLinkProvider(String(payload.provider || "Remote clipping engine"));
       setLinkStatus(payload.message || "Video accepted. Waiting for the clipping engine to process it.");
     } catch (caught) {
       setLinkError(caught instanceof Error ? caught.message : "Could not submit this link.");
@@ -98,7 +96,7 @@ export function ClipAIWorkbench() {
     } finally { setLinkBusy(false); }
   };
 
-  const refreshRemoteClips = async () => {
+  const refreshRemoteClips = useCallback(async () => {
     if (!linkProjectId) return;
     setLinkBusy(true); setLinkError("");
     try {
@@ -112,13 +110,13 @@ export function ClipAIWorkbench() {
     } catch (caught) {
       setLinkError(caught instanceof Error ? caught.message : "Could not check clip status.");
     } finally { setLinkBusy(false); }
-  };
+  }, [linkProjectId]);
 
   useEffect(() => {
     if (!linkProjectId || remoteClips.length) return;
     const timer = window.setInterval(() => { void refreshRemoteClips(); }, 15000);
     return () => window.clearInterval(timer);
-  }, [linkProjectId, remoteClips.length]);
+  }, [linkProjectId, remoteClips.length, refreshRemoteClips]);
 
   const renderClip = async () => {
     const video = videoRef.current;

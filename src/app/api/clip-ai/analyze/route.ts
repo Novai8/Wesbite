@@ -66,12 +66,12 @@ export async function POST(request: Request) {
     const start = cleaned.indexOf("{"), end = cleaned.lastIndexOf("}");
     if (start < 0 || end <= start) return NextResponse.json({ error: "The AI response was not structured correctly. Try again." }, { status: 502 });
     const parsed = JSON.parse(cleaned.slice(start, end + 1));
-    const clips = Array.isArray(parsed.clips) ? parsed.clips.map((clip: any) => ({
+    const clips = Array.isArray(parsed.clips) ? parsed.clips.map((clip: Record<string, unknown>) => ({
       start: Math.max(0, Number(clip.start)),
       end: Math.min(duration, Number(clip.end)),
       title: String(clip.title || "Suggested highlight").slice(0, 100),
       hook: String(clip.hook || "A potentially useful moment from your video.").slice(0, 240),
-      captions: Array.isArray(clip.captions) ? clip.captions.map((caption: any) => ({
+      captions: Array.isArray(clip.captions) ? clip.captions.map((caption: Record<string, unknown>) => ({
         start: Math.max(0, Number(caption.start)),
         end: Math.min(duration, Number(caption.end)),
         text: String(caption.text || "").slice(0, 160),
