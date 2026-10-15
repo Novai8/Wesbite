@@ -42,7 +42,8 @@ export function ClipAIWorkbench() {
     setError(""); setClips([]); setOutputUrl(""); setOutputName(""); setDuration(0); setProgress(0);
     if (fileUrl) URL.revokeObjectURL(fileUrl);
     if (outputUrl) URL.revokeObjectURL(outputUrl);
-    if (!next) { setFile(null); setFileUrl(""); return; }
+    setFile(null); setFileUrl("");
+    if (!next) return;
     if (!next.type.startsWith("video/")) { setError("Choose a video file such as MP4 or WebM."); return; }
     if (next.size > MAX_BYTES) { setError("For this first version, choose a video under 10 MB. Larger uploads need a dedicated media-processing server."); return; }
     setFile(next); setFileUrl(URL.createObjectURL(next));
