@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowDown, ArrowLeft, ArrowUpRight, Captions, Clapperboard, Film, Play, Scissors, Sparkles, WandSparkles, Waves, Zap } from "lucide-react";
-import { site } from "@/lib/site";
 import { ClipAIWorkbench } from "@/components/clip-ai-workbench";
 
 export const metadata: Metadata = {
@@ -17,8 +16,6 @@ const steps = [
 ];
 
 export default function ClipAIPage() {
-  const subject = encodeURIComponent("[Rapigents Clip AI] Early access");
-  const body = encodeURIComponent("Hi Rapigents,\n\nI'd like to hear about early access to Clip AI.\n\nPlatforms I use:\n\nThe kind of videos I want to clip:\n");
   return <main id="content" className="rg-clip-page">
     <section className="rg-clip-hero">
       <div className="rg-clip-grid" aria-hidden="true" />
