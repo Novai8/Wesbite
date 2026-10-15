@@ -1,6 +1,15 @@
-import type {Metadata} from "next";
+import type { Metadata } from "next";
 import Link from "next/link";
-import {ArrowRight,Eye,GitBranch,ShieldCheck} from "lucide-react";
-export const metadata:Metadata={title:"Method",description:"The Rapigents method for turning messy business work into clear operations."};
-const steps=[{icon:Eye,n:"01",title:"Listen for the leak",text:"Start with the sentence people actually say: “We keep forgetting to follow up.” That contains more useful information than another slide about AI."},{icon:GitBranch,n:"02",title:"Expose the sequence",text:"Map the trigger, information needed, decisions, exceptions, human approvals and final output. The process becomes something a person can inspect."},{icon:ShieldCheck,n:"03",title:"Automate with boundaries",text:"Only then do integrations and models enter the picture. Sensitive actions can stop for approval, and failures stay visible."}];
-export default function AboutPage(){return <main id="content"><section className="page-hero-clean"><div className="container-page"><span className="section-kicker">THE RAPIGENTS METHOD</span><h1>Find the work hiding inside the complaint.</h1><p>Most businesses do not wake up wishing for an “AI agent”. They want fewer missed leads, fewer repetitive tasks and fewer things living in someone&apos;s memory.</p></div></section><section className="section-block"><div className="container-page"><div className="method-grid">{steps.map(({icon:Icon,n,title,text})=><article className="method-card" key={n}><span>{n}</span><Icon aria-hidden/><h2>{title}</h2><p>{text}</p></article>)}</div></div></section><section className="section-dark"><div className="container-page"><div className="method-statement"><span className="section-kicker">BOUNDARY</span><h2>Automation should make responsibility clearer, not harder to find.</h2><p>No invented testimonials. No fake case studies. No pretending a simulation is a production deployment. The site shows what the operation could look like before credentials are connected.</p><Link href="/contact" className="magnetic-button magnetic-button-light">Bring a real process <ArrowRight aria-hidden/></Link></div></div></section></main>}
+import { ArrowRight, Blocks, MousePointer2, Sparkles } from "lucide-react";
+
+export const metadata: Metadata = { title: "How it works", description: "How to use Rapigents AI tools and browser utilities." };
+
+const steps = [
+  { icon: MousePointer2, title: "Choose a tool", text: "Find a utility for the task you need to finish, from writing and research to data cleanup." },
+  { icon: Blocks, title: "Add your context", text: "Give the tool the text, details, or data it needs. Browser-based utilities run locally in your browser." },
+  { icon: Sparkles, title: "Use the result", text: "Review the output, refine it, then copy what you need. You stay in control of what gets shared or sent." },
+];
+
+export default function AboutPage() {
+  return <main id="content"><section className="page-hero-clean"><div className="container-page"><span className="section-kicker">A TOOLKIT BUILT AROUND TASKS</span><h1>Less hunting. More doing.</h1><p>Rapigents brings practical AI helpers and simple browser utilities into one clear workspace, so small tasks take fewer steps.</p></div></section><section className="section-block"><div className="container-page"><div className="method-grid">{steps.map(({ icon: Icon, title, text }, index) => <article className="method-card rg-how-card" key={title}><span>{String(index + 1).padStart(2, "0")}</span><Icon aria-hidden/><h2>{title}</h2><p>{text}</p></article>)}</div></div></section><section className="section-dark"><div className="container-page"><div className="method-statement"><span className="section-kicker">READY WHEN YOU ARE</span><h2>Your next useful tool is a click away.</h2><p>Search the library, open a tool, and get straight to the task.</p><Link href="/tools" className="magnetic-button magnetic-button-light">Explore AI tools <ArrowRight aria-hidden/></Link></div></div></section></main>;
+}
