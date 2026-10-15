@@ -82,6 +82,10 @@ def suggest_title(text):
  if len(candidate)>68: candidate=candidate[:65].rsplit(" ",1)[0]+"…"
  return candidate[:90] or "The key takeaway"
 
+def ass_stamp(sec):
+ ms=max(0,int(sec*100)); h,ms=divmod(ms,360000); m,ms=divmod(ms,6000); s,cs=divmod(ms,100)
+ return f"{h}:{m:02}:{s:02}.{cs:02}"
+
 def ass_escape(value):
  return str(value).replace("\\","\\\\").replace("{","\\{").replace("}","\\}").replace("\n"," ").strip()
 
@@ -122,7 +126,7 @@ Format: Layer,Start,End,Style,Name,MarginL,MarginR,MarginV,Effect,Text
     a=max(0.0,float(seg["start"])-start); b=max(a+0.18,min(end-start,float(seg["end"])-start))
     caption=ass_escape(seg["text"].replace("-->","→"))
     if not caption: continue
-    events.append(f"Dialogue: 0,{stamp(a).replace(',', '.')},{stamp(b).replace(',', '.')},Caption,,0,0,0,,{{\\fad(70,90)\\c{colors[i%len(colors)]}}}{caption.upper()}")
+    events.append(f"Dialogue: 0,{ass_stamp(a)},{ass_stamp(b)},Caption,,0,0,0,,{{\\fad(70,90)\\c{colors[i%len(colors)]}}}{caption.upper()}")
    ass.write_text(header+"\n".join(events)+"\n",encoding="utf-8")
    cmd(["ffmpeg","-y","-f","lavfi","-i","anoisesrc=color=pink:duration=0.55:sample_rate=48000","-af","highpass=f=700,lowpass=f=6500,afade=t=in:st=0:d=0.08,afade=t=out:st=0.16:d=0.38,volume=0.08","-ac","2",str(sfx)],60)
    ass_path=str(ass).replace("\\\\","/").replace(":","\\\\:")
