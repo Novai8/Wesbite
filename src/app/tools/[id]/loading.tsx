@@ -1,6 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
+import "../tools.css";
 import { findTool } from "@/data/tool-catalog";
 import { ToolLaunchVisual } from "@/components/tool-motion-visual";
 
