@@ -9,3 +9,15 @@ body:has(.tools-page) .trust-strip ul,body:has(.tools-page) .trust-strip p{color
 body:has(.tools-page) .toggle-chip{background:rgba(255,255,255,.04);border-color:rgba(164,174,222,.17);color:#d8dcf0}
 body:has(.tools-page) .site-footer{background:#090b14!important;color:#8d96b0!important;border-top:1px solid rgba(162,174,230,.13)}
 body:has(.tools-page) .site-footer a{color:#b2a7ff}
+
+/* Integration overrides for the existing Rapigents site chrome on the Tools Lab routes. */
+body:has(.tools-page) .desktop-nav a{color:#a1a9c0}
+body:has(.tools-page) .desktop-nav a:hover{color:#f3f5ff}
+body:has(.tools-page) .sound-button,
+body:has(.tools-page) .mobile-menu-button{background:#101421;border-color:rgba(162,174,230,.2);color:#f3f5ff}
+body:has(.tools-page) .sound-button:hover,
+body:has(.tools-page) .mobile-menu-button:hover{border-color:#9b8cff}
+body:has(.tools-page) .header-cta{background:#f3f5ff;color:#080a13}
+body:has(.tools-page) .mobile-menu{background:#101421;color:#f3f5ff;border-top-color:rgba(162,174,230,.14)}
+body:has(.tools-page) .mobile-menu a{border-bottom-color:rgba(162,174,230,.14)}
+body:has(.tools-page) .mobile-menu .mobile-menu-cta{background:#9b8cff;color:#080a13}
