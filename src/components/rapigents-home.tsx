@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
-import { ArrowDownRight, ArrowRight, ArrowUpRight, AudioLines, Braces, Check, Code2, FileText, Layers3, Search, Sparkles, WandSparkles, Zap } from "lucide-react";
+import { ArrowDownRight, ArrowRight, ArrowUpRight, AudioLines, Braces, Captions, Check, Clapperboard, Code2, FileText, Film, Layers3, Play, Search, Scissors, Sparkles, WandSparkles, Zap } from "lucide-react";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 const highlights = [
@@ -70,6 +70,7 @@ export function RapigentsHome() {
         <div className="rg-fun-cta-band"><div className="rg-cta-icon"><Search size={21}/></div><div><strong>Not sure where to start?</strong><p>Search the toolbox by task, not by technical jargon.</p></div><Link href="/tools" className="rg-cta-link">Find a tool <ArrowRight size={16}/></Link></div>
       </div>
     </section>
+    <section className="rg-home-clip" aria-labelledby="rg-home-clip-title"><div className="rg-fun-shell rg-home-clip-layout"><div className="rg-home-clip-copy"><span className="rg-home-clip-kicker"><Film size={14}/> MEET YOUR NEXT CREATOR TOOL <span> / 002</span></span><h2 id="rg-home-clip-title">Long video.<br/><em>Short-form magic.</em></h2><p>Turn a video link into the short people actually finish watching. Clip AI is being built for smart cuts, kinetic captions, and polished vertical edits without the tedious timeline work.</p><Link href="/clip-ai" className="rg-home-clip-cta">Explore Clip AI <ArrowUpRight size={17}/></Link><div className="rg-home-clip-chips"><span><Scissors size={13}/> Smart cuts</span><span><Captions size={13}/> Pro captions</span><span><Clapperboard size={13}/> 9:16 framing</span></div></div><div className="rg-home-clip-art" aria-hidden="true"><div className="rg-home-clip-halo"/><div className="rg-home-clip-frame"><div className="rg-home-clip-scene"><div className="rg-home-clip-sun"/><div className="rg-home-clip-mountain mountain-a"/><div className="rg-home-clip-mountain mountain-b"/><div className="rg-home-clip-play"><Play size={22} fill="currentColor"/></div><div className="rg-home-clip-subtitles"><span>YOUR STORY</span><strong>IN MOTION.</strong></div><div className="rg-home-clip-bars"><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/></div></div><div className="rg-home-clip-frame-foot"><span>CLIP AI / PREVIEW</span><span>9:16</span></div></div><div className="rg-home-clip-float clip-float-cut"><Scissors size={15}/> CUT ON BEAT</div><div className="rg-home-clip-float clip-float-cap"><Captions size={15}/> CAPTIONS READY</div><span className="rg-home-clip-note">CONCEPT PREVIEW · IN DEVELOPMENT</span></div></div></section>
     <section className="rg-fun-last"><div className="rg-fun-shell rg-fun-last-inner"><div><span className="rg-fun-kicker"><AudioLines size={14}/> LESS TAB CHAOS, MORE GETTING-THINGS-DONE</span><h2>Your next shortcut<br/>is <em>right here.</em></h2></div><Link href="/tools" className="rg-fun-primary">Explore all tools <ArrowUpRight size={18}/></Link><div className="rg-last-orb" aria-hidden="true"/></div></section>
   </main>;
 }
