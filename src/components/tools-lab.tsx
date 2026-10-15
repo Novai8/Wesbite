@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { useRouter } from "next/navigation";
 import {
   ArrowDownRight, ArrowRight, ArrowUpRight, AudioLines, Check, ChevronDown,
   CircleHelp, Clock3, Code2, Copy, FileText, LoaderCircle,
@@ -131,7 +132,7 @@ function ParticleField() {
   return <canvas ref={canvasRef} className="tools-particle-canvas" aria-hidden="true" />;
 }
 
-function localTransform(tool: ToolItem, input: string): string | null {
+export function localTransform(tool: ToolItem, input: string): string | null {
   const value = input.trim();
   switch (tool.id) {
     case "json-formatter-and-validator":
@@ -243,6 +244,8 @@ function localTransform(tool: ToolItem, input: string): string | null {
 }
 
 export function ToolsLab() {
+  const router = useRouter();
+  const [openingTool, setOpeningTool] = useState<ToolItem | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("All tools");
@@ -271,6 +274,11 @@ export function ToolsLab() {
     const matchesQuery = (tool.name + " " + tool.description + " " + tool.category).toLowerCase().includes(query.toLowerCase());
     return matchesQuery && (category === "All tools" || tool.category === category) && (kind === "all" || tool.kind === kind);
   }), [query, category, kind]);
+
+  const openToolPage = (tool: ToolItem) => {
+    setOpeningTool(tool);
+    window.setTimeout(() => router.push("/tools/" + tool.id), 720);
+  };
 
   const chooseTool = (tool: ToolItem) => {
     setSelected(tool);
@@ -389,7 +397,7 @@ export function ToolsLab() {
 
         <div className="tools-card-grid">
           {filtered.slice(0, showAll ? filtered.length : 24).map((tool, index) => (
-            <motion.button type="button" key={tool.id} className={"tool-card " + (selected?.id === tool.id ? "is-selected" : "")} onClick={() => chooseTool(tool)} initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.12 }} transition={{ duration: 0.45, delay: Math.min(index % 6, 5) * 0.035 }} whileHover={{ y: -5, transition: { duration: 0.2 } }}>
+            <motion.button type="button" key={tool.id} className={"tool-card " + (selected?.id === tool.id ? "is-selected" : "")} onClick={() => openToolPage(tool)} initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.12 }} transition={{ duration: 0.45, delay: Math.min(index % 6, 5) * 0.035 }} whileHover={{ y: -5, transition: { duration: 0.2 } }}>
               <div className="tool-card-top"><span className="tool-card-icon">{tool.kind === "browser" ? <Code2 size={17}/> : <Sparkles size={17}/>}</span><span className={tool.kind === "browser" ? "tool-type-tag local" : "tool-type-tag"}>{tool.kind === "browser" ? "LOCAL" : "AI POWERED"}</span></div>
               <span className="tool-card-category">{tool.category}</span>
               <strong>{tool.name}</strong>
@@ -404,6 +412,16 @@ export function ToolsLab() {
 
       <section className="tools-note-band"><div className="tools-shell"><div className="tools-note-icon"><Zap size={19}/></div><div><strong>Built to be useful, not just impressive.</strong><p>Local tools run in your browser. AI-assisted tools analyze the context you provide. Outputs are drafts and should be reviewed before important decisions or external actions.</p></div><a href="#explore">Back to tools <ArrowUpRight size={14}/></a></div></section>
 
+      <AnimatePresence>
+        {openingTool && <motion.div className="tool-launch-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} role="status" aria-live="polite">
+          <motion.div className={"tool-launch-card launch-" + openingTool.kind} initial={{ opacity: 0, y: 18, scale: .96 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: .28 }}>
+            <div className="tool-launch-top"><span className="tools-live-dot" /> RAPIGENTS / TOOL INITIALIZING <span>{openingTool.category.toUpperCase()}</span></div>
+            <ToolLaunchVisual tool={openingTool} />
+            <span className="tool-launch-label">{openingTool.name}</span>
+            <span className="tool-launch-sub">Preparing your workspace…</span>
+          </motion.div>
+        </motion.div>}
+      </AnimatePresence>
       <AnimatePresence>
         {selected && <motion.div className="tool-modal-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onMouseDown={(event) => { if (event.target === event.currentTarget) setSelected(null); }}>
           <motion.section className="tool-modal" role="dialog" aria-modal="true" aria-labelledby="tool-modal-title" initial={{ opacity: 0, y: 28, scale: 0.97, filter: "blur(8px)" }} animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }} exit={{ opacity: 0, y: 18, scale: 0.98, filter: "blur(8px)" }} transition={{ duration: 0.28 }} onKeyDown={(event) => { if (event.key === "Escape") setSelected(null); }}>
