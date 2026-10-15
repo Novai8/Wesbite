@@ -1,107 +1,75 @@
 "use client";
 
 import Link from "next/link";
-import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
-import { ArrowDownRight, ArrowRight, ArrowUpRight, Bot, Braces, Check, Command, GitBranch, Layers3, ScanLine, Workflow, Zap } from "lucide-react";
-import { useRef } from "react";
+import { motion, useReducedMotion } from "framer-motion";
+import { ArrowDownRight, ArrowRight, ArrowUpRight, AudioLines, Braces, Check, Code2, FileText, Layers3, Search, Sparkles, WandSparkles, Zap } from "lucide-react";
 
 const ease = [0.22, 1, 0.36, 1] as const;
-
-const systems = [
-  { n: "01", title: "Capture", detail: "Catch the signal before it goes cold.", icon: ScanLine },
-  { n: "02", title: "Interpret", detail: "Turn scattered context into a clear next step.", icon: Braces },
-  { n: "03", title: "Execute", detail: "Move the work forward, with a human in control.", icon: Zap },
+const highlights = [
+  { icon: FileText, title: "Write & refine", text: "Turn rough notes into something clear, polished, and ready to use.", tint: "pink" },
+  { icon: Braces, title: "Clean & convert", text: "Format data, transform text, and get small technical jobs out of the way.", tint: "blue" },
+  { icon: Zap, title: "Think faster", text: "Use AI helpers for research, planning, learning, and everyday work.", tint: "lime" },
 ];
 
 export function RapigentsHome() {
-  const scene = useRef<HTMLElement>(null);
   const reduceMotion = useReducedMotion();
-  const { scrollYProgress } = useScroll({ target: scene, offset: ["start start", "end start"] });
-  const sceneY = useTransform(scrollYProgress, [0, 1], [0, reduceMotion ? 0 : 170]);
-  const sceneRotate = useTransform(scrollYProgress, [0, 1], [0, reduceMotion ? 0 : -9]);
-  const sceneScale = useTransform(scrollYProgress, [0, 1], [1, reduceMotion ? 1 : 0.88]);
+  const tiltScene = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (reduceMotion || event.pointerType !== "mouse") return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = (event.clientX - rect.left) / rect.width - 0.5;
+    const y = (event.clientY - rect.top) / rect.height - 0.5;
+    event.currentTarget.style.setProperty("--tilt-x", (y * -10).toFixed(2) + "deg");
+    event.currentTarget.style.setProperty("--tilt-y", (x * 12).toFixed(2) + "deg");
+    event.currentTarget.style.setProperty("--float-x", (x * 18).toFixed(1) + "px");
+    event.currentTarget.style.setProperty("--float-y", (y * 18).toFixed(1) + "px");
+  };
+  const resetScene = (event: React.PointerEvent<HTMLDivElement>) => {
+    event.currentTarget.style.setProperty("--tilt-x", "0deg");
+    event.currentTarget.style.setProperty("--tilt-y", "0deg");
+    event.currentTarget.style.setProperty("--float-x", "0px");
+    event.currentTarget.style.setProperty("--float-y", "0px");
+  };
 
-  return (
-    <main id="content" className="rg-home">
-      <section ref={scene} className="rg-hero">
-        <div className="rg-hero-grid" aria-hidden="true" />
-        <div className="rg-hero-scan" aria-hidden="true" />
-        <div className="rg-shell rg-hero-layout">
-          <motion.div className="rg-hero-copy" initial={{ opacity: 0, y: 32 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9, ease }}>
-            <div className="rg-kicker"><span className="rg-status-dot" /> INDEPENDENT AUTOMATION STUDIO <span className="rg-kicker-index">/ 001</span></div>
-            <h1>Work should<br />move <em>without</em><br /><span>the chaos.</span></h1>
-            <p className="rg-hero-deck">We design practical AI tools and business workflows that turn repetitive operations into clear, reviewable systems.</p>
-            <div className="rg-hero-actions">
-              <Link href="/demos" className="rg-button rg-button-primary">Explore the systems <ArrowUpRight size={16} /></Link>
-              <Link href="/tools" className="rg-button rg-button-quiet">Find your first tool <ArrowRight size={16} /></Link>
-            </div>
-            <div className="rg-hero-foot"><span>BUILT FOR REAL WORK</span><span className="rg-foot-rule" /><span>HUMAN REVIEW STAYS IN THE LOOP</span></div>
-          </motion.div>
-
-          <motion.div className="rg-machine-wrap" style={{ y: sceneY, rotateX: sceneRotate, scale: sceneScale }} initial={{ opacity: 0, x: 36, rotateY: -12 }} animate={{ opacity: 1, x: 0, rotateY: 0 }} transition={{ duration: 1.1, delay: 0.1, ease }} aria-label="Abstract visualization of a business workflow">
-            <div className="rg-machine-label rg-machine-label-top"><span>FIG. 01</span><span>OPERATIONS ENGINE</span><span>LIVE MODEL</span></div>
-            <div className="rg-machine-orbit rg-orbit-a" />
-            <div className="rg-machine-orbit rg-orbit-b" />
-            <div className="rg-machine-orbit rg-orbit-c" />
-            <div className="rg-machine-core"><div className="rg-core-mark"><Workflow size={31} strokeWidth={1.3} /></div><span>ROUTE / REASON / RESOLVE</span></div>
-            <div className="rg-node rg-node-capture"><span className="rg-node-symbol"><ScanLine size={15}/></span><span><b>INBOUND SIGNAL</b><small>01 / CAPTURE</small></span><i>↘</i></div>
-            <div className="rg-node rg-node-intelligence"><span className="rg-node-symbol"><Bot size={15}/></span><span><b>CONTEXT ENGINE</b><small>02 / INTERPRET</small></span><i>↗</i></div>
-            <div className="rg-node rg-node-action"><span className="rg-node-symbol"><Check size={15}/></span><span><b>REVIEWED ACTION</b><small>03 / EXECUTE</small></span><i>↗</i></div>
-            <div className="rg-machine-rail"><span>INPUT</span><span className="rg-rail-line" /><span>DECISION</span><span className="rg-rail-line" /><span>OUTPUT</span></div>
-            <div className="rg-machine-coordinate">24° / RG—OPS / 006</div>
-          </motion.div>
-        </div>
-        <div className="rg-hero-bottom"><span>RAPIGENTS / WORK, MADE VISIBLE</span><a href="#approach">SCROLL TO TRACE THE SYSTEM <ArrowDownRight size={13}/></a><span>PAKISTAN · WORKING WORLDWIDE</span></div>
-      </section>
-
-      <section className="rg-intro rg-section" id="approach">
-        <div className="rg-shell">
-          <div className="rg-section-meta"><span>01 — THE PRINCIPLE</span><span>LESS REPETITION. MORE MOMENTUM.</span></div>
-          <div className="rg-intro-grid">
-            <h2>Not more software.<br /><em>Less friction.</em></h2>
-            <div className="rg-intro-copy"><p>Most teams do not need another dashboard. They need the handoffs, follow-ups and small decisions between their tools to stop leaking time.</p><p>Rapigents builds focused systems around that gap. Start with a clear task, test it on realistic data, keep people in control.</p><Link href="/about" className="rg-text-link">How we think about the work <ArrowUpRight size={15}/></Link></div>
+  return <main id="content" className="rg-home rg-home-fun">
+    <section className="rg-fun-hero">
+      <div className="rg-fun-grid" aria-hidden="true"/>
+      <div className="rg-fun-glow rg-fun-glow-a" aria-hidden="true"/>
+      <div className="rg-fun-glow rg-fun-glow-b" aria-hidden="true"/>
+      <div className="rg-fun-shell rg-fun-layout">
+        <motion.div className="rg-fun-copy" initial={{ opacity: 0, y: 28, filter: "blur(12px)" }} animate={{ opacity: 1, y: 0, filter: "blur(0px)" }} transition={{ duration: reduceMotion ? 0 : 0.9, ease }}>
+          <div className="rg-fun-kicker"><span className="rg-fun-pulse"/> YOUR NEW FAVOURITE TOOLBOX <span className="rg-kicker-index">✳ 001</span></div>
+          <h1>Less <span className="rg-word-gradient">busywork.</span><br/>More <em>brainpower.</em></h1>
+          <p>Meet the little tools that make the annoying tasks easier. Write, think, clean up data, explore ideas, and get on with your day.</p>
+          <div className="rg-fun-actions">
+            <Link href="/tools" className="rg-fun-primary">Get into the tools <ArrowUpRight size={18}/></Link>
+            <Link href="/about" className="rg-fun-secondary">How it works <ArrowRight size={16}/></Link>
           </div>
-          <div className="rg-process">
-            {systems.map((step) => {
-              const Icon = step.icon;
-              return <motion.article key={step.n} className="rg-process-step" initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.25 }} transition={{ duration: 0.65, delay: Number(step.n) * 0.08, ease }}>
-                <div className="rg-process-top"><span>{step.n} / 03</span><Icon size={19} strokeWidth={1.4}/></div>
-                <h3>{step.title}</h3><p>{step.detail}</p><span className="rg-process-arrow"><ArrowDownRight size={16}/></span>
-              </motion.article>;
-            })}
+          <div className="rg-fun-trust"><span><Check size={14}/> AI-powered helpers</span><span><Check size={14}/> Handy browser tools</span><span><Check size={14}/> No setup maze</span></div>
+        </motion.div>
+        <motion.div className="rg-fun-scene-wrap" initial={{ opacity: 0, scale: 0.86, y: 22 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ duration: reduceMotion ? 0 : 1.05, delay: 0.12, ease }}>
+          <div className="rg-fun-scene" onPointerMove={tiltScene} onPointerLeave={resetScene} aria-label="A playful three-dimensional stack of floating tool cards">
+            <div className="rg-scene-shadow"/>
+            <div className="rg-scene-orbit rg-scene-orbit-one"/><div className="rg-scene-orbit rg-scene-orbit-two"/>
+            <div className="rg-scene-spark spark-one">✳</div><div className="rg-scene-spark spark-two">✦</div><div className="rg-scene-spark spark-three">✧</div>
+            <div className="rg-float-tile tile-back"><span className="rg-tile-icon icon-blue"><Code2 size={22}/></span><span className="rg-tile-label">CLEAN CODE</span><div className="rg-code-lines"><i/><i/><i/><i/></div></div>
+            <div className="rg-float-tile tile-front"><span className="rg-tile-icon icon-pink"><WandSparkles size={24}/></span><span className="rg-tile-label">IDEA → DONE</span><strong>Make it<br/><em>make sense.</em></strong><div className="rg-tile-wave"><i/><i/><i/><i/><i/><i/><i/><i/><i/></div></div>
+            <div className="rg-float-tile tile-side"><span className="rg-tile-icon icon-lime"><Layers3 size={20}/></span><span className="rg-tile-label">TOOLS THAT CLICK</span><div className="rg-side-dots"><i/><i/><i/></div></div>
+            <div className="rg-fun-sticker"><Sparkles size={15}/> MAKE ROOM FOR THE GOOD STUFF</div>
+            <div className="rg-scene-caption"><span>THE RAPIGENTS TOOLBOX</span><span>MOVE YOUR MOUSE ↗</span></div>
           </div>
-        </div>
-      </section>
+        </motion.div>
+      </div>
+      <a className="rg-fun-scroll" href="#toolkit">SCROLL A LITTLE <ArrowDownRight size={14}/></a>
+      <div className="rg-fun-bottomline"><span>TOOLS FOR THE EVERYDAY STUFF</span><span>CURIOUS BY DESIGN <Sparkles size={12}/></span></div>
+    </section>
 
-      <section className="rg-tools-band">
-        <div className="rg-shell rg-tools-layout">
-          <div className="rg-tools-orbit" aria-hidden="true"><div className="rg-tools-orbit-ring ring-one"/><div className="rg-tools-orbit-ring ring-two"/><div className="rg-tools-orbit-ring ring-three"/><div className="rg-tools-orbit-core"><Command size={27}/></div><span className="orbit-chip chip-a">WRITE</span><span className="orbit-chip chip-b">BUILD</span><span className="orbit-chip chip-c">THINK</span></div>
-          <div className="rg-tools-copy"><div className="rg-kicker"><span className="rg-status-dot" /> FIELD TOOL / 002</div><h2>Small tools.<br /><em>Useful output.</em></h2><p>Explore a growing lab of AI-assisted and browser-native utilities for writing, research, study, data cleanup and everyday operations.</p><div className="rg-tools-points"><span><Check size={14}/> AI-assisted workflows</span><span><Check size={14}/> Local browser utilities</span><span><Check size={14}/> No fake buttons or mystery steps</span></div><Link href="/tools" className="rg-button rg-button-primary">Open AI Tools Lab <ArrowUpRight size={16}/></Link></div>
-        </div>
-      </section>
-
-      <section className="rg-work-section rg-section">
-        <div className="rg-shell">
-          <div className="rg-section-meta"><span>02 — PROTOTYPES, NOT PROMISES</span><span>REAL FLOWS / FICTIONAL DEMO DATA</span></div>
-          <div className="rg-work-heading"><h2>See how the<br /><em>work moves.</em></h2><p>Browse workflow prototypes built around real operational patterns. Each one shows the trigger, decision path and handoff, with review points made visible.</p></div>
-          <div className="rg-work-diagram" aria-label="Example workflow: enquiry, qualification, human review, response">
-            <div className="rg-diagram-head"><span>WORKFLOW / ENQUIRY TO RESPONSE</span><span>DEMO STATE <i /></span></div>
-            <div className="rg-diagram-flow">
-              <div className="rg-diagram-node"><span>01</span><ScanLine size={18}/><b>Enquiry</b><small>Capture signal</small></div><div className="rg-diagram-connector"><span/></div>
-              <div className="rg-diagram-node"><span>02</span><Layers3 size={18}/><b>Qualify</b><small>Structure context</small></div><div className="rg-diagram-connector"><span/></div>
-              <div className="rg-diagram-node node-review"><span>03</span><Check size={18}/><b>Human review</b><small>Approve action</small></div><div className="rg-diagram-connector"><span/></div>
-              <div className="rg-diagram-node"><span>04</span><ArrowUpRight size={18}/><b>Respond</b><small>Close the loop</small></div>
-            </div>
-            <div className="rg-diagram-foot"><span><span className="rg-status-dot"/> AUDITABLE STEPS</span><span>NO AUTONOMOUS EXTERNAL ACTIONS IN THIS DEMO</span></div>
-          </div>
-          <div className="rg-work-footer"><span>EXAMPLES ARE ILLUSTRATIVE. ACTUAL RESULTS DEPEND ON CONTEXT.</span><Link href="/demos" className="rg-text-link">Browse workflow patterns <ArrowUpRight size={15}/></Link></div>
-        </div>
-      </section>
-
-      <section className="rg-close">
-        <div className="rg-close-grid" aria-hidden="true"/>
-        <div className="rg-shell rg-close-inner"><div className="rg-kicker"><span className="rg-status-dot"/> START WITH THE BOTTLENECK</div><h2>What keeps getting<br /><em>left until later?</em></h2><p>Start with one repetitive task. We will make the steps visible, then figure out what is worth automating.</p><div className="rg-close-actions"><Link href="/contact" className="rg-button rg-button-primary">Describe the bottleneck <ArrowUpRight size={16}/></Link><Link href="/demos" className="rg-button rg-button-quiet">See workflow patterns <ArrowRight size={16}/></Link></div><div className="rg-close-note"><GitBranch size={14}/> SMALL SYSTEMS. CLEAR HANDOFFS. HUMAN CONTROL.</div></div>
-      </section>
-    </main>
-  );
+    <section className="rg-fun-toolkit" id="toolkit">
+      <div className="rg-fun-shell">
+        <div className="rg-fun-section-head"><div><span className="rg-fun-kicker">A TOOL FOR THAT? PROBABLY.</span><h2>Small tasks.<br/><em>Big sigh of relief.</em></h2></div><p>Open a tool, add what it needs, and get a useful starting point without wrestling another complicated app.</p></div>
+        <div className="rg-fun-cards">{highlights.map((item, index) => { const Icon = item.icon; return <motion.article key={item.title} className={"rg-fun-card tint-" + item.tint} initial={{ opacity: 0, y: 22 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.25 }} transition={{ duration: reduceMotion ? 0 : 0.55, delay: index * 0.1, ease }}><div className="rg-fun-card-top"><span>0{index + 1} / 03</span><Icon size={21}/></div><h3>{item.title}</h3><p>{item.text}</p><Link href="/tools#explore" aria-label={"Explore tools for " + item.title}>Explore tools <ArrowUpRight size={15}/></Link><span className="rg-fun-card-orb" aria-hidden="true"/></motion.article>; })}</div>
+        <div className="rg-fun-cta-band"><div className="rg-cta-icon"><Search size={21}/></div><div><strong>Not sure where to start?</strong><p>Search the toolbox by task, not by technical jargon.</p></div><Link href="/tools" className="rg-cta-link">Find a tool <ArrowRight size={16}/></Link></div>
+      </div>
+    </section>
+    <section className="rg-fun-last"><div className="rg-fun-shell rg-fun-last-inner"><div><span className="rg-fun-kicker"><AudioLines size={14}/> LESS TAB CHAOS, MORE GETTING-THINGS-DONE</span><h2>Your next shortcut<br/>is <em>right here.</em></h2></div><Link href="/tools" className="rg-fun-primary">Explore all tools <ArrowUpRight size={18}/></Link><div className="rg-last-orb" aria-hidden="true"/></div></section>
+  </main>;
 }
