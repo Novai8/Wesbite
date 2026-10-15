@@ -282,3 +282,24 @@
 @media(max-width:900px){.clip-workbench-grid{grid-template-columns:1fr}.clip-workbench-heading{align-items:start}.clip-workbench-version{margin-top:4px}}
 @media(max-width:600px){.clip-workbench{padding:68px 16px}.clip-workbench-heading{display:block}.clip-workbench-version{display:inline-block;margin-top:18px}.clip-source-panel,.clip-results-panel{padding:12px;border-radius:17px}.clip-pick{padding:12px}.clip-workbench-heading h2{font-size:clamp(2.7rem,13vw,4rem)}.clip-download-card{grid-template-columns:78px 1fr}.clip-download-card video{width:78px}.tool-attachments-head{align-items:start;flex-direction:column}}
 @media(prefers-reduced-motion:reduce){.clip-sound-bars i,.clip-spin{animation:none}.clip-upload-zone,.clip-pick,.clip-analyze-button,.clip-render-button{transition:none}}
+
+
+/* Page-specific motion scenes for the How It Works and Contact pages */
+.rg-how-hero,.rg-contact-hero{position:relative;isolation:isolate;overflow:hidden}
+.rg-how-copy,.rg-contact-copy{position:relative;z-index:2}
+.rg-how-motion{position:absolute;right:max(3vw,calc((100vw - 1280px)/2));top:50%;width:min(45vw,540px);height:330px;transform:translateY(-50%);pointer-events:none;opacity:.9}
+.rg-how-orbit{position:absolute;left:50%;top:50%;border:1px solid color-mix(in srgb,var(--accent,#9c8cff) 35%,transparent);border-radius:50%;transform:translate(-50%,-50%) rotate(-20deg)}
+.rg-how-orbit-a{width:78%;height:48%;animation:rg-how-spin 24s linear infinite}.rg-how-orbit-b{width:53%;height:90%;border-style:dashed;animation:rg-how-spin 31s linear infinite reverse}
+.rg-how-core{position:absolute;left:50%;top:50%;display:grid;place-items:center;width:76px;height:76px;border:1px solid var(--accent,#9c8cff);background:var(--surface,#111);color:var(--accent,#9c8cff);font:italic 25px var(--font-instrument),Georgia,serif;transform:translate(-50%,-50%) rotate(45deg);box-shadow:0 0 45px color-mix(in srgb,var(--accent,#9c8cff) 18%,transparent);animation:rg-how-breathe 5s ease-in-out infinite}
+.rg-how-node{position:absolute;display:flex;align-items:center;gap:8px;padding:11px 13px;border:1px solid var(--line,rgba(255,255,255,.16));background:var(--surface,#111);color:var(--muted,#aaa);font:600 8px var(--font-geist-mono),monospace;letter-spacing:.12em;animation:rg-how-breathe 4.8s ease-in-out infinite}.rg-how-node i{width:6px;height:6px;border-radius:50%;background:var(--accent,#9c8cff);box-shadow:0 0 12px var(--accent,#9c8cff)}
+.rg-how-node-a{left:2%;top:25%}.rg-how-node-b{right:0;top:43%;animation-delay:-1.6s}.rg-how-node-c{left:27%;bottom:10%;animation-delay:-3s}
+.rg-how-route{position:absolute;left:11%;right:8%;top:50%;height:1px;background:linear-gradient(90deg,transparent,var(--accent,#9c8cff),transparent);opacity:.45}
+@keyframes rg-how-spin{to{transform:translate(-50%,-50%) rotate(340deg)}}@keyframes rg-how-breathe{0%,100%{filter:brightness(.9);translate:0 0}50%{filter:brightness(1.25);translate:0 -5px}}
+.rg-contact-motion{position:absolute;right:max(6vw,calc((100vw - 1280px)/2));top:50%;width:min(36vw,390px);aspect-ratio:1;transform:translateY(-50%);pointer-events:none;opacity:.8}
+.rg-contact-ring{position:absolute;left:50%;top:50%;border:1px solid color-mix(in srgb,var(--accent,#9c8cff) 38%,transparent);border-radius:50%;transform:translate(-50%,-50%)}
+.rg-contact-ring.ring-a{width:96%;height:96%;animation:rg-how-spin 28s linear infinite}.rg-contact-ring.ring-b{width:70%;height:70%;border-style:dashed;animation:rg-how-spin 20s linear infinite reverse}.rg-contact-ring.ring-c{width:42%;height:42%;border-color:color-mix(in srgb,var(--accent,#9c8cff) 70%,transparent);animation:rg-how-breathe 5s ease-in-out infinite}
+.rg-contact-core{position:absolute;left:50%;top:50%;display:grid;place-items:center;width:76px;height:76px;border:1px solid var(--accent,#9c8cff);background:var(--surface,#111);color:var(--accent,#9c8cff);transform:translate(-50%,-50%) rotate(45deg);box-shadow:0 0 50px color-mix(in srgb,var(--accent,#9c8cff) 18%,transparent)}
+.rg-contact-core svg:first-child{transform:rotate(-45deg)}.rg-contact-core svg:last-child{position:absolute;right:-13px;top:-13px;transform:rotate(-45deg)}
+.rg-contact-signal{position:absolute;width:7px;height:7px;border-radius:50%;background:var(--accent,#9c8cff);box-shadow:0 0 13px var(--accent,#9c8cff);animation:rg-how-breathe 3.5s ease-in-out infinite}.rg-contact-signal.signal-a{left:18%;top:28%}.rg-contact-signal.signal-b{right:14%;top:46%;animation-delay:-1.2s}.rg-contact-signal.signal-c{left:36%;bottom:12%;animation-delay:-2.4s}
+@media(max-width:820px){.rg-how-motion,.rg-contact-motion{right:-28%;width:65vw;opacity:.22}.rg-how-copy,.rg-contact-copy{max-width:100%}.rg-how-hero .container-page,.rg-contact-hero .container-page{position:relative;z-index:2}}
+@media(prefers-reduced-motion:reduce){.rg-how-orbit,.rg-how-core,.rg-how-node,.rg-contact-ring,.rg-contact-core,.rg-contact-signal{animation:none!important}}
