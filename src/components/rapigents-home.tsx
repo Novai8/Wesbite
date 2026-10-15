@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { ArrowDownRight, ArrowRight, ArrowUpRight, AudioLines, Braces, Captions, Check, Clapperboard, Code2, FileText, Film, Layers3, Play, Search, Scissors, Sparkles, WandSparkles, Zap } from "lucide-react";
 
@@ -12,7 +14,15 @@ const highlights = [
 ];
 
 export function RapigentsHome() {
+  const router = useRouter();
+  const [clipLaunching, setClipLaunching] = useState(false);
   const reduceMotion = useReducedMotion();
+  const openClipAI = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
+    event.preventDefault();
+    setClipLaunching(true);
+    window.setTimeout(() => router.push("/clip-ai"), reduceMotion ? 0 : 760);
+  };
   const tiltScene = (event: React.PointerEvent<HTMLDivElement>) => {
     if (reduceMotion || event.pointerType !== "mouse") return;
     const rect = event.currentTarget.getBoundingClientRect();
@@ -70,7 +80,16 @@ export function RapigentsHome() {
         <div className="rg-fun-cta-band"><div className="rg-cta-icon"><Search size={21}/></div><div><strong>Not sure where to start?</strong><p>Search the toolbox by task, not by technical jargon.</p></div><Link href="/tools" className="rg-cta-link">Find a tool <ArrowRight size={16}/></Link></div>
       </div>
     </section>
-    <section className="rg-home-clip" aria-labelledby="rg-home-clip-title"><div className="rg-fun-shell rg-home-clip-layout"><div className="rg-home-clip-copy"><span className="rg-home-clip-kicker"><Film size={14}/> MEET YOUR NEXT CREATOR TOOL <span> / 002</span></span><h2 id="rg-home-clip-title">Long video.<br/><em>Short-form magic.</em></h2><p>Turn a video link into the short people actually finish watching. Clip AI is being built for smart cuts, kinetic captions, and polished vertical edits without the tedious timeline work.</p><Link href="/clip-ai" className="rg-home-clip-cta">Explore Clip AI <ArrowUpRight size={17}/></Link><div className="rg-home-clip-chips"><span><Scissors size={13}/> Smart cuts</span><span><Captions size={13}/> Pro captions</span><span><Clapperboard size={13}/> 9:16 framing</span></div></div><div className="rg-home-clip-art" aria-hidden="true"><div className="rg-home-clip-halo"/><div className="rg-home-clip-frame"><div className="rg-home-clip-scene"><div className="rg-home-clip-sun"/><div className="rg-home-clip-mountain mountain-a"/><div className="rg-home-clip-mountain mountain-b"/><div className="rg-home-clip-play"><Play size={22} fill="currentColor"/></div><div className="rg-home-clip-subtitles"><span>YOUR STORY</span><strong>IN MOTION.</strong></div><div className="rg-home-clip-bars"><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/></div></div><div className="rg-home-clip-frame-foot"><span>CLIP AI / PREVIEW</span><span>9:16</span></div></div><div className="rg-home-clip-float clip-float-cut"><Scissors size={15}/> CUT ON BEAT</div><div className="rg-home-clip-float clip-float-cap"><Captions size={15}/> CAPTIONS READY</div><span className="rg-home-clip-note">CONCEPT PREVIEW · IN DEVELOPMENT</span></div></div></section>
+    <section className="rg-home-clip" aria-labelledby="rg-home-clip-title"><div className="rg-fun-shell rg-home-clip-layout"><div className="rg-home-clip-copy"><span className="rg-home-clip-kicker"><Film size={14}/> MEET YOUR NEXT CREATOR TOOL <span> / 002</span></span><h2 id="rg-home-clip-title">Long video.<br/><em>Short-form magic.</em></h2><p>Turn a video link into the short people actually finish watching. Clip AI is being built for smart cuts, kinetic captions, and polished vertical edits without the tedious timeline work.</p><Link href="/clip-ai" onClick={openClipAI} className="rg-home-clip-cta">Explore Clip AI <ArrowUpRight size={17}/></Link><div className="rg-home-clip-chips"><span><Scissors size={13}/> Smart cuts</span><span><Captions size={13}/> Pro captions</span><span><Clapperboard size={13}/> 9:16 framing</span></div></div><div className="rg-home-clip-art" aria-hidden="true"><div className="rg-home-clip-halo"/><div className="rg-home-clip-frame"><div className="rg-home-clip-scene"><div className="rg-home-clip-sun"/><div className="rg-home-clip-mountain mountain-a"/><div className="rg-home-clip-mountain mountain-b"/><div className="rg-home-clip-play"><Play size={22} fill="currentColor"/></div><div className="rg-home-clip-subtitles"><span>YOUR STORY</span><strong>IN MOTION.</strong></div><div className="rg-home-clip-bars"><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/></div></div><div className="rg-home-clip-frame-foot"><span>CLIP AI / PREVIEW</span><span>9:16</span></div></div><div className="rg-home-clip-float clip-float-cut"><Scissors size={15}/> CUT ON BEAT</div><div className="rg-home-clip-float clip-float-cap"><Captions size={15}/> CAPTIONS READY</div><span className="rg-home-clip-note">CONCEPT PREVIEW · IN DEVELOPMENT</span></div></div></section>
     <section className="rg-fun-last"><div className="rg-fun-shell rg-fun-last-inner"><div><span className="rg-fun-kicker"><AudioLines size={14}/> LESS TAB CHAOS, MORE GETTING-THINGS-DONE</span><h2>Your next shortcut<br/>is <em>right here.</em></h2></div><Link href="/tools" className="rg-fun-primary">Explore all tools <ArrowUpRight size={18}/></Link><div className="rg-last-orb" aria-hidden="true"/></div></section>
+    {clipLaunching && <motion.div className="rg-clip-launch-overlay" initial={{opacity:0}} animate={{opacity:1}} role="status" aria-live="polite">
+      <motion.div className="rg-clip-launch-card" initial={{y:18,scale:.96}} animate={{y:0,scale:1}} transition={{duration:.28}}>
+        <div className="rg-clip-launch-top"><span className="rg-fun-pulse"/> RAPIGENTS / CLIP AI <span>PREPARING EDIT</span></div>
+        <div className="rg-clip-launch-preview"><div className="rg-clip-launch-sun"/><div className="rg-clip-launch-mountain mountain-a"/><div className="rg-clip-launch-mountain mountain-b"/><span>UPLOAD / SOURCE VIDEO</span></div>
+        <div className="rg-clip-launch-timeline"><div className="rg-clip-launch-track"><i/><i/><i/><i/><i/></div><div className="rg-clip-launch-track captions"><i/><i/><i/><i/></div><motion.i className="rg-clip-launch-playhead" animate={{x:[0,260,0]}} transition={{duration:2.1,repeat:Infinity,ease:"easeInOut"}}/></div>
+        <motion.div className="rg-clip-launch-caption" animate={{y:[0,-3,0],opacity:[.7,1,.7]}} transition={{duration:1.2,repeat:Infinity}}>CUTS SYNCED · CAPTIONS READY</motion.div>
+        <strong>Finding the story inside your video.</strong><span>Opening your Clip AI workspace…</span>
+      </motion.div>
+    </motion.div>}
   </main>;
 }
