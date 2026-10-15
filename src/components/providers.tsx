@@ -16,7 +16,7 @@ type ToastItem = { id: number; message: string };
 type Theme = "light" | "dark";
 type PrefSnapshot = { sound: boolean; theme: Theme };
 
-const serverSnapshot: PrefSnapshot = { sound: false, theme: "light" };
+const serverSnapshot: PrefSnapshot = { sound: false, theme: "dark" };
 let snapshot: PrefSnapshot = serverSnapshot;
 const listeners = new Set<() => void>();
 
@@ -41,10 +41,10 @@ function getServerSnapshot() {
 
 function readStoredPrefs(): PrefSnapshot {
   let sound = false;
-  let theme: Theme = "light";
+  let theme: Theme = "dark";
   try {
     sound = localStorage.getItem("rapigents-sound") === "on";
-    theme = localStorage.getItem("rapigents-theme") === "dark" ? "dark" : "light";
+    theme = localStorage.getItem("rapigents-theme") === "light" ? "light" : "dark";
   } catch {
     // Storage can be blocked. Keep the default off.
   }
