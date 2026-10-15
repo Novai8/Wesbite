@@ -19,6 +19,7 @@ export function InteractionLayer() {
   const target = useRef({ x: -80, y: -80 });
   const current = useRef({ x: -80, y: -80 });
   const [hovering, setHovering] = useState(false);
+  const [cursorSeen, setCursorSeen] = useState(false);
   const [transition, setTransition] = useState<{ label: string; accent: string } | null>(null);
   const navigating = useRef(false);
   const accent = accents[pathname] ?? accents["/"];
@@ -31,6 +32,7 @@ export function InteractionLayer() {
     let frame = 0;
     const move = (event: PointerEvent) => {
       target.current = { x: event.clientX, y: event.clientY };
+      setCursorSeen(true);
       if (coreRef.current) {
         coreRef.current.style.transform = `translate3d(${event.clientX}px,${event.clientY}px,0)`;
       }
@@ -84,8 +86,8 @@ export function InteractionLayer() {
   }, [router]);
 
   return <>
-    <div ref={auraRef} className="rg-pointer-aura" aria-hidden="true"><span>✳</span></div>
-    <div ref={coreRef} className={`rg-pointer-core${hovering ? " is-hovering" : ""}`} aria-hidden="true" />
+    <div ref={auraRef} className={"rg-pointer-aura" + (cursorSeen ? " is-visible" : "") + (hovering ? " is-hovering" : "")} aria-hidden="true"><span>✳</span></div>
+    <div ref={coreRef} className={`rg-pointer-core${cursorSeen ? " is-visible" : ""}${hovering ? " is-hovering" : ""}`} aria-hidden="true" />
     {transition && <div className="rg-page-flash" role="status" aria-live="polite" style={{ "--flash-accent": transition.accent } as React.CSSProperties}>
       <div className="rg-flash-orb rg-flash-orb-one" /><div className="rg-flash-orb rg-flash-orb-two" />
       <div className="rg-flash-content"><span className="rg-flash-icon"><Sparkles size={24}/></span><span className="rg-flash-label">RAPIGENTS / IN MOTION</span><h2>{transition.label}</h2><span className="rg-flash-arrow"><ArrowRight size={16}/> ONE MOMENT</span></div>
