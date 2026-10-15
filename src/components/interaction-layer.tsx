@@ -21,6 +21,7 @@ export function InteractionLayer() {
   const target = useRef({ x: -100, y: -100 });
   const current = useRef({ x: -100, y: -100 });
   const [loading, setLoading] = useState(false);
+  const transitioning = useRef(false);
   const [label, setLabel] = useState("PREPARING YOUR SPACE");
   const [progress, setProgress] = useState(0);
   const [hovering, setHovering] = useState(false);
@@ -63,7 +64,8 @@ export function InteractionLayer() {
       if (url.origin !== window.location.origin || targetEl.target === "_blank" || targetEl.hasAttribute("download") || url.pathname === pathname && url.hash) return;
       if (url.pathname === pathname && !url.search) return;
       event.preventDefault();
-      if (loading) return;
+      if (transitioning.current) return;
+      transitioning.current = true;
       const next = palettes[url.pathname] ?? palettes["/"];
       setLabel(next.name === "lab" ? "CALIBRATING THE LAB" : next.name === "flow" ? "MAPPING THE WORKFLOW" : next.name === "connect" ? "OPENING A CHANNEL" : "PREPARING YOUR SPACE");
       setProgress(6);
@@ -71,7 +73,7 @@ export function InteractionLayer() {
       let value = 6;
       progressTimer = setInterval(() => { value = Math.min(94, value + Math.max(1, (94 - value) * 0.14)); setProgress(value); }, 110);
       navigationTimer = setTimeout(() => router.push(url.pathname + url.search + url.hash), 720);
-      finishTimer = setTimeout(() => { setProgress(100); setLoading(false); }, 2550);
+      finishTimer = setTimeout(() => { setProgress(100); setLoading(false); transitioning.current = false; }, 2550);
     };
     document.addEventListener("click", onClick, true);
     return () => {
@@ -80,7 +82,7 @@ export function InteractionLayer() {
       if (finishTimer) clearTimeout(finishTimer);
       if (progressTimer) clearInterval(progressTimer);
     };
-  }, [pathname, router, loading]);
+  }, [router]);
 
   return <>
     <div className="rg-cursor-halo" ref={cursorRef} aria-hidden="true"><span>{palette.glyph}</span></div>
