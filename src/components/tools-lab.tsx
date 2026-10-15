@@ -3,8 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  ArrowDownRight, ArrowRight, ArrowUpRight, AudioLines, Bot, Check, ChevronDown,
-  CircleHelp, Clock3, Code2, Copy, FileText, Filter, Layers3, LoaderCircle,
+  ArrowDownRight, ArrowRight, ArrowUpRight, AudioLines, Check, ChevronDown,
+  CircleHelp, Clock3, Code2, Copy, FileText, LoaderCircle,
   Search, Sparkles, WandSparkles, X, Zap,
 } from "lucide-react";
 import { browserToolIds, toolCatalog, type ToolItem } from "@/data/tool-catalog";
@@ -109,10 +109,6 @@ function ParticleField() {
   }, []);
 
   return <canvas ref={canvasRef} className="tools-particle-canvas" aria-hidden="true" />;
-}
-
-function makeId(text: string) {
-  return text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }
 
 function localTransform(tool: ToolItem, input: string): string | null {
