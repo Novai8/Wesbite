@@ -1,10 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Captions, Check, Clapperboard, Download, FileVideo, LoaderCircle, Scissors, Upload, WandSparkles } from "lucide-react";
+import { AudioLines, Captions, Check, CheckCircle2, Clapperboard, Download, FileVideo, LoaderCircle, Scissors, Upload, WandSparkles } from "lucide-react";
 
 type Caption = { start: number; end: number; text: string };
 type Clip = { start: number; end: number; title: string; hook: string; captions: Caption[] };
+type RemoteClip = { id: string; title: string; url: string; thumbnail?: string; hook?: string; start?: number; end?: number; potentialScore?: number; reachOutlook?: string; effects?: string[] };
+type ClipStage = "queued" | "downloading" | "transcribing" | "rendering" | "completed" | "failed";
 const MAX_BYTES = 10 * 1024 * 1024;
 const MAX_DURATION_SECONDS = 10 * 60;
 
@@ -40,7 +42,8 @@ export function ClipAIWorkbench() {
   const [linkStatus, setLinkStatus] = useState("");
   const [linkError, setLinkError] = useState("");
   const [linkProjectId, setLinkProjectId] = useState("");
-  const [remoteClips, setRemoteClips] = useState<Array<{ id: string; title: string; url: string; thumbnail?: string; hook?: string; start?: number; end?: number }>>([]);
+  const [linkStage, setLinkStage] = useState<ClipStage>("queued");
+  const [remoteClips, setRemoteClips] = useState<RemoteClip[]>([]);
 
   useEffect(() => () => { if (fileUrl) URL.revokeObjectURL(fileUrl); }, [fileUrl]);
   useEffect(() => () => { if (outputUrl) URL.revokeObjectURL(outputUrl); }, [outputUrl]);
@@ -77,10 +80,10 @@ export function ClipAIWorkbench() {
 
   const submitSourceLink = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setLinkError(""); setLinkStatus(""); setRemoteClips([]); setLinkProjectId("");
+    setLinkError(""); setLinkStatus(""); setRemoteClips([]); setLinkProjectId(""); setLinkStage("queued");
     const url = sourceLink.trim();
     if (!/^https?:\/\//i.test(url)) { setLinkError("Paste a complete https:// video or supported platform link."); return; }
-    setLinkBusy(true); setLinkStatus("Checking source and submitting to the clipping engine…");
+    setLinkBusy(true); setLinkStage("queued"); setLinkStatus("Preparing your video job…");
     try {
       const response = await fetch("/api/clip-ai/import", {
         method: "POST", headers: { "Content-Type": "application/json" },
@@ -89,6 +92,7 @@ export function ClipAIWorkbench() {
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload.error || "This source could not be submitted.");
       setLinkProjectId(String(payload.projectId || ""));
+      setLinkStage((payload.status as ClipStage) || "queued");
       setLinkStatus(payload.message || "Video accepted. Waiting for the clipping engine to process it.");
     } catch (caught) {
       setLinkError(caught instanceof Error ? caught.message : "Could not submit this link.");
@@ -103,6 +107,7 @@ export function ClipAIWorkbench() {
       const response = await fetch("/api/clip-ai/import?projectId=" + encodeURIComponent(linkProjectId), { cache: "no-store" });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload.error || "Could not check the processing status.");
+      setLinkStage((payload.status as ClipStage) || "queued");
       if (payload.status === "failed") { setLinkProjectId(""); throw new Error(payload.message || "The worker could not process this source."); }
       const items = Array.isArray(payload.clips) ? payload.clips : [];
       setRemoteClips(items);
@@ -115,7 +120,7 @@ export function ClipAIWorkbench() {
 
   useEffect(() => {
     if (!linkProjectId || remoteClips.length) return;
-    const timer = window.setInterval(() => { void refreshRemoteClips(); }, 15000);
+    const timer = window.setInterval(() => { void refreshRemoteClips(); }, 5000);
     return () => window.clearInterval(timer);
   }, [linkProjectId, remoteClips.length, refreshRemoteClips]);
 
@@ -218,9 +223,45 @@ export function ClipAIWorkbench() {
       <form className="clip-link-import" onSubmit={submitSourceLink}>
         <div className="clip-link-copy"><span className="clip-workbench-kicker"><WandSparkles size={13}/> FREE LINK CLIPPING ENGINE</span><strong>Or paste a public video link</strong><p>Uses the self-hosted open-source worker: yt-dlp, local Whisper transcription, and FFmpeg. No paid clipping API.</p></div>
         <div className="clip-link-controls"><input aria-label="Public video URL" type="url" inputMode="url" autoComplete="url" placeholder="https://www.youtube.com/watch?v=…" value={sourceLink} onChange={event => setSourceLink(event.target.value)} disabled={linkBusy} required /><button type="submit" disabled={linkBusy || !sourceLink.trim()}>{linkBusy ? <><LoaderCircle size={15} className="clip-spin"/> Working…</> : <>Find clips <WandSparkles size={15}/></>}</button></div>
-        {linkStatus && <p className="clip-link-status" role="status">{linkStatus}{linkProjectId && !remoteClips.length ? <button type="button" onClick={refreshRemoteClips} disabled={linkBusy}>Check now</button> : null}</p>}
+        {linkStatus && <p className="clip-link-status" role="status">{linkStatus}</p>}
+        {linkProjectId && !remoteClips.length && !linkError && <div className="clip-job-progress" role="status" aria-live="polite">
+          <div className="clip-job-progress-head"><span><span className="clip-job-live-dot" /> LIVE EDITING PIPELINE</span><strong>{linkBusy ? "SYNCING" : linkStage.toUpperCase()}</strong></div>
+          <div className="clip-job-stages">
+            {([{id:"downloading",label:"Downloading",detail:"Fetching source video",icon:Download},{id:"transcribing",label:"Transcribing",detail:"Finding spoken hooks",icon:AudioLines},{id:"rendering",label:"Editing clips",detail:"Zoom, captions & sound",icon:WandSparkles}] as const).map((stage)=>{
+              const order: ClipStage[] = ["queued","downloading","transcribing","rendering","completed"];
+              const current = order.indexOf(linkStage), stageIndex = order.indexOf(stage.id);
+              const active = linkStage === stage.id, done = linkStage === "completed" || (current > stageIndex && linkStage !== "failed");
+              const Icon = done ? CheckCircle2 : stage.icon;
+              return <div key={stage.id} className={"clip-job-stage"+(active?" is-active":"")+(done?" is-done":"")}>
+                <span className="clip-job-stage-icon"><Icon size={17}/>{active && <i />}</span>
+                <span className="clip-job-stage-copy"><strong>{stage.label}</strong><small>{stage.detail}</small></span>
+                <span className="clip-job-stage-state">{done ? "DONE" : active ? "WORKING" : "WAITING"}</span>
+              </div>;
+            })}
+          </div>
+          <div className="clip-job-progress-foot"><span className="clip-job-pulse-bars"><i/><i/><i/><i/><i/></span><span>Stages update automatically. Video transcription may take a few minutes.</span></div>
+        </div>}
         {linkError && <p className="clip-link-error" role="alert">{linkError}</p>}
-        {remoteClips.length > 0 && <div className="clip-link-results">{remoteClips.map((clip,index)=><article key={clip.id||clip.url} className="clip-link-result"><div><span>CLIP {String(index+1).padStart(2,"0")}{typeof clip.start==="number"&&typeof clip.end==="number"?" · "+formatTime(clip.start)+"–"+formatTime(clip.end):""}</span><strong>{clip.title}</strong><p>{clip.hook||"Locally transcribed highlight with burned-in captions."}</p></div><a href={clip.url} target="_blank" rel="noreferrer" download><Download size={14}/> Open / download</a></article>)}</div>}
+        {remoteClips.length > 0 && <div className="clip-link-results-wrap">
+          <div className="clip-link-results-heading"><div><span className="clip-workbench-kicker"><CheckCircle2 size={14}/> EDITING COMPLETE</span><h3>Your clips, ranked by hook potential.</h3><p>Scores use transcript-based signals, not guaranteed views or a promise of viral reach.</p></div><span className="clip-link-results-count">{String(remoteClips.length).padStart(2,"0")} CLIPS</span></div>
+          <div className="clip-link-results">{remoteClips.map((clip,index)=>{
+            const score = typeof clip.potentialScore === "number" ? clip.potentialScore : null;
+            const outlook = clip.reachOutlook || (score !== null && score >= 75 ? "Strong signals" : score !== null && score >= 58 ? "Promising" : "Niche fit");
+            return <article key={clip.id||clip.url} className="clip-link-result">
+              <div className="clip-link-result-preview"><video src={clip.url} controls playsInline preload="metadata" aria-label={"Preview of clip "+(index+1)} /><span>CLIP {String(index+1).padStart(2,"0")}</span></div>
+              <div className="clip-link-result-body">
+                <div className="clip-link-result-meta"><span>{typeof clip.start==="number"&&typeof clip.end==="number"?formatTime(clip.start)+"–"+formatTime(clip.end):"HIGHLIGHT"}</span><span>9:16 · CAPTIONED</span></div>
+                <strong>{clip.title}</strong><p>{clip.hook||"Locally transcribed highlight with burned-in captions."}</p>
+                <div className="clip-link-metrics">
+                  <div className="clip-link-metric-score"><span>VIRALITY POTENTIAL</span><strong>{score === null ? "—" : score}<small>{score === null ? "" : "/100"}</small></strong><div><i style={{width:(score === null ? 0 : Math.max(0,Math.min(100,score)))+"%"}}/></div></div>
+                  <div className="clip-link-metric-reach"><span>REACH OUTLOOK</span><strong>{outlook}</strong><small>Relative signal estimate</small></div>
+                </div>
+                {clip.effects?.length ? <div className="clip-link-effects">{clip.effects.map(effect=><span key={effect}>{effect}</span>)}</div> : null}
+                <a href={clip.url} target="_blank" rel="noreferrer" download><Download size={14}/> Download clip <span>↗</span></a>
+              </div>
+            </article>;
+          })}</div>
+        </div>}
       </form>
       <div className="clip-workbench-grid">
         <div className="clip-source-panel">
