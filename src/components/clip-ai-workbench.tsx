@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Captions, Check, Clapperboard, Download, FileVideo, LoaderCircle, Scissors, Upload, WandSparkles } from "lucide-react";
+import { Captions, Check, Clapperboard, Download, FileVideo, Film, LoaderCircle, Scissors, Upload, WandSparkles } from "lucide-react";
 
 type Caption = { start: number; end: number; text: string };
 type Clip = { start: number; end: number; title: string; hook: string; captions: Caption[] };
@@ -35,6 +35,13 @@ export function ClipAIWorkbench() {
   const [error, setError] = useState("");
   const [outputUrl, setOutputUrl] = useState("");
   const [outputName, setOutputName] = useState("");
+  const [sourceLink, setSourceLink] = useState("");
+  const [linkBusy, setLinkBusy] = useState(false);
+  const [linkStatus, setLinkStatus] = useState("");
+  const [linkError, setLinkError] = useState("");
+  const [linkProjectId, setLinkProjectId] = useState("");
+  const [remoteClips, setRemoteClips] = useState<Array<{ id: string; title: string; url: string; thumbnail?: string }>>([]);
+  const [linkProvider, setLinkProvider] = useState("");
 
   useEffect(() => () => { if (fileUrl) URL.revokeObjectURL(fileUrl); }, [fileUrl]);
   useEffect(() => () => { if (outputUrl) URL.revokeObjectURL(outputUrl); }, [outputUrl]);
@@ -68,6 +75,49 @@ export function ClipAIWorkbench() {
       setError(caught instanceof Error ? caught.message : "Could not analyze this video.");
     } finally { setBusy(false); }
   };
+
+  const submitSourceLink = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setLinkError(""); setLinkStatus(""); setRemoteClips([]); setLinkProjectId("");
+    const url = sourceLink.trim();
+    if (!/^https?:\\/\\//i.test(url)) { setLinkError("Paste a complete https:// video or supported platform link."); return; }
+    setLinkBusy(true); setLinkStatus("Checking source and submitting to the clipping engine…");
+    try {
+      const response = await fetch("/api/clip-ai/import", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload.error || "This source could not be submitted.");
+      setLinkProjectId(String(payload.projectId || ""));
+      setLinkProvider(String(payload.provider || "Remote clipping engine"));
+      setLinkStatus(payload.message || "Video accepted. Waiting for the clipping engine to process it.");
+    } catch (caught) {
+      setLinkError(caught instanceof Error ? caught.message : "Could not submit this link.");
+      setLinkStatus("");
+    } finally { setLinkBusy(false); }
+  };
+
+  const refreshRemoteClips = async () => {
+    if (!linkProjectId) return;
+    setLinkBusy(true); setLinkError("");
+    try {
+      const response = await fetch("/api/clip-ai/import?projectId=" + encodeURIComponent(linkProjectId), { cache: "no-store" });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload.error || "Could not check the processing status.");
+      const items = Array.isArray(payload.clips) ? payload.clips : [];
+      setRemoteClips(items);
+      setLinkStatus(items.length ? "Your clips are ready. Open or download them from the clipping provider." : (payload.message || "Still processing. Check again in a little while."));
+    } catch (caught) {
+      setLinkError(caught instanceof Error ? caught.message : "Could not check clip status.");
+    } finally { setLinkBusy(false); }
+  };
+
+  useEffect(() => {
+    if (!linkProjectId || remoteClips.length) return;
+    const timer = window.setInterval(() => { void refreshRemoteClips(); }, 15000);
+    return () => window.clearInterval(timer);
+  }, [linkProjectId, remoteClips.length]);
 
   const renderClip = async () => {
     const video = videoRef.current;

@@ -5,12 +5,12 @@ import { ClipAIWorkbench } from "@/components/clip-ai-workbench";
 
 export const metadata: Metadata = {
   title: "Clip AI | Turn long videos into short-form edits",
-  description: "Rapigents Clip AI analyzes uploaded videos, suggests strong short-form moments, and renders vertical clips with captions.",
+  description: "Rapigents Clip AI accepts supported video links or uploads, finds strong short-form moments, and creates shareable clips.",
   openGraph: { title: "Clip AI by Rapigents", description: "From long video to short-form story.", url: "https://rapigents.com/clip-ai", siteName: "Rapigents", type: "website" },
 };
 
 const steps = [
-  { n: "01", icon: Waves, title: "Upload your video", body: "Upload an MP4 or WebM up to 10 minutes, then let Clip AI find promising moments and adapt clip lengths to the source." },
+  { n: "01", icon: Waves, title: "Upload your video", body: "Paste a supported video link or upload an MP4/WebM, then let Clip AI find promising moments and adapt clip lengths to the source." },
   { n: "02", icon: Scissors, title: "Find the moments", body: "Identify strong hooks, useful moments, and clean cut points instead of chopping randomly." },
   { n: "03", icon: Captions, title: "Style the short", body: "Add readable animated captions, vertical framing, and pacing built for mobile viewing." },
 ];
@@ -51,6 +51,6 @@ export default function ClipAIPage() {
       <div className="rg-clip-steps">{steps.map((step)=>{const Icon=step.icon;return <article className="rg-clip-step" key={step.n}><div className="rg-clip-step-top"><span>{step.n}</span><Icon size={20}/></div><h3>{step.title}</h3><p>{step.body}</p><div className="rg-clip-step-line"/></article>;})}</div>
     </div></section>
     <section className="rg-clip-features"><div className="rg-clip-shell rg-clip-feature-layout"><div><span className="rg-clip-kicker"><Sparkles size={13}/> MADE FOR REAL CREATOR WORKFLOWS</span><h2>Not just captions.<br/><em>A complete short.</em></h2><p>Planned for creators, educators, podcasters, and teams who have good long-form material but not hours to manually find every usable moment.</p><a className="rg-clip-primary" href="mailto:hussnain@rapigents.com?subject=Help%20shape%20Clip%20AI&body=I%27d%20like%20to%20share%20feedback%20about%20Clip%20AI.">Help shape Clip AI <ArrowUpRight size={17}/></a></div><div className="rg-clip-feature-list"><div><span><Scissors size={17}/></span><div><strong>Purposeful cuts</strong><p>Hook, context, payoff. Keep the story moving.</p></div><Zap size={16}/></div><div><span><Captions size={17}/></span><div><strong>Captions with rhythm</strong><p>Legible, well-timed subtitles with a consistent visual style.</p></div><Zap size={16}/></div><div><span><Clapperboard size={17}/></span><div><strong>Vertical-ready framing</strong><p>Composition designed for Shorts, Reels, and TikTok-style feeds.</p></div><Zap size={16}/></div><div><span><WandSparkles size={17}/></span><div><strong>Export-ready finish</strong><p>Aiming for a clean, professional result that still feels like your content.</p></div><Zap size={16}/></div></div></div></section>
-    <section className="rg-clip-final"><div className="rg-clip-shell rg-clip-final-inner"><div><span className="rg-clip-kicker">MVP / UPLOAD, ANALYZE, EXPORT</span><h2>Your next great short<br/>starts <em>with an upload.</em></h2><p>The current version supports direct uploads up to 10 minutes, duration-aware AI highlight suggestions, caption overlays, and browser-based WebM export. YouTube link ingestion still needs a dedicated, authorized media-processing backend.</p></div><a className="rg-clip-primary" href="#clip-workbench">Create a short <ArrowUpRight size={17}/></a></div></section>
+    <section className="rg-clip-final"><div className="rg-clip-shell rg-clip-final-inner"><div><span className="rg-clip-kicker">MVP / UPLOAD, ANALYZE, EXPORT</span><h2>Your next great short<br/>starts <em>with an upload.</em></h2><p>Clip AI supports local uploads plus supported link imports through the configured clipping provider. Link processing requires an active provider API key and may use paid credits.</p></div><a className="rg-clip-primary" href="#clip-workbench">Create a short <ArrowUpRight size={17}/></a></div></section>
   </main>;
 }
