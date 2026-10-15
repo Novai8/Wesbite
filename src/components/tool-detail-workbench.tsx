@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, Check, Clipboard, FileText, Paperclip, Sparkles, X } from "lucide-react";
 import { browserToolIds, type ToolItem } from "@/data/tool-catalog";
-import { localTransform } from "@/components/tools-lab";
+import { localTransform } from "@/lib/local-tool-transform";
 import { ToolLaunchVisual } from "@/components/tool-motion-visual";
 
 function acceptsFor(tool: ToolItem) {
