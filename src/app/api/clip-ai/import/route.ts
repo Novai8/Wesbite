@@ -15,8 +15,10 @@ const supportedHosts = [
 ];
 
 function getKey() { return process.env.OPUSCLIP_API_KEY; }
-function hostAllowed(host: string) {
-  return supportedHosts.includes(host.toLowerCase()) || /\.(mp4|m4v|mov|webm)(\.|$)/i.test(host);
+function hostAllowed(url: URL) {
+  const host = url.hostname.toLowerCase();
+  const directVideoPath = /\\.(mp4|m4v|mov|webm|m3u8)$/i.test(url.pathname);
+  return supportedHosts.includes(host) || directVideoPath;
 }
 function extractProjectId(payload: any): string {
   const candidates = [payload?.projectId, payload?.data?.projectId, payload?.data?.id, payload?.id, payload?.data?.clipProjectId];
