@@ -6,11 +6,11 @@ export const site = {
   githubRepo: "https://github.com/Novai8/Wesbite",
   linkedin: "https://www.linkedin.com/in/spell-automation/",
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://rapigents.com",
-  title: "Rapigents | Turn messy work into clear operations",
+  title: "Rapigents | AI tools for everyday work",
   description:
-    "Rapigents decodes repetitive business work into clear, reviewable operations. Start with the leak, simulate the sequence, then build the fix.",
-  disclaimerTitle: "Independent Portfolio Prototype • Fictional Data",
-  disclaimerBody: "Time and outcome figures are illustrative assumptions, not measured client results.",
+    "Rapigents is a practical collection of AI-powered helpers and browser utilities for writing, research, study, data cleanup, and everyday tasks.",
+  disclaimerTitle: "Rapigents AI Tools",
+  disclaimerBody: "Practical AI helpers and browser-based utilities for everyday tasks.",
 } as const;
 
 export const toolLinks: Record<string, string> = {
