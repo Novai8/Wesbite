@@ -42,7 +42,7 @@ export async function POST(request: Request) {
   let url: URL;
   try { url = new URL(raw); } catch { return NextResponse.json({ error: "That URL is not valid. Include https://." }, { status: 400 }); }
   if (url.protocol !== "https:" && url.protocol !== "http:") return NextResponse.json({ error: "Only http and https video links are supported." }, { status: 400 });
-  if (url.username || url.password || !hostAllowed(url.hostname)) return NextResponse.json({ error: "This provider is not currently supported. Try YouTube, Vimeo, Drive, Dropbox, Loom, Twitch, or a direct video-file URL." }, { status: 400 });
+  if (url.username || url.password || !hostAllowed(url)) return NextResponse.json({ error: "This provider is not currently supported. Try YouTube, Vimeo, Drive, Dropbox, Loom, Twitch, or a direct video-file URL." }, { status: 400 });
   if (!getKey()) return NextResponse.json({ error: "Link clipping is almost ready, but the provider key is not configured. Add OPUSCLIP_API_KEY to your Cloudflare environment variables, then redeploy." }, { status: 503 });
 
   try {
