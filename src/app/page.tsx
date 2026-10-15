@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
-import { ToolsLab } from "@/components/tools-lab";
-import "./tools/tools.css";
+import { RapigentsHome } from "@/components/rapigents-home";
+import "./home.css";
 
 export const metadata: Metadata = {
-  title: "AI Tools Lab",
-  description: "A practical AI toolkit for business, writing, research, study, and automation.",
+  title: "Rapigents | Work, made visible",
+  description: "Practical AI tools and business workflows that turn repetitive operations into clear, reviewable systems.",
 };
 
 export default function HomePage() {
-  return <ToolsLab />;
+  return <RapigentsHome />;
 }
