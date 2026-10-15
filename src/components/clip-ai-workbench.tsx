@@ -45,7 +45,7 @@ export function ClipAIWorkbench() {
     setFile(null); setFileUrl("");
     if (!next) return;
     if (!next.type.startsWith("video/")) { setError("Choose a video file such as MP4 or WebM."); return; }
-    if (next.size > MAX_BYTES) { setError("For this first version, choose a video under 10 MB. Larger uploads need a dedicated media-processing server."); return; }
+    if (next.size > MAX_BYTES) { setError("For this first version, choose a video under 10 MB. Larger files are not supported yet."); return; }
     setFile(next); setFileUrl(URL.createObjectURL(next));
   };
 
