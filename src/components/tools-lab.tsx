@@ -5,11 +5,31 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowDownRight, ArrowRight, ArrowUpRight, AudioLines, Check, ChevronDown,
   CircleHelp, Clock3, Code2, Copy, FileText, LoaderCircle,
-  Search, Sparkles, WandSparkles, X, Zap,
+  Search, Sparkles, WandSparkles, X, Zap, Paperclip, FileAudio, FileImage, FileVideo,
 } from "lucide-react";
 import { browserToolIds, toolCatalog, type ToolItem } from "@/data/tool-catalog";
 
 const categories = ["All tools", ...Array.from(new Set(toolCatalog.map((tool) => tool.category)))];
+
+function supportsAttachments(tool: ToolItem) {
+  return /image|photo|visual|thumbnail|video|audio|podcast|speech|voice|pronunciation|transcri|pdf|document|invoice|receipt|handwritten|logo|poster|subtitle|resume|spreadsheet|file/i.test(tool.name);
+}
+function attachmentAccept(tool: ToolItem) {
+  const name = tool.name.toLowerCase();
+  if (/image|photo|visual|thumbnail|handwritten|logo|poster/.test(name)) return "image/*";
+  if (/audio|podcast|speech|voice|pronunciation|filler-word|transcri/.test(name)) return "audio/*";
+  if (/video|subtitle|shorts|scene|shot/.test(name)) return "video/*";
+  if (/pdf|document|invoice|receipt|resume|spreadsheet|file/.test(name)) return "application/pdf,image/*,audio/*,video/*";
+  return "image/*,audio/*,video/*,application/pdf";
+}
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => typeof reader.result === "string" ? resolve(reader.result) : reject(new Error("Could not read the attachment."));
+    reader.onerror = () => reject(new Error("Could not read the attachment."));
+    reader.readAsDataURL(file);
+  });
+}
 
 function ParticleField() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -229,6 +249,7 @@ export function ToolsLab() {
   const [kind, setKind] = useState<"all" | "ai" | "browser">("all");
   const [selected, setSelected] = useState<ToolItem | null>(null);
   const [input, setInput] = useState("");
+  const [attachments, setAttachments] = useState<File[]>([]);
   const [result, setResult] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -254,14 +275,19 @@ export function ToolsLab() {
   const chooseTool = (tool: ToolItem) => {
     setSelected(tool);
     setInput("");
+    setAttachments([]);
     setResult("");
     setError("");
     setCopied(false);
   };
 
   const runTool = async () => {
-    if (!selected || !input.trim()) {
-      setError("Add your text or details first.");
+    if (!selected || (!input.trim() && attachments.length === 0)) {
+      setError("Add some details or attach a file first.");
+      return;
+    }
+    if (attachments.some(file => file.size > 8 * 1024 * 1024)) {
+      setError("Each attachment must be smaller than 8 MB. Use a shorter clip or a smaller file.");
       return;
     }
     setError("");
@@ -276,10 +302,11 @@ export function ToolsLab() {
           return;
         }
       }
+      const encodedAttachments = await Promise.all(attachments.map(async file => ({ name: file.name, type: file.type || "application/octet-stream", data: await readFileAsDataUrl(file) })));
       const response = await fetch("/api/tools", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ toolId: selected.id, input }),
+        body: JSON.stringify({ toolId: selected.id, input, attachments: encodedAttachments }),
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload.error || "The tool could not complete this request.");
@@ -375,7 +402,7 @@ export function ToolsLab() {
         {filtered.length === 0 && <div className="tools-empty"><CircleHelp size={26}/><strong>No tools found</strong><span>Try another search or clear the category filter.</span><button type="button" onClick={() => { setQuery(""); setCategory("All tools"); setKind("all"); }}>Reset filters</button></div>}
       </section>
 
-      <section className="tools-note-band"><div className="tools-shell"><div className="tools-note-icon"><Zap size={19}/></div><div><strong>Built to be useful, not just impressive.</strong><p>Local tools run in your browser. AI tools use the server-side OpenRouter connection when configured. Outputs are drafts and should be reviewed before important decisions or external actions.</p></div><a href="#explore">Back to tools <ArrowUpRight size={14}/></a></div></section>
+      <section className="tools-note-band"><div className="tools-shell"><div className="tools-note-icon"><Zap size={19}/></div><div><strong>Built to be useful, not just impressive.</strong><p>Local tools run in your browser. AI-assisted tools analyze the context you provide. Outputs are drafts and should be reviewed before important decisions or external actions.</p></div><a href="#explore">Back to tools <ArrowUpRight size={14}/></a></div></section>
 
       <AnimatePresence>
         {selected && <motion.div className="tool-modal-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onMouseDown={(event) => { if (event.target === event.currentTarget) setSelected(null); }}>
@@ -384,9 +411,20 @@ export function ToolsLab() {
             <div className="tool-modal-heading"><div><span className="tools-section-kicker">{selected.category.toUpperCase()} / {selected.kind === "browser" ? "LOCAL PROCESSING" : "AI ASSISTED"}</span><h2 id="tool-modal-title">{selected.name}</h2><p>{selected.description}</p></div><span className="tool-modal-index">RG—{String(toolCatalog.findIndex((tool) => tool.id === selected.id) + 1).padStart(3, "0")}</span></div>
             <label className="tool-input-label" htmlFor="tool-input">{selected.kind === "browser" ? "INPUT / TEXT OR VALUES" : "GIVE THE TOOL CONTEXT"}</label>
             <textarea id="tool-input" value={input} onChange={(event) => setInput(event.target.value)} placeholder={selected.id === "text-diff-checker" ? "Paste the first version here, then add a line with --- and paste the second version." : selected.id === "utm-link-builder" ? "https://example.com\nsource=newsletter\nmedium=email\ncampaign=launch" : selected.id === "percentage-calculator" ? "18, 240" : selected.id === "profit-margin-calculator" ? "100, 65" : selected.id === "timestamp-converter" ? "1735689600" : selected.id === "password-generator" ? "20" : "Paste text, describe the task, or provide the details to process…"} maxLength={12000} />
-            <div className="tool-input-foot"><span>{input.length.toLocaleString()} / 12,000 characters</span><span>{selected.kind === "browser" ? <><Code2 size={12}/> Processed locally</> : <><Sparkles size={12}/> AI model required</>}</span></div>
+            <div className="tool-input-foot"><span>{input.length.toLocaleString()} / 12,000 characters</span><span>{selected.kind === "browser" ? <><Code2 size={12}/> Processed locally</> : <><Sparkles size={12}/> AI-assisted processing</>}</span></div>
+            {selected.kind === "ai" && supportsAttachments(selected) && <div className="tool-attachments">
+              <div className="tool-attachments-head"><span><Paperclip size={15}/> ATTACH SUPPORTING FILES</span><small>Up to 3 files · 8 MB each</small></div>
+              <label className="tool-attachment-picker"><input type="file" accept={attachmentAccept(selected)} multiple onChange={event => {
+                const picked = Array.from(event.target.files || []);
+                if (picked.length + attachments.length > 3) { setError("Attach up to 3 files per request."); event.target.value = ""; return; }
+                if (picked.some(file => file.size > 8 * 1024 * 1024)) { setError("Each attachment must be smaller than 8 MB."); event.target.value = ""; return; }
+                setError(""); setAttachments(current => [...current, ...picked].slice(0, 3)); event.target.value = "";
+              }}/><FileImage size={17}/><FileAudio size={17}/><FileVideo size={17}/><span>Choose image, audio, video, or PDF</span><b>Browse</b></label>
+              {attachments.length > 0 && <div className="tool-attachment-list">{attachments.map((file, index) => <div key={file.name + file.size + index}><span>{file.type.startsWith("image/") ? <FileImage size={14}/> : file.type.startsWith("audio/") ? <FileAudio size={14}/> : file.type.startsWith("video/") ? <FileVideo size={14}/> : <FileText size={14}/>}</span><span>{file.name}<small>{(file.size / (1024 * 1024)).toFixed(1)} MB</small></span><button type="button" onClick={() => setAttachments(current => current.filter((_, i) => i !== index))} aria-label={"Remove " + file.name}><X size={14}/></button></div>)}</div>}
+              <p>Files are sent with your prompt to the AI service for analysis. Avoid private or sensitive material.</p>
+            </div>}
             {error && <div className="tool-error" role="alert">{error}</div>}
-            <div className="tool-modal-actions"><button type="button" className="tool-run-button" onClick={runTool} disabled={loading || !input.trim()}>{loading ? <><LoaderCircle size={16} className="animate-spin"/> Working on it…</> : <>Run tool <ArrowRight size={16}/></>}</button><button type="button" className="tool-clear-button" onClick={() => { setInput(""); setResult(""); setError(""); }}>Clear input</button><span className="tool-privacy-note"><CircleHelp size={13}/> Don’t include passwords or sensitive personal details.</span></div>
+            <div className="tool-modal-actions"><button type="button" className="tool-run-button" onClick={runTool} disabled={loading || (!input.trim() && attachments.length === 0)}>{loading ? <><LoaderCircle size={16} className="animate-spin"/> Working on it…</> : <>Run tool <ArrowRight size={16}/></>}</button><button type="button" className="tool-clear-button" onClick={() => { setInput(""); setAttachments([]); setResult(""); setError(""); }}>Clear input</button><span className="tool-privacy-note"><CircleHelp size={13}/> Don’t include passwords or sensitive personal details.</span></div>
             {result && <motion.div className="tool-output" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}><div className="tool-output-head"><div><span className="tools-section-kicker">RESULT / READY</span><strong>Generated output</strong></div><button type="button" onClick={copyResult} className="tool-copy-button">{copied ? <Check size={14}/> : <Copy size={14}/>} {copied ? "Copied" : "Copy result"}</button></div><pre>{result}</pre><div className="tool-output-foot"><span><Check size={12}/> Result ready for review</span><button type="button" onClick={() => { setInput(result); setResult(""); setError(""); }}>Use as new input <ArrowDownRight size={13}/></button></div></motion.div>}
             <div className="tool-modal-bottom"><span><AudioLines size={13}/> AI REQUEST</span><span><Clock3 size={13}/> RESULTS ARE NOT SAVED HERE</span></div>
           </motion.section>
