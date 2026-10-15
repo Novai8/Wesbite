@@ -33,7 +33,7 @@ export function RapigentsHome() {
             <p className="rg-hero-deck">We design practical AI tools and business workflows that turn repetitive operations into clear, reviewable systems.</p>
             <div className="rg-hero-actions">
               <Link href="/demos" className="rg-button rg-button-primary">Explore the systems <ArrowUpRight size={16} /></Link>
-              <Link href="/tools" className="rg-button rg-button-quiet">Enter AI Tools Lab <ArrowRight size={16} /></Link>
+              <Link href="/tools" className="rg-button rg-button-quiet">Find your first tool <ArrowRight size={16} /></Link>
             </div>
             <div className="rg-hero-foot"><span>BUILT FOR REAL WORK</span><span className="rg-foot-rule" /><span>HUMAN REVIEW STAYS IN THE LOOP</span></div>
           </motion.div>
