@@ -1,7 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft, Mail } from "lucide-react";
+import { ArrowLeft, Mail, Sparkles } from "lucide-react";
 import { ContactForm } from "@/components/contact-form";
 import { site } from "@/lib/site";
-export const metadata:Metadata={title:"Describe the leak",description:"Tell Rapigents about a repetitive business process that keeps slipping through the cracks."};
-export default function ContactPage(){return <main id="content"><section className="page-hero-clean contact-hero"><div className="container-page"><Link href="/" className="back-link"><ArrowLeft aria-hidden/> Back home</Link><span className="section-kicker">START WITH THE PROBLEM</span><h1>Where does the work disappear?</h1><p>Give us one repetitive process. The form builds a ready-to-send email in Gmail. Nothing is stored by this portfolio site.</p><a href={"mailto:"+site.email} className="contact-direct"><Mail aria-hidden/> {site.email}</a></div></section><section className="section-block"><div className="container-page"><ContactForm/></div></section></main>;}
+
+export const metadata: Metadata = { title: "Contact", description: "Questions, feedback, or ideas for Rapigents AI tools." };
+
+export default function ContactPage() {
+  return <main id="content"><section className="page-hero-clean contact-hero"><div className="container-page">
+    <Link href="/" className="back-link"><ArrowLeft aria-hidden/> Back home</Link>
+    <span className="section-kicker">LET’S TALK TOOLS</span>
+    <h1>Have a question or an idea?</h1>
+    <p>Send feedback, report an issue, or tell us which tool would make your day easier.</p>
+    <a href={"mailto:" + site.email} className="contact-direct"><Mail aria-hidden/> {site.email}</a>
+  </div></section><section className="section-block"><div className="container-page"><div className="rg-contact-intro"><Sparkles size={18}/><span>Feedback helps us make the toolkit more useful.</span></div><ContactForm/></div></section></main>;
+}
