@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import type { CSSProperties } from "react";
 import {
   AudioLines, ChartNoAxesCombined, CheckCircle2, Clapperboard, Code2,
   FileSearch, FileText, GraduationCap, Image, MessageCircle, ScanText,
@@ -35,7 +36,7 @@ export function ToolLaunchVisual({ tool }: { tool: ToolItem }) {
   const Icon = kind === "timeline" ? Clapperboard : kind === "wave" ? AudioLines : kind === "image" ? Image : kind === "document" ? FileText : kind === "data" ? ChartNoAxesCombined : kind === "nodes" ? Workflow : kind === "cards" ? GraduationCap : kind === "writing" ? MessageCircle : kind === "scan" ? FileSearch : WandSparkles;
   const bars = Array.from({ length: kind === "wave" ? 27 : 13 }, (_, index) => index);
   return (
-    <div className={"tool-motion-visual visual-" + kind} style={{ "--tool-accent": accent } as React.CSSProperties} aria-hidden="true">
+    <div className={"tool-motion-visual visual-" + kind} style={{ "--tool-accent": accent } as CSSProperties} aria-hidden="true">
       <div className="tool-motion-orbit orbit-one" /><div className="tool-motion-orbit orbit-two" />
       <div className="tool-motion-core"><Icon size={25} strokeWidth={1.5}/></div>
       {kind === "timeline" ? <>
