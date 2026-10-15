@@ -2,9 +2,9 @@
 
 import { motion } from "framer-motion";
 import {
-  AudioLines, Captions, ChartNoAxesCombined, CheckCircle2, Clapperboard, Code2,
-  FileSearch, FileText, GraduationCap, Image, MessageCircle, ScanText, Scissors,
-  Search, ShoppingBag, Sparkles, Table2, WandSparkles, Workflow,
+  AudioLines, ChartNoAxesCombined, CheckCircle2, Clapperboard, Code2,
+  FileSearch, FileText, GraduationCap, Image, MessageCircle, ScanText,
+  Search, Sparkles, WandSparkles, Workflow,
 } from "lucide-react";
 import type { ToolItem } from "@/data/tool-catalog";
 
