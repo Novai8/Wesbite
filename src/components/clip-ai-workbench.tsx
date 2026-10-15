@@ -72,6 +72,7 @@ export function ClipAIWorkbench() {
     const video = videoRef.current;
     const canvas = canvasRef.current;
     const clip = clips[selected];
+    const sourceName = file?.name || "rapigents-clip";
     if (!video || !canvas || !clip) return;
     const capture = video as HTMLVideoElement & { captureStream?: () => MediaStream; mozCaptureStream?: () => MediaStream };
     const captureVideo = capture.captureStream || capture.mozCaptureStream;
@@ -153,7 +154,7 @@ export function ClipAIWorkbench() {
       sourceStream.getTracks().forEach(track => { if (track.kind !== "audio") track.stop(); });
       if (blob.size < 1000) throw new Error("The rendered file was empty. Try exporting again.");
       const url = URL.createObjectURL(blob);
-      setOutputUrl(url); setOutputName((file.name.replace(/\.[^.]+$/, "") || "rapigents-clip") + "-" + formatTime(clip.start).replace(":", "-") + ".webm");
+      setOutputUrl(url); setOutputName((sourceName.replace(/\.[^.]+$/, "") || "rapigents-clip") + "-" + formatTime(clip.start).replace(":", "-") + ".webm");
       setProgress(100);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Could not render this clip.");
