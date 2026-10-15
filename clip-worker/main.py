@@ -132,7 +132,9 @@ Format: Layer,Start,End,Style,Name,MarginL,MarginR,MarginV,Effect,Text
    ass_path=str(ass).replace("\\\\","/").replace(":","\\\\:")
    vf=f"scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,zoompan=z='min(zoom+0.0007,1.08)':d=1:s=720x1280:fps=30,ass='{ass_path}'"
    cmd(["ffmpeg","-y","-ss",str(start),"-i",str(src),"-i",str(sfx),"-t",str(end-start),"-filter_complex",f"[0:a]volume=1.0[original];[1:a]adelay=120|120[effect];[original][effect]amix=inputs=2:duration=first:dropout_transition=0:normalize=0[aout]","-vf",vf,"-map","0:v:0","-map","[aout]","-c:v","libx264","-preset","veryfast","-crf","24","-c:a","aac","-b:a","128k","-pix_fmt","yuv420p","-movflags","+faststart",str(out)],600)
-   results.append({"id":cid,"title":pick["title"],"hook":pick["hook"],"start":round(start,2),"end":round(end,2),"effects":["subtle zoom-in","opening hook title","multicolor captions","soft whoosh sound effect"],"url":f"{PUBLIC}/media/{name}" if PUBLIC else f"/media/{name}"})
+   potential=min(98,max(35,round(pick["score"])))
+   outlook="Strong signals" if potential>=75 else "Promising" if potential>=58 else "Niche fit"
+   results.append({"id":cid,"title":pick["title"],"hook":pick["hook"],"start":round(start,2),"end":round(end,2),"potentialScore":potential,"reachOutlook":outlook,"effects":["subtle zoom-in","opening hook title","multicolor captions","soft whoosh sound effect"],"url":f"{PUBLIC}/media/{name}" if PUBLIC else f"/media/{name}"})
   with LOCK: JOBS[jid].update(status="completed",message=f"Created {len(results)} clips.",clips=results,duration=duration,language=getattr(info,"language",None))
  except subprocess.TimeoutExpired:
   with LOCK: JOBS[jid].update(status="failed",message="Processing timed out. Try a shorter or lower-resolution source.")
