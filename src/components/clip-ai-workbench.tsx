@@ -35,12 +35,8 @@ export function ClipAIWorkbench() {
   const [outputUrl, setOutputUrl] = useState("");
   const [outputName, setOutputName] = useState("");
 
-  useEffect(() => {
-    return () => {
-      if (fileUrl) URL.revokeObjectURL(fileUrl);
-      if (outputUrl) URL.revokeObjectURL(outputUrl);
-    };
-  }, [fileUrl, outputUrl]);
+  useEffect(() => () => { if (fileUrl) URL.revokeObjectURL(fileUrl); }, [fileUrl]);
+  useEffect(() => () => { if (outputUrl) URL.revokeObjectURL(outputUrl); }, [outputUrl]);
 
   const chooseFile = (next: File | null) => {
     setError(""); setClips([]); setOutputUrl(""); setOutputName(""); setDuration(0); setProgress(0);
@@ -89,12 +85,14 @@ export function ClipAIWorkbench() {
     canvas.width = 720; canvas.height = 1280;
     try {
       video.pause();
-      video.currentTime = clip.start;
-      await new Promise<void>((resolve, reject) => {
-        const timer = window.setTimeout(() => reject(new Error("Video seeking took too long. Try again.")), 8000);
-        const ready = () => { window.clearTimeout(timer); video.removeEventListener("seeked", ready); resolve(); };
-        video.addEventListener("seeked", ready, { once: true });
-      });
+      if (Math.abs(video.currentTime - clip.start) > 0.1) {
+        await new Promise<void>((resolve, reject) => {
+          const timer = window.setTimeout(() => { video.removeEventListener("seeked", ready); reject(new Error("Video seeking took too long. Try again.")); }, 8000);
+          const ready = () => { window.clearTimeout(timer); resolve(); };
+          video.addEventListener("seeked", ready, { once: true });
+          video.currentTime = clip.start;
+        });
+      }
       const canvasStream = canvas.captureStream(30);
       const sourceStream = captureVideo.call(video);
       sourceStream.getAudioTracks().forEach(track => canvasStream.addTrack(track));
@@ -121,6 +119,7 @@ export function ClipAIWorkbench() {
         const now = video.currentTime;
         const caption = clip.captions.find(item => now >= item.start && now <= item.end);
         if (caption?.text) {
+          context.font = "900 43px Arial, sans-serif";
           const words = caption.text.trim().split(/\s+/);
           const lines: string[] = [];
           let line = "";
@@ -130,7 +129,6 @@ export function ClipAIWorkbench() {
           }
           if (line) lines.push(line);
           context.textAlign = "center"; context.textBaseline = "middle";
-          context.font = "900 43px Arial, sans-serif";
           const baseY = h * 0.79 - (lines.length - 1) * 26;
           lines.forEach((text, index) => {
             context.lineWidth = 7; context.lineJoin = "round"; context.strokeStyle = "rgba(0,0,0,.8)";
@@ -173,7 +171,7 @@ export function ClipAIWorkbench() {
           {fileUrl && <video ref={videoRef} className="clip-source-video" src={fileUrl} controls playsInline onLoadedMetadata={event => setDuration(event.currentTarget.duration || 0)} />}
           {!fileUrl && <div className="clip-empty-preview"><Clapperboard size={34}/><span>YOUR SOURCE VIDEO</span><small>Upload a video to begin</small></div>}
           <div className="clip-source-foot"><span><Check size={13}/> No account needed</span><span>Local preview + export</span></div>
-          <button className="clip-analyze-button" type="button" onClick={analyze} disabled={!file || busy || duration > 180}>{busy ? <><LoaderCircle className="clip-spin" size={17}/> Finding the best moments…</> : <><WandSparkles size={17}/> Find my best clips <span>↗</span></>}</button>
+          <button className="clip-analyze-button" type="button" onClick={analyze} disabled={!file || busy || duration <= 0 || duration > 180}>{busy ? <><LoaderCircle className="clip-spin" size={17}/> Finding the best moments…</> : <><WandSparkles size={17}/> Find my best clips <span>↗</span></>}</button>
           {busy && <div className="clip-analysis-note">Sending this video for multimodal analysis. Free-model availability can vary.</div>}
         </div>
         <div className="clip-results-panel">
