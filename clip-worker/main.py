@@ -50,7 +50,7 @@ def picks(transcript,duration):
    start=max(0.,selected[0]["start"]); end=min(duration,selected[-1]["end"])
    words=" ".join(x["text"] for x in selected).strip(); tokens=re.findall(r"\b[\w']+\b",words.lower())
    if end-start>=8 and len(tokens)>=12:
-    title=suggest_title(words); score=min(len(tokens),100)*0.55.split(r"(?<=[.!?])\s+",words)[0][:90].strip(" .!?") or "Strong moment"
+    title=suggest_title(words)
     # Fully local highlight ranking: speech density, a clean ending, and language
     # patterns common in explanations, questions, contrasts, and story payoffs.
     score=min(len(tokens),100)*0.55
@@ -70,20 +70,20 @@ def picks(transcript,duration):
  return unique[:5]
 
 def suggest_title(text):
- words=re.sub(r"\\s+"," ",text).strip()
- first=re.split(r"(?<=[.!?])\\s+",words)[0].strip(" .!?")
- if re.search(r"\\bhow to\\b",words,re.I): candidate="How to "+re.split(r"\\bhow to\\b",words,flags=re.I)[-1].split(".")[0].strip(" .!?")
- elif re.search(r"\\bwhy\\b",first,re.I): candidate=first
- elif re.search(r"\\b(mistake|wrong|fail|failed)\\b",words,re.I): candidate="The mistake most people miss"
- elif re.search(r"\\b(secret|truth|reason)\\b",words,re.I): candidate=first
- elif re.search(r"\\b(but|however|instead)\\b",words,re.I): candidate="The part people overlook"
+ words=re.sub(r"\s+"," ",text).strip()
+ first=re.split(r"(?<=[.!?])\s+",words)[0].strip(" .!?")
+ if re.search(r"\bhow to\b",words,re.I): candidate="How to "+re.split(r"\bhow to\b",words,flags=re.I)[-1].split(".")[0].strip(" .!?")
+ elif re.search(r"\bwhy\b",first,re.I): candidate=first
+ elif re.search(r"\b(mistake|wrong|fail|failed)\b",words,re.I): candidate="The mistake most people miss"
+ elif re.search(r"\b(secret|truth|reason)\b",words,re.I): candidate=first
+ elif re.search(r"\b(but|however|instead)\b",words,re.I): candidate="The part people overlook"
  else: candidate=first or "The key takeaway"
- candidate=re.sub(r"\\s+"," ",candidate).strip()
+ candidate=re.sub(r"\s+"," ",candidate).strip()
  if len(candidate)>68: candidate=candidate[:65].rsplit(" ",1)[0]+"…"
  return candidate[:90] or "The key takeaway"
 
 def ass_escape(value):
- return str(value).replace("\\\\","\\\\\\\\").replace("{","\\\\{").replace("}","\\\\}").replace("\\n"," ").strip()
+ return str(value).replace("\\","\\\\").replace("{","\\{").replace("}","\\}").replace("\n"," ").strip()
 
 def process(jid,url):
  work=INBOX/jid; work.mkdir(parents=True,exist_ok=True)
@@ -123,7 +123,7 @@ Format: Layer,Start,End,Style,Name,MarginL,MarginR,MarginV,Effect,Text
     caption=ass_escape(seg["text"].replace("-->","→"))
     if not caption: continue
     events.append(f"Dialogue: 0,{stamp(a).replace(',', '.')},{stamp(b).replace(',', '.')},Caption,,0,0,0,,{{\\fad(70,90)\\c{colors[i%len(colors)]}}}{caption.upper()}")
-   ass.write_text(header+"\\n".join(events)+"\\n",encoding="utf-8")
+   ass.write_text(header+"\n".join(events)+"\n",encoding="utf-8")
    cmd(["ffmpeg","-y","-f","lavfi","-i","anoisesrc=color=pink:duration=0.55:sample_rate=48000","-af","highpass=f=700,lowpass=f=6500,afade=t=in:st=0:d=0.08,afade=t=out:st=0.16:d=0.38,volume=0.08","-ac","2",str(sfx)],60)
    ass_path=str(ass).replace("\\\\","/").replace(":","\\\\:")
    vf=f"scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,zoompan=z='min(zoom+0.0007,1.08)':d=1:s=720x1280:fps=30,ass='{ass_path}'"
