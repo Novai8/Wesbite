@@ -5,6 +5,34 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const MAX_INPUT_LENGTH = 12000;
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX = 8;
+const requestWindows = new Map<string, { count: number; resetAt: number }>();
+
+function checkRateLimit(request: Request) {
+  const forwarded = request.headers.get("cf-connecting-ip")
+    || request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+    || "unknown";
+  const now = Date.now();
+  let bucket = requestWindows.get(forwarded);
+
+  if (!bucket || bucket.resetAt <= now) {
+    bucket = { count: 0, resetAt: now + RATE_LIMIT_WINDOW_MS };
+    requestWindows.set(forwarded, bucket);
+  }
+
+  if (bucket.count >= RATE_LIMIT_MAX) {
+    return { allowed: false, retryAfter: Math.max(1, Math.ceil((bucket.resetAt - now) / 1000)) };
+  }
+
+  bucket.count += 1;
+  if (requestWindows.size > 1000) {
+    for (const [key, value] of requestWindows) {
+      if (value.resetAt <= now) requestWindows.delete(key);
+    }
+  }
+  return { allowed: true, retryAfter: 0 };
+}
 
 export async function POST(request: Request) {
   const apiKey = process.env.OPENROUTER_API_KEY;
@@ -12,6 +40,14 @@ export async function POST(request: Request) {
     return NextResponse.json(
       { error: "AI tools are not connected yet. Add OPENROUTER_API_KEY to the deployment environment, then redeploy." },
       { status: 503 },
+    );
+  }
+
+  const limit = checkRateLimit(request);
+  if (!limit.allowed) {
+    return NextResponse.json(
+      { error: "Too many requests. Wait a minute before trying again." },
+      { status: 429, headers: { "Retry-After": String(limit.retryAfter) } },
     );
   }
 
