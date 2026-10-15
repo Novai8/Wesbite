@@ -32,7 +32,7 @@ export const toolCatalog: ToolItem[] = groups.flatMap((group) =>
     category: group.category,
     kind: group.kind,
     icon: group.category === "Browser Utilities" ? "code" : group.category === "Study & Education" ? "graduation-cap" : group.category === "Creators & Social" ? "clapperboard" : group.category === "Developer & Automation" ? "workflow" : group.category === "Business" ? "briefcase-business" : group.category === "Career & Freelancing" ? "target" : group.category === "Ecommerce & Marketing" ? "shopping-bag" : group.category === "Image, Audio & Video" ? "sparkles" : group.category === "Personal Productivity" ? "calendar-check" : "brain",
-    description: group.kind === "browser" ? "Runs locally in your browser. No AI key required." : "AI-powered drafting and analysis. Requires the server-side OpenRouter key.",
+    description: group.kind === "browser" ? "Runs locally in your browser for quick, private utility tasks." : "AI-powered drafting, analysis, and file-aware assistance for focused tasks.",
   })),
 );
 
