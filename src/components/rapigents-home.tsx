@@ -59,7 +59,7 @@ export function RapigentsHome() {
           <div className="rg-section-meta"><span>01 — THE PRINCIPLE</span><span>LESS REPETITION. MORE MOMENTUM.</span></div>
           <div className="rg-intro-grid">
             <h2>Not more software.<br /><em>Less friction.</em></h2>
-            <div className="rg-intro-copy"><p>Most teams don't need another dashboard. They need the handoffs, follow-ups and small decisions between their tools to stop leaking time.</p><p>Rapigents builds focused systems around that gap. Start with a clear task, test it on realistic data, keep people in control.</p><Link href="/about" className="rg-text-link">How we think about the work <ArrowUpRight size={15}/></Link></div>
+            <div className="rg-intro-copy"><p>Most teams do not need another dashboard. They need the handoffs, follow-ups and small decisions between their tools to stop leaking time.</p><p>Rapigents builds focused systems around that gap. Start with a clear task, test it on realistic data, keep people in control.</p><Link href="/about" className="rg-text-link">How we think about the work <ArrowUpRight size={15}/></Link></div>
           </div>
           <div className="rg-process">
             {systems.map((step) => {
@@ -100,7 +100,7 @@ export function RapigentsHome() {
 
       <section className="rg-close">
         <div className="rg-close-grid" aria-hidden="true"/>
-        <div className="rg-shell rg-close-inner"><div className="rg-kicker"><span className="rg-status-dot"/> START WITH THE BOTTLENECK</div><h2>What keeps getting<br /><em>left until later?</em></h2><p>Start with one repetitive task. We'll make the steps visible, then figure out what is worth automating.</p><div className="rg-close-actions"><Link href="/contact" className="rg-button rg-button-primary">Describe the bottleneck <ArrowUpRight size={16}/></Link><Link href="/demos" className="rg-button rg-button-quiet">See workflow patterns <ArrowRight size={16}/></Link></div><div className="rg-close-note"><GitBranch size={14}/> SMALL SYSTEMS. CLEAR HANDOFFS. HUMAN CONTROL.</div></div>
+        <div className="rg-shell rg-close-inner"><div className="rg-kicker"><span className="rg-status-dot"/> START WITH THE BOTTLENECK</div><h2>What keeps getting<br /><em>left until later?</em></h2><p>Start with one repetitive task. We will make the steps visible, then figure out what is worth automating.</p><div className="rg-close-actions"><Link href="/contact" className="rg-button rg-button-primary">Describe the bottleneck <ArrowUpRight size={16}/></Link><Link href="/demos" className="rg-button rg-button-quiet">See workflow patterns <ArrowRight size={16}/></Link></div><div className="rg-close-note"><GitBranch size={14}/> SMALL SYSTEMS. CLEAR HANDOFFS. HUMAN CONTROL.</div></div>
       </section>
     </main>
   );
