@@ -40,7 +40,7 @@ export default function ClipAIPage() {
           </div>
           <div className="rg-clip-timeline"><div className="rg-clip-timeline-head"><span><Film size={13}/> SMART TIMELINE</span><span>01:24 → 00:32</span></div><div className="rg-clip-timeline-track"><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/></div><div className="rg-clip-timeline-foot"><span>HOOK</span><span>HIGHLIGHT</span><span>PAYOFF</span></div></div>
           <div className="rg-clip-floating rg-clip-float-a"><Scissors size={15}/><span>SMART CUTS</span></div><div className="rg-clip-floating rg-clip-float-b"><Captions size={15}/><span>CAPTIONS ON</span></div>
-          <span className="rg-clip-preview-note">CONCEPT PREVIEW · EDITING ENGINE NOT LIVE YET</span>
+          <span className="rg-clip-preview-note">VISUAL PREVIEW · LINK CLIPPING ENGINE BELOW</span>
         </div>
       </div>
       <div className="rg-clip-marquee" aria-hidden="true"><div>HOOK FIRST ✳ CLEAN CAPTIONS ✳ SMART CUTS ✳ MOBILE-FIRST ✳ YOUR BEST MOMENTS ✳ HOOK FIRST ✳ CLEAN CAPTIONS ✳ SMART CUTS ✳ MOBILE-FIRST ✳</div></div>
