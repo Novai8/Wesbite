@@ -41,20 +41,34 @@ def stamp(sec):
  ms=max(0,int(sec*1000)); h,ms=divmod(ms,3600000); m,ms=divmod(ms,60000); s,ms=divmod(ms,1000)
  return f"{h:02}:{m:02}:{s:02},{ms:03}"
 def picks(transcript,duration):
- chunks=[{"start":float(s.start),"end":float(s.end),"text":re.sub(r"\s+"," ",s.text).strip()} for s in transcript if s.text.strip()]
+ chunks=[{"start":float(s.start),"end":float(s.end),"text":re.sub(r"\\s+"," ",s.text).strip()} for s in transcript if s.text.strip()]
  if not chunks: raise RuntimeError("Speech recognition found no usable spoken content.")
- target=min(45.,max(18.,duration/5)); windows=[]; start=chunks[0]["start"]
- while start<duration and len(windows)<10:
-  endlim=min(duration,start+target); selected=[x for x in chunks if x["start"]<endlim and x["end"]>start]
+ target=min(45.,max(18.,duration/5)); windows=[]; cursor=chunks[0]["start"]
+ while cursor<duration and len(windows)<18:
+  limit=min(duration,cursor+target); selected=[x for x in chunks if x["start"]<limit and x["end"]>cursor]
   if selected:
-   end=min(duration,max(x["end"] for x in selected)); words=" ".join(x["text"] for x in selected); title=re.split(r"(?<=[.!?])\s+",words)[0][:90].strip(" .!?") or "Strong moment"
-   score=min(len(words.split()),100)+(12 if re.search(r"[.!?]$",words) else 0)
-   windows.append({"start":start,"end":end,"title":title,"hook":words[:220],"score":score,"segments":selected})
-  start+=max(15.,target*.7)
+   start=max(0.,selected[0]["start"]); end=min(duration,selected[-1]["end"])
+   words=" ".join(x["text"] for x in selected).strip(); tokens=re.findall(r"\\b[\\w']+\\b",words.lower())
+   if end-start>=8 and len(tokens)>=12:
+    title=re.split(r"(?<=[.!?])\\s+",words)[0][:90].strip(" .!?") or "Strong moment"
+    # Fully local highlight ranking: speech density, a clean ending, and language
+    # patterns common in explanations, questions, contrasts, and story payoffs.
+    score=min(len(tokens),100)*0.55
+    if re.search(r"[.!?][\"')]*$",words): score+=10
+    if re.search(r"\\b(how to|why|here'?s|the reason|the truth|what happens|the biggest|the most|the problem|the secret|mistake|lesson|because|imagine|remember|first|finally)\\b",words,re.I): score+=12
+    if "?" in words: score+=7
+    if re.search(r"\\b(you|your|we|our)\\b",words,re.I): score+=4
+    if re.search(r"\\b(but|however|instead|although|yet|except)\\b",words,re.I): score+=5
+    if re.search(r"\\b\\d+(?:[.,]\\d+)?%?\\b",words): score+=3
+    fillers=len(re.findall(r"\\b(um|uh|erm|you know|like)\\b",words,re.I))
+    score-=min(fillers*2,10)
+    windows.append({"start":start,"end":end,"title":title,"hook":words[:220],"score":score,"segments":selected})
+  cursor+=max(12.,target*.65)
  windows.sort(key=lambda x:x["score"],reverse=True); unique=[]
  for x in windows:
-  if all(abs(x["start"]-y["start"])>target*.5 for y in unique): unique.append(x)
+  if all(abs(x["start"]-y["start"])>target*.55 for y in unique): unique.append(x)
  return unique[:5]
+
 def process(jid,url):
  work=INBOX/jid; work.mkdir(parents=True,exist_ok=True)
  try:

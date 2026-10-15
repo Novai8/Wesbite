@@ -103,10 +103,11 @@ export function ClipAIWorkbench() {
       const response = await fetch("/api/clip-ai/import?projectId=" + encodeURIComponent(linkProjectId), { cache: "no-store" });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload.error || "Could not check the processing status.");
-      if (payload.status === "failed") throw new Error(payload.message || "The worker could not process this source.");
+      if (payload.status === "failed") { setLinkProjectId(""); throw new Error(payload.message || "The worker could not process this source."); }
       const items = Array.isArray(payload.clips) ? payload.clips : [];
       setRemoteClips(items);
-      setLinkStatus(items.length ? "Your clips are ready. Open or download them from the clipping provider." : (payload.message || "Still processing. Check again in a little while."));
+      setLinkStatus(items.length ? "Your clips are ready. Open or download them from your free Clip AI worker." : (payload.message || "Still processing. Check again in a little while."));
+      if (payload.status === "completed") setLinkProjectId("");
     } catch (caught) {
       setLinkError(caught instanceof Error ? caught.message : "Could not check clip status.");
     } finally { setLinkBusy(false); }
@@ -219,7 +220,7 @@ export function ClipAIWorkbench() {
         <div className="clip-link-controls"><input aria-label="Public video URL" type="url" inputMode="url" autoComplete="url" placeholder="https://www.youtube.com/watch?v=…" value={sourceLink} onChange={event => setSourceLink(event.target.value)} disabled={linkBusy} required /><button type="submit" disabled={linkBusy || !sourceLink.trim()}>{linkBusy ? <><LoaderCircle size={15} className="clip-spin"/> Working…</> : <>Find clips <WandSparkles size={15}/></>}</button></div>
         {linkStatus && <p className="clip-link-status" role="status">{linkStatus}{linkProjectId && !remoteClips.length ? <button type="button" onClick={refreshRemoteClips} disabled={linkBusy}>Check now</button> : null}</p>}
         {linkError && <p className="clip-link-error" role="alert">{linkError}</p>}
-        {remoteClips.length > 0 && <div className="clip-link-results">{remoteClips.map((clip,index)=><article key={clip.id||clip.url} className="clip-link-result"><div><span>CLIP {String(index+1).padStart(2,"0")}{typeof clip.start==="number"&&typeof clip.end==="number"?" · "+formatTime(clip.start)+"–"+formatTime(clip.end):""}</span><strong>{clip.title}</strong><p>{clip.hook||"AI-selected highlight with burned-in captions."}</p></div><a href={clip.url} target="_blank" rel="noreferrer" download><Download size={14}/> Open / download</a></article>)}</div>}
+        {remoteClips.length > 0 && <div className="clip-link-results">{remoteClips.map((clip,index)=><article key={clip.id||clip.url} className="clip-link-result"><div><span>CLIP {String(index+1).padStart(2,"0")}{typeof clip.start==="number"&&typeof clip.end==="number"?" · "+formatTime(clip.start)+"–"+formatTime(clip.end):""}</span><strong>{clip.title}</strong><p>{clip.hook||"Locally transcribed highlight with burned-in captions."}</p></div><a href={clip.url} target="_blank" rel="noreferrer" download><Download size={14}/> Open / download</a></article>)}</div>}
       </form>
       <div className="clip-workbench-grid">
         <div className="clip-source-panel">

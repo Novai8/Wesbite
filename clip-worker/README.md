@@ -1,6 +1,6 @@
 # Rapigents free Clip AI worker
 
-Open-source, self-hostable link processor replacing the paid OpusClip API. It uses **yt-dlp** for supported public sources, **faster-whisper** for local speech transcription, and **FFmpeg** to render vertical MP4 clips with burned-in subtitles. No AI API key is needed.
+Open-source, self-hostable link processor replacing the paid OpusClip API. It uses **yt-dlp** for supported public sources, **faster-whisper** for local speech transcription, and **FFmpeg** to render vertical MP4 clips with burned-in subtitles. A local transcript-ranking heuristic scores hooks, questions, contrast, numbers, speech density, and sentence endings. No AI API key is needed.
 
 ## Run locally with Docker
 
