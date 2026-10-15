@@ -17,7 +17,7 @@ const supportedHosts = [
 function getKey() { return process.env.OPUSCLIP_API_KEY; }
 function hostAllowed(url: URL) {
   const host = url.hostname.toLowerCase();
-  const directVideoPath = /\\.(mp4|m4v|mov|webm|m3u8)$/i.test(url.pathname);
+  const directVideoPath = /\.(mp4|m4v|mov|webm|m3u8)$/i.test(url.pathname);
   return supportedHosts.includes(host) || directVideoPath;
 }
 function extractProjectId(payload: any): string {
