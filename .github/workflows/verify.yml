@@ -29,3 +29,11 @@ jobs:
         run: npm run lint
       - name: Build production app
         run: npm run build
+      - name: Set up Python for Clip AI worker checks
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Check Clip AI worker syntax
+        run: python -m compileall -q clip-worker/main.py
+      - name: Build Clip AI worker image
+        run: docker build -t rapigents-clip-worker ./clip-worker
