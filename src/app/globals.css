@@ -84,3 +84,45 @@ html:not([data-theme="dark"]) .sea-actions .sea-btn:not(.sea-btn-primary):hover{
 html:not([data-theme="dark"]) .sea-proof span{background:rgba(7,20,23,.62);color:#E9E3D2;padding:5px 10px;border-radius:999px;backdrop-filter:blur(6px)}
 
 .sea-horizon{pointer-events:none}
+
+/* Page-aware motion system */
+:root{--page-accent:#d8ff63;--page-glow:rgba(216,255,99,.22)}
+html[data-page="lab"]{--page-accent:#aa9aff;--page-glow:rgba(156,140,255,.24)}
+html[data-page="flow"]{--page-accent:#ff9e6e;--page-glow:rgba(255,158,110,.24)}
+html[data-page="method"]{--page-accent:#6de0cf;--page-glow:rgba(109,224,207,.22)}
+html[data-page="proof"]{--page-accent:#f0ca73;--page-glow:rgba(240,202,115,.23)}
+html[data-page="connect"]{--page-accent:#ff83b8;--page-glow:rgba(255,131,184,.23)}
+@media (pointer:fine) and (hover:hover){body, a, button, [role=button]{cursor:none!important}input,textarea{cursor:text!important}.rg-cursor-halo,.rg-cursor-dot{display:flex}}
+.rg-cursor-halo{position:fixed;z-index:10020;top:0;left:0;width:54px;height:54px;display:none;align-items:center;justify-content:center;border:1px solid color-mix(in srgb,var(--page-accent),transparent 25%);border-radius:50%;background:radial-gradient(circle at 35% 25%,var(--page-glow),transparent 72%);backdrop-filter:blur(7px);pointer-events:none;will-change:transform;translate:-50% -50%;transition:width .32s cubic-bezier(.2,.8,.2,1),height .32s cubic-bezier(.2,.8,.2,1),border-radius .32s,background .32s}
+.rg-cursor-halo span{font-size:18px;color:var(--page-accent);text-shadow:0 0 18px var(--page-glow);transition:transform .3s}
+.rg-cursor-dot{position:fixed;z-index:10021;top:0;left:0;width:5px;height:5px;border-radius:50%;background:var(--page-accent);box-shadow:0 0 12px var(--page-glow);pointer-events:none;will-change:transform;translate:-50% -50%;display:none}
+.rg-cursor-halo:has(+.rg-cursor-dot.is-hovering){width:76px;height:76px;border-radius:24px;background:var(--page-glow)}
+.rg-cursor-dot.is-hovering{width:8px;height:8px}
+html[data-page="lab"] .rg-cursor-halo{border-radius:14px;transform-origin:center}
+html[data-page="flow"] .rg-cursor-halo{border-radius:7px 50% 50% 50%}
+html[data-page="method"] .rg-cursor-halo{border-style:dashed}
+html[data-page="connect"] .rg-cursor-halo{border-radius:50% 18% 50% 50%}
+.rg-transition-screen{--transition-accent:var(--page-accent);position:fixed;inset:0;z-index:10010;display:grid;place-items:center;overflow:hidden;background:#08090c;color:#f5f3ee;isolation:isolate;animation:rg-transition-in .42s cubic-bezier(.16,1,.3,1) both}
+.rg-transition-screen:before{content:"";position:absolute;inset:0;z-index:-1;background:radial-gradient(ellipse at 50% 48%,var(--page-glow),transparent 45%),linear-gradient(135deg,rgba(255,255,255,.035),transparent 45%);filter:saturate(1.2)}
+.rg-transition-grain{position:absolute;inset:-50%;opacity:.09;pointer-events:none;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.7'/%3E%3C/svg%3E");animation:rg-grain .24s steps(2) infinite}
+.rg-transition-orbit{position:absolute;width:min(70vw,680px);aspect-ratio:1;border:1px solid color-mix(in srgb,var(--transition-accent),transparent 72%);border-radius:50%;animation:rg-orbit-spin 12s linear infinite}
+.rg-transition-orbit:after{content:"";position:absolute;top:10%;left:17%;width:9px;height:9px;border-radius:50%;background:var(--transition-accent);box-shadow:0 0 28px var(--transition-accent)}
+.rg-transition-orbit.orbit-a{transform:scaleY(.36) rotate(-24deg)}
+.rg-transition-orbit.orbit-b{transform:scaleY(.64) rotate(54deg);animation-duration:17s;animation-direction:reverse}
+.rg-transition-orbit.orbit-c{width:min(48vw,470px);border-style:dashed;opacity:.45;animation-duration:24s}
+.rg-transition-center{width:min(440px,calc(100% - 48px));position:relative;text-align:center}
+.rg-transition-symbol{display:grid;place-items:center;width:70px;height:70px;margin:0 auto 34px;border:1px solid color-mix(in srgb,var(--transition-accent),transparent 35%);border-radius:22px;color:var(--transition-accent);background:var(--page-glow);box-shadow:0 0 70px var(--page-glow);animation:rg-symbol-breathe 1.4s ease-in-out infinite alternate}
+.rg-transition-eyebrow,.rg-transition-bottom,.rg-transition-corner{font:600 9px/1.6 var(--font-geist-mono),monospace;letter-spacing:.16em;color:#9ca19f}
+.rg-transition-center h2{font-size:clamp(27px,4vw,43px);font-weight:400;letter-spacing:-.045em;margin:14px 0 34px;text-wrap:balance}
+.rg-transition-meter{height:2px;background:rgba(255,255,255,.12);overflow:hidden}
+.rg-transition-meter span{display:block;height:100%;background:var(--transition-accent);box-shadow:0 0 20px var(--transition-accent);transition:width .16s linear}
+.rg-transition-bottom{display:flex;justify-content:space-between;align-items:center;margin-top:12px}
+.rg-transition-bottom span:last-child{display:flex;align-items:center;gap:8px;color:var(--transition-accent)}
+.rg-loader-spin{animation:rg-orbit-spin .9s linear infinite}
+.rg-transition-corner{position:absolute;right:28px;bottom:25px;display:flex;align-items:end;gap:9px;text-align:right}
+@keyframes rg-transition-in{from{opacity:0;backdrop-filter:blur(24px)}to{opacity:1;backdrop-filter:blur(0)}}
+@keyframes rg-grain{0%{transform:translate(0,0)}25%{transform:translate(2%,-1%)}50%{transform:translate(-1%,2%)}75%{transform:translate(1%,1%)}}
+@keyframes rg-orbit-spin{to{rotate:360deg}}
+@keyframes rg-symbol-breathe{to{transform:translateY(-5px) rotate(4deg);box-shadow:0 0 90px var(--page-glow)}}
+@media (max-width:640px){.rg-transition-corner{right:16px;bottom:16px;font-size:8px}.rg-transition-orbit{width:90vw}.rg-transition-orbit.orbit-c{width:68vw}}
+@media (prefers-reduced-motion:reduce){.rg-cursor-halo,.rg-cursor-dot{display:none!important}.rg-transition-screen,.rg-transition-grain,.rg-transition-orbit,.rg-transition-symbol,.rg-loader-spin{animation:none!important}.rg-transition-screen{backdrop-filter:none}}
