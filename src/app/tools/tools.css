@@ -67,9 +67,9 @@
 .tool-launch-sub{display:block;margin-top:7px;color:#8d9689;font-size:11px}
 .tool-motion-visual{--tool-accent:#d8ff63;position:relative;width:100%;height:220px;margin:15px 0 0;overflow:hidden;border:1px solid rgba(228,236,219,.1);background:radial-gradient(ellipse at 50% 48%,color-mix(in srgb,var(--tool-accent) 12%,transparent),transparent 56%),linear-gradient(135deg,#111715,#0b0f0e);color:var(--tool-accent);isolation:isolate}
 .tool-motion-orbit{position:absolute;left:50%;top:48%;border:1px solid color-mix(in srgb,var(--tool-accent) 28%,transparent);border-radius:50%;transform:translate(-50%,-50%) rotate(-20deg);pointer-events:none}
-.tool-motion-orbit.orbit-one{width:170px;height:104px;animation:tool-orbit-spin 13s linear infinite}
-.tool-motion-orbit.orbit-two{width:125px;height:184px;transform:translate(-50%,-50%) rotate(35deg);border-style:dashed;animation:tool-orbit-spin 18s linear infinite reverse}
-.tool-motion-core{position:absolute;left:50%;top:48%;z-index:2;display:grid;place-items:center;width:54px;height:54px;border:1px solid color-mix(in srgb,var(--tool-accent) 65%,transparent);background:#0d1210;box-shadow:0 0 35px color-mix(in srgb,var(--tool-accent) 16%,transparent);transform:translate(-50%,-50%) rotate(45deg)}
+.tool-motion-orbit.orbit-one{width:170px;height:104px;animation:tool-orbit-spin var(--tool-orbit-speed,13s) linear infinite}
+.tool-motion-orbit.orbit-two{width:125px;height:184px;transform:translate(-50%,-50%) rotate(35deg);border-style:dashed;animation:tool-orbit-spin calc(var(--tool-orbit-speed,13s) * 1.38) linear infinite reverse;animation-delay:calc(var(--tool-delay,0s) * -1)}
+.tool-motion-core{position:absolute;left:50%;top:48%;z-index:2;display:grid;place-items:center;width:54px;height:54px;border:1px solid color-mix(in srgb,var(--tool-accent) 65%,transparent);background:#0d1210;box-shadow:0 0 35px color-mix(in srgb,var(--tool-accent) 16%,transparent);transform:translate(-50%,-50%) rotate(var(--tool-tilt,45deg))}
 .tool-motion-core svg{transform:rotate(-45deg)}
 .motion-preview-frame{position:absolute;top:20px;left:calc(50% - 48px);width:96px;height:112px;overflow:hidden;border:1px solid #ffffff3b;background:linear-gradient(165deg,#4b6262 0%,#1c3436 50%,#141b1c 51%,#0b1010 100%)}
 .motion-preview-sun{position:absolute;top:18px;right:17px;width:20px;height:20px;border-radius:50%;background:var(--tool-accent);opacity:.8;filter:blur(1px)}
@@ -128,3 +128,15 @@
 .tool-detail-foot{display:flex;justify-content:space-between;gap:15px;padding:20px 0 35px;border-top:1px solid var(--lab-line);color:#7c8678;font:600 8px var(--font-geist-mono),monospace;letter-spacing:.1em}.tool-detail-foot a{display:flex;align-items:center;gap:8px;color:#dfe6d8;text-decoration:none}
 @media(max-width:760px){.tool-detail-shell{width:min(100% - 32px,1180px)}.tool-detail-nav{align-items:flex-start;gap:12px}.tool-detail-nav>span{max-width:55%;text-align:right;justify-content:flex-end;font-size:7px}.tool-detail-hero{grid-template-columns:1fr;gap:28px;padding:48px 0}.tool-detail-visual .tool-motion-visual{height:230px}.tool-detail-actions>span{width:100%;margin-left:0}.tool-detail-workspace{padding-top:42px}.tool-detail-workspace-head{align-items:flex-start}.tool-detail-result{padding:13px}}
 @media(prefers-reduced-motion:reduce){.tool-motion-orbit{animation:none!important}.tool-detail-page *{scroll-behavior:auto!important;transition-duration:.01ms!important}}
+
+/* Each tool ID gets its own motion tempo and geometric variation. */
+.tool-motion-visual.variant-1 .tool-motion-orbit{border-radius:28%}
+.tool-motion-visual.variant-2 .tool-motion-orbit.orbit-one{width:200px;height:82px}
+.tool-motion-visual.variant-3 .tool-motion-orbit.orbit-two{width:150px;height:150px}
+.tool-motion-visual.variant-4 .tool-motion-core{border-radius:50%}
+.tool-motion-visual.variant-5 .tool-motion-core{width:46px;height:64px}
+.tool-motion-visual.variant-6 .tool-motion-orbit.orbit-one{border-style:dashed}
+.tool-motion-visual.variant-7 .tool-motion-orbit.orbit-two{border-radius:18%}
+.tool-motion-visual.variant-8 .tool-motion-core{box-shadow:0 0 48px color-mix(in srgb,var(--tool-accent) 24%,transparent)}
+.tool-motion-visual.variant-9 .tool-motion-orbit.orbit-one{width:145px;height:145px}
+.tool-motion-visual.variant-10 .tool-motion-orbit.orbit-two{width:190px;height:100px}
