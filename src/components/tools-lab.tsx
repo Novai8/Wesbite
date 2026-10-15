@@ -168,6 +168,7 @@ export function ToolsLab() {
   }), [query, category, kind]);
 
   const openToolPage = (tool: ToolItem) => {
+    chooseTool(tool);
     setOpeningTool(tool);
     window.setTimeout(() => router.push("/tools/" + tool.id), 720);
   };
