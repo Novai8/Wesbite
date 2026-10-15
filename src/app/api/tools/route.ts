@@ -62,7 +62,6 @@ export async function POST(request: Request) {
     });
     const payload = await upstream.json().catch(() => null);
     if (!upstream.ok) {
-      const providerMessage = typeof payload?.error?.message === "string" ? payload.error.message : "The selected model is temporarily unavailable.";
       return NextResponse.json({ error: upstream.status === 429 ? "The AI service is busy right now. Wait a little and try again." : "This tool could not finish the request. Please try again." }, { status: upstream.status === 429 ? 429 : 502 });
     }
     const result = payload?.choices?.[0]?.message?.content;
