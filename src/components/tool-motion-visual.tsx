@@ -60,7 +60,7 @@ export function ToolLaunchVisual({ tool }: { tool: ToolItem }) {
         <motion.div className="motion-node node-a" animate={{ y:[0,-5,0] }} transition={{ duration:2, repeat:Infinity }}><Code2 size={14}/></motion.div>
         <motion.div className="motion-node node-b" animate={{ y:[0,5,0] }} transition={{ duration:2.2, repeat:Infinity }}><Workflow size={14}/></motion.div>
         <motion.div className="motion-node node-c" animate={{ y:[0,-4,0] }} transition={{ duration:1.8, repeat:Infinity }}><CheckCircle2 size={14}/></motion.div>
-        <motion.div className="motion-data-pulse" animate={{ offsetDistance:["0%","100%"] }} transition={{ duration:2.4, repeat:Infinity, ease:"linear" }}/>
+        <motion.div className="motion-data-pulse" animate={{ opacity:[.25,1,.25], scale:[.8,1.3,.8] }} transition={{ duration:1.5, repeat:Infinity, ease:"linear" }}/>
       </> : kind === "cards" ? <>
         <motion.div className="motion-study-card card-a" animate={{ rotate: [-8,-4,-8], y:[0,-5,0] }} transition={{ duration:2.5, repeat:Infinity }}><span>Q</span><i/><i/></motion.div>
         <motion.div className="motion-study-card card-b" animate={{ rotate: [7,3,7], y:[0,4,0] }} transition={{ duration:2.1, repeat:Infinity }}><span>A</span><i/><i/><i/></motion.div>
