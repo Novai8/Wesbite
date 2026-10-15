@@ -121,6 +121,18 @@ function localTransform(tool: ToolItem, input: string): string | null {
     case "json-formatter-and-validator":
       try { return JSON.stringify(JSON.parse(value), null, 2); }
       catch (error) { return "Invalid JSON: " + (error instanceof Error ? error.message : "Check commas, quotes, and brackets."); }
+    case "csv-cleaner": {
+      const rows = value.split(/\r?\n/).filter(Boolean).map((row) => row.split(",").map((cell) => cell.trim().replace(/^"|"$/g, "")));
+      if (!rows.length) return "Paste CSV rows to clean.";
+      const seen = new Set<string>();
+      const cleaned = rows.filter((row) => {
+        const key = row.join("\u0000");
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      }).map((row) => row.map((cell) => /[",\n]/.test(cell) ? '"' + cell.replace(/"/g, '""') + '"' : cell).join(","));
+      return cleaned.join("\n");
+    }
     case "csv-to-json-converter": {
       const rows = value.split(/\r?\n/).filter(Boolean).map((row) => row.split(",").map((cell) => cell.trim().replace(/^"|"$/g, "")));
       if (rows.length < 2) return "Add a CSV header row followed by at least one data row.";
