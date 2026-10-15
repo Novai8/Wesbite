@@ -21,7 +21,7 @@ const instrument = localFont({
 export const metadata: Metadata = {
   metadataBase: new URL(site.url),
   title: {
-    default: "Rapigents — Business Operations, Built Around the Problem",
+    default: "Rapigents — AI Tools Lab",
     template: "%s · Rapigents",
   },
   description: site.description,
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
     apple: [{ url: "/brand/logo.png", type: "image/png", sizes: "512x512" }],
   },
   openGraph: {
-    title: "Rapigents — Business Operations, Built Around the Problem",
+    title: "Rapigents — AI Tools Lab",
     description: site.description,
     url: site.url,
     siteName: site.name,
@@ -49,8 +49,8 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#F5F4EF",
-  colorScheme: "light",
+  themeColor: "#080A13",
+  colorScheme: "dark",
   width: "device-width",
   initialScale: 1,
 };
