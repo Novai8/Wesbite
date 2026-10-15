@@ -215,6 +215,7 @@ function localTransform(tool: ToolItem, input: string): string | null {
 }
 
 export function ToolsLab() {
+  const searchRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("All tools");
   const [kind, setKind] = useState<"all" | "ai" | "browser">("all");
@@ -225,6 +226,17 @@ export function ToolsLab() {
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showAll, setShowAll] = useState(false);
+
+  useEffect(() => {
+    const onShortcut = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        searchRef.current?.focus();
+      }
+    };
+    window.addEventListener("keydown", onShortcut);
+    return () => window.removeEventListener("keydown", onShortcut);
+  }, []);
 
   const filtered = useMemo(() => toolCatalog.filter((tool) => {
     const matchesQuery = (tool.name + " " + tool.description + " " + tool.category).toLowerCase().includes(query.toLowerCase());
@@ -326,7 +338,7 @@ export function ToolsLab() {
         </div>
 
         <div className="tools-controls">
-          <label className="tools-search"><Search size={17} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search tools, tasks, or categories…" aria-label="Search tools" /><kbd>⌘ K</kbd></label>
+          <label className="tools-search"><Search size={17} /><input ref={searchRef} value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search tools, tasks, or categories…" aria-label="Search tools" /><kbd>⌘ K</kbd></label>
           <div className="tools-filter-toggle" role="group" aria-label="Filter by tool type">
             <button type="button" className={kind === "all" ? "is-active" : ""} onClick={() => setKind("all")}>All</button>
             <button type="button" className={kind === "ai" ? "is-active" : ""} onClick={() => setKind("ai")}><Sparkles size={13}/> AI tools</button>
