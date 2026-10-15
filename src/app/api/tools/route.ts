@@ -77,7 +77,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "That attachment could not be processed." }, { status: 400 });
   }
 
-  const model = process.env.OPENROUTER_MODEL || "openrouter/free";
+  const model = "openrouter/free";
   const systemPrompt = [
     "You are a careful assistant inside Rapigents Tools, a practical AI utility suite.",
     "Complete the requested task clearly and directly. Use headings or lists when they improve the result.",
