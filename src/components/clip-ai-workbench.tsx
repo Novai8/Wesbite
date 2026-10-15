@@ -40,7 +40,7 @@ export function ClipAIWorkbench() {
   const [linkStatus, setLinkStatus] = useState("");
   const [linkError, setLinkError] = useState("");
   const [linkProjectId, setLinkProjectId] = useState("");
-  const [remoteClips, setRemoteClips] = useState<Array<{ id: string; title: string; url: string; thumbnail?: string }>>([]);
+  const [remoteClips, setRemoteClips] = useState<Array<{ id: string; title: string; url: string; thumbnail?: string; hook?: string; start?: number; end?: number }>>([]);
   const [linkProvider, setLinkProvider] = useState("");
 
   useEffect(() => () => { if (fileUrl) URL.revokeObjectURL(fileUrl); }, [fileUrl]);
@@ -80,7 +80,7 @@ export function ClipAIWorkbench() {
     event.preventDefault();
     setLinkError(""); setLinkStatus(""); setRemoteClips([]); setLinkProjectId("");
     const url = sourceLink.trim();
-    if (!/^https?:\\/\\//i.test(url)) { setLinkError("Paste a complete https:// video or supported platform link."); return; }
+    if (!/^https?:\/\//i.test(url)) { setLinkError("Paste a complete https:// video or supported platform link."); return; }
     setLinkBusy(true); setLinkStatus("Checking source and submitting to the clipping engine…");
     try {
       const response = await fetch("/api/clip-ai/import", {
@@ -105,6 +105,7 @@ export function ClipAIWorkbench() {
       const response = await fetch("/api/clip-ai/import?projectId=" + encodeURIComponent(linkProjectId), { cache: "no-store" });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload.error || "Could not check the processing status.");
+      if (payload.status === "failed") throw new Error(payload.message || "The worker could not process this source.");
       const items = Array.isArray(payload.clips) ? payload.clips : [];
       setRemoteClips(items);
       setLinkStatus(items.length ? "Your clips are ready. Open or download them from the clipping provider." : (payload.message || "Still processing. Check again in a little while."));
@@ -215,6 +216,13 @@ export function ClipAIWorkbench() {
   return <section className="clip-workbench" id="clip-workbench">
     <div className="clip-workbench-shell">
       <div className="clip-workbench-heading"><div><span className="clip-workbench-kicker"><WandSparkles size={14}/> CLIP AI / WORKBENCH</span><h2>Make your first <em>short.</em></h2><p>Upload a video up to 10 minutes, let AI adapt highlight lengths to the source, then render a vertical clip with captions. The source stays in this browser except for the analysis request.</p></div><span className="clip-workbench-version">MVP / 01</span></div>
+      <form className="clip-link-import" onSubmit={submitSourceLink}>
+        <div className="clip-link-copy"><span className="clip-workbench-kicker"><WandSparkles size={13}/> FREE LINK CLIPPING ENGINE</span><strong>Or paste a public video link</strong><p>Uses the self-hosted open-source worker: yt-dlp, local Whisper transcription, and FFmpeg. No paid clipping API.</p></div>
+        <div className="clip-link-controls"><input aria-label="Public video URL" type="url" inputMode="url" autoComplete="url" placeholder="https://www.youtube.com/watch?v=…" value={sourceLink} onChange={event => setSourceLink(event.target.value)} disabled={linkBusy} required /><button type="submit" disabled={linkBusy || !sourceLink.trim()}>{linkBusy ? <><LoaderCircle size={15} className="clip-spin"/> Working…</> : <>Find clips <WandSparkles size={15}/></>}</button></div>
+        {linkStatus && <p className="clip-link-status" role="status">{linkStatus}{linkProjectId && !remoteClips.length ? <button type="button" onClick={refreshRemoteClips} disabled={linkBusy}>Check now</button> : null}</p>}
+        {linkError && <p className="clip-link-error" role="alert">{linkError}</p>}
+        {remoteClips.length > 0 && <div className="clip-link-results">{remoteClips.map((clip,index)=><article key={clip.id||clip.url} className="clip-link-result"><div><span>CLIP {String(index+1).padStart(2,"0")}{typeof clip.start==="number"&&typeof clip.end==="number"?" · "+formatTime(clip.start)+"–"+formatTime(clip.end):""}</span><strong>{clip.title}</strong><p>{clip.hook||"AI-selected highlight with burned-in captions."}</p></div><a href={clip.url} target="_blank" rel="noreferrer" download><Download size={14}/> Open / download</a></article>)}</div>}
+      </form>
       <div className="clip-workbench-grid">
         <div className="clip-source-panel">
           <label className="clip-upload-zone" htmlFor="clip-source-file">
