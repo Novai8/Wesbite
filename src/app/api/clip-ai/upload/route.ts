@@ -32,6 +32,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Choose a video file to upload." }, { status: 400 });
   }
 
+  const requestedStyle = form.get("style");
+  const editStyle = typeof requestedStyle === "string" && ["punchy", "cinematic", "clean"].includes(requestedStyle) ? requestedStyle : "punchy";
+
   const entry = form.get("file");
   if (!entry || typeof entry === "string" || typeof entry.arrayBuffer !== "function") {
     return NextResponse.json({ error: "Choose a video file to upload." }, { status: 400 });
@@ -58,6 +61,7 @@ export async function POST(request: Request) {
         Authorization: "Bearer " + worker.token,
         "Content-Type": file.type || "application/octet-stream",
         "X-Upload-Filename": encodeURIComponent(safeName),
+        "X-Edit-Style": editStyle,
       },
       body: new Uint8Array(await file.arrayBuffer()),
       cache: "no-store",
