@@ -598,3 +598,14 @@ html[data-theme="light"] .clip-link-controls input:focus{outline-color:rgba(108,
 html[data-theme="light"] .clip-link-controls button{background:#6c4bc1;color:#fff}
 html[data-theme="light"] .clip-link-status{background:rgba(108,75,193,.06);border-color:#d6cee6;color:#39334e}
 html[data-theme="light"] .clip-link-error{background:#fff5f3;border-color:#dbaaa5;color:#8b2f2a}
+html[data-theme="light"] .clip-job-progress-head>strong{color:#9c4b30}
+html[data-theme="light"] .clip-job-live-dot{background:#9c4b30}
+html[data-theme="light"] .clip-job-stage.is-active .clip-job-stage-icon{color:#9c4b30;background:rgba(156,75,48,.08)}
+html[data-theme="light"] .clip-job-stage-icon>i{border-color:#9c4b30}
+html[data-theme="light"] .clip-job-stage.is-active .clip-job-stage-state{color:#9c4b30}
+html[data-theme="light"] .clip-link-result-meta{color:#666078}
+html[data-theme="light"] .clip-link-result-body>p{color:#5d5a70}
+html[data-theme="light"] .clip-link-metrics>div>span{color:#666078}
+html[data-theme="light"] .clip-link-metric-score>strong small,html[data-theme="light"] .clip-link-metric-reach>small{color:#666078}
+html[data-theme="light"] .clip-link-effects span{color:#4d4863}
+html[data-theme="light"] .clip-link-result-body>a{background:#6c4bc1;color:#fff}
