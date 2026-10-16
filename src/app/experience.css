@@ -591,3 +591,10 @@ html[data-theme="light"] .rg-clip-launch-overlay{background:rgba(241,238,249,.88
 html[data-theme="light"] .rg-clip-launch-card{background:#fff;border-color:rgba(69,53,112,.18);color:#252139;box-shadow:0 28px 90px rgba(50,35,81,.18)}
 html[data-theme="light"] .rg-clip-launch-top,html[data-theme="light"] .rg-clip-launch-card>span:last-child{color:#666078}
 @media(prefers-reduced-motion:reduce){html[data-theme="light"] .rg-fun-scene{filter:none}}
+html[data-theme="light"] .clip-link-import{background:linear-gradient(130deg,rgba(108,75,193,.07),rgba(255,255,255,.82));border-color:#d6cee6}
+html[data-theme="light"] .clip-link-copy .clip-workbench-kicker{color:#6c4bc1}
+html[data-theme="light"] .clip-link-controls input{background:rgba(255,255,255,.8);border-color:#d2cbdc;color:#211f31}
+html[data-theme="light"] .clip-link-controls input:focus{outline-color:rgba(108,75,193,.2);border-color:#6c4bc1}
+html[data-theme="light"] .clip-link-controls button{background:#6c4bc1;color:#fff}
+html[data-theme="light"] .clip-link-status{background:rgba(108,75,193,.06);border-color:#d6cee6;color:#39334e}
+html[data-theme="light"] .clip-link-error{background:#fff5f3;border-color:#dbaaa5;color:#8b2f2a}
