@@ -53,7 +53,8 @@ export function ToolDetailWorkbench({ tool }: { tool: ToolItem }) {
       if (!response.ok) throw new Error(payload.error || "This tool could not finish the request. Try again.");
       setResult(payload.result || "No result returned.");
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Something went wrong. Try again.");
+      const message = caught instanceof Error ? caught.message : "Something went wrong. Try again.";
+      setError(/openrouter|free model|model selected|video model|provider|backend|api key/i.test(message) ? "This tool could not complete the request right now. Please try again." : message);
     } finally {
       setBusy(false);
     }
