@@ -140,3 +140,49 @@
 .tool-motion-visual.variant-8 .tool-motion-core{box-shadow:0 0 48px color-mix(in srgb,var(--tool-accent) 24%,transparent)}
 .tool-motion-visual.variant-9 .tool-motion-orbit.orbit-one{width:145px;height:145px}
 .tool-motion-visual.variant-10 .tool-motion-orbit.orbit-two{width:190px;height:100px}
+/* Light theme for the tools library. Keep the ultraviolet identity, ditch the night-only contrast. */
+html[data-theme="light"] .tools-page{
+  --lab-bg:#f7f5fb;
+  --lab-panel:#ffffff;
+  --lab-ink:#211e32;
+  --lab-muted:#5e5a70;
+  --lab-line:rgba(47,38,78,.16);
+  --lab-accent:#6c55ca;
+  --lab-warm:#9a5c22;
+  background:radial-gradient(ellipse at 92% 2%,rgba(156,140,255,.16),transparent 30%),radial-gradient(ellipse at 0% 38%,rgba(67,51,137,.075),transparent 34%),var(--lab-bg);
+  color:var(--lab-ink);
+}
+html[data-theme="light"] .tools-page .tools-ambient{background:radial-gradient(ellipse at 78% 7%,rgba(108,85,202,.09),transparent 32%),linear-gradient(180deg,#f7f5fb,#f1eef9 50%,#f8f6fb)}
+html[data-theme="light"] .tools-page .tools-ambient-grid{background-image:linear-gradient(rgba(64,50,108,.055) 1px,transparent 1px),linear-gradient(90deg,rgba(64,50,108,.055) 1px,transparent 1px)}
+html[data-theme="light"] .tools-page .tools-hero{background:radial-gradient(ellipse at 78% 18%,rgba(156,140,255,.11),transparent 38%),linear-gradient(135deg,rgba(255,255,255,.65),transparent 60%)}
+html[data-theme="light"] .tools-page .tools-eyebrow,
+html[data-theme="light"] .tools-page .tools-section-kicker{color:#625b7b}
+html[data-theme="light"] .tools-page .tools-hero-lede{color:#5c596e}
+html[data-theme="light"] .tools-page .tools-hero-stats strong{color:#211e32}
+html[data-theme="light"] .tools-page .tools-hero-stats span,
+html[data-theme="light"] .tools-page .tools-art-top,
+html[data-theme="light"] .tools-page .tools-art-bottom,
+html[data-theme="light"] .tools-page .tools-art-caption,
+html[data-theme="light"] .tools-page .tools-scroll-cue{color:#625e74}
+html[data-theme="light"] .tools-page .tools-art-node{background:rgba(255,255,255,.94);border-color:rgba(80,67,125,.2);color:#302a47;box-shadow:8px 12px 28px rgba(46,36,79,.10)}
+html[data-theme="light"] .tools-page .tools-art-core{background:linear-gradient(145deg,rgba(216,255,99,.22),rgba(255,255,255,.94));box-shadow:12px 12px 0 rgba(88,68,153,.035),0 0 80px rgba(108,85,202,.10)}
+html[data-theme="light"] .tools-page .tools-section-heading>p{color:#5e5a70}
+html[data-theme="light"] .tools-page .tools-search{background:rgba(255,255,255,.86);color:#5d5873}
+html[data-theme="light"] .tools-page .tools-search input{color:#211e32}
+html[data-theme="light"] .tools-page .tools-search input::placeholder{color:#8c879e}
+html[data-theme="light"] .tools-page .tools-category-row button{color:#5b5670}
+html[data-theme="light"] .tools-page .tools-category-row button span{color:#827b98}
+html[data-theme="light"] .tools-page .tools-category-row button.is-active{background:rgba(108,85,202,.09);border-color:rgba(108,85,202,.4);color:#5b45b2}
+html[data-theme="light"] .tools-page .tools-results-meta{color:#716b87}
+html[data-theme="light"] .tools-page .tool-card{background:rgba(255,255,255,.56)}
+html[data-theme="light"] .tools-page .tool-card strong{color:#262239}
+html[data-theme="light"] .tools-page .tool-card p,
+html[data-theme="light"] .tools-page .tool-card-category{color:#625e74}
+html[data-theme="light"] .tools-page .tool-card:hover,
+html[data-theme="light"] .tools-page .tool-card.is-selected{background:rgba(255,255,255,.96);border-color:rgba(108,85,202,.35);box-shadow:0 18px 45px rgba(48,37,77,.09)}
+html[data-theme="light"] .tools-page .tools-empty{color:#6e6883}
+html[data-theme="light"] .tools-page .tools-empty strong{color:#262239}
+html[data-theme="light"] .tools-page .tools-note-band{background:linear-gradient(110deg,#ebe6f6,#f4eef7);border-color:rgba(47,38,78,.16)}
+html[data-theme="light"] .tools-page .tools-note-band strong{color:#29243f}
+html[data-theme="light"] .tools-page .tools-note-band p{color:#5e5a70}
+html[data-theme="light"] .tools-page .tools-note-icon{border-color:rgba(108,85,202,.28);color:#6c55ca}
