@@ -483,7 +483,8 @@ Format: Layer,Start,End,Style,Name,MarginL,MarginR,MarginV,Effect,Text
    ass.write_text(header+"\n".join(events)+"\n",encoding="utf-8")
    cmd(["ffmpeg","-y","-f","lavfi","-i","anoisesrc=color=white:duration=0.65:sample_rate=48000","-f","lavfi","-i","sine=frequency=82:duration=0.18:sample_rate=48000","-filter_complex","[0:a]highpass=f=450,lowpass=f=9000,afade=t=in:st=0:d=0.16,afade=t=out:st=0.18:d=0.42,volume=0.10[whoosh];[1:a]afade=t=in:st=0:d=0.01,afade=t=out:st=0.03:d=0.15,volume=0.16[thump];[whoosh][thump]amix=inputs=2:duration=longest:normalize=0,alimiter=limit=0.8[out]","-map","[out]","-ac","2",str(sfx)],60)
    ass_path=str(ass).replace("\\\\","/").replace(":","\\\\:")
-   vf=f"scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,zoompan=z='min(zoom+0.00055,1.07)':x='iw/2-(iw/zoom/2)+sin(on/95)*5':y='ih/2-(ih/zoom/2)+cos(on/125)*4':d=1:s=720x1280:fps=30,eq=contrast=1.04:saturation=1.08,unsharp=5:5:0.3:3:3:0.0,ass='{ass_path}'"
+   fade_out_at=max(0.0,(end-start)-fade_out)
+   vf=f"scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,zoompan=z='{zoom_expr}':x='{zoom_x}':y='{zoom_y}':d=1:s=720x1280:fps=30,{picture_filter},fade=t=in:st=0:d={fade_in:.2f},fade=t=out:st={fade_out_at:.2f}:d={fade_out:.2f},ass='{ass_path}'"
    cmd(["ffmpeg","-y","-ss",str(start),"-i",str(src),"-i",str(sfx),"-t",str(end-start),"-filter_complex",f"[0:a]volume=1.0[original];[1:a]adelay=120|120[effect];[original][effect]amix=inputs=2:duration=first:dropout_transition=0:normalize=0[aout]","-vf",vf,"-map","0:v:0","-map","[aout]","-c:v","libx264","-preset","veryfast","-crf","24","-c:a","aac","-b:a","128k","-pix_fmt","yuv420p","-movflags","+faststart",str(out)],600)
    potential=min(98,max(35,round(pick["score"])))
    outlook="Strong signals" if potential>=75 else "Promising" if potential>=58 else "Niche fit"
