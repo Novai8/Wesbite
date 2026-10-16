@@ -1,5 +1,6 @@
-import ipaddress, os, re, shutil, socket, subprocess, threading, time, uuid
+import ipaddress, json, os, re, shutil, socket, subprocess, threading, time, uuid
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import unquote, urlparse
 from fastapi import FastAPI, Header, HTTPException, Request
@@ -14,6 +15,11 @@ TOKEN=os.getenv("CLIP_WORKER_TOKEN",""); PUBLIC=os.getenv("CLIP_WORKER_PUBLIC_UR
 TUNELIO_FALLBACK_ENABLED=os.getenv("TUNELIO_FALLBACK_ENABLED","false").strip().lower() in {"1","true","yes","on"}
 VIDFETCH_API_KEY=os.getenv("VIDFETCH_API_KEY","").strip()
 VIDFETCH_FALLBACK_ENABLED=os.getenv("VIDFETCH_FALLBACK_ENABLED","false").strip().lower() in {"1","true","yes","on"}
+VIDFETCH_QUALITY=os.getenv("VIDFETCH_QUALITY","360p").strip().lower()
+VIDFETCH_MONTHLY_MAX_BYTES=int(os.getenv("VIDFETCH_MONTHLY_MAX_BYTES",str(800*1024*1024)))
+VIDFETCH_MONTHLY_MAX_JOBS=int(os.getenv("VIDFETCH_MONTHLY_MAX_JOBS","20"))
+VIDFETCH_MAX_ESTIMATED_BYTES=int(os.getenv("VIDFETCH_MAX_ESTIMATED_BYTES",str(150*1024*1024)))
+VIDFETCH_USAGE_PATH=ROOT/"vidfetch-usage.json"; VIDFETCH_USAGE_LOCK=threading.Lock()
 MAX_SECONDS=int(os.getenv("MAX_SOURCE_SECONDS","1800")); MAX_BYTES=int(os.getenv("MAX_DOWNLOAD_BYTES",str(750*1024*1024)))
 MAX_UPLOAD_BYTES=min(MAX_BYTES,int(os.getenv("MAX_UPLOAD_BYTES",str(10*1024*1024))))
 MODEL_NAME=os.getenv("WHISPER_MODEL","small"); POOL=ThreadPoolExecutor(max_workers=1); LOCK=threading.Lock(); MODEL_LOCK=threading.Lock(); JOBS={}; MODEL=None
@@ -54,69 +60,171 @@ def download_from_ytdlp(raw_url,work,is_youtube=False):
  if src.stat().st_size>MAX_BYTES: raise RuntimeError("Source exceeds worker download-size limit.")
  return src
 
+def _vidfetch_month():
+ return datetime.now(timezone.utc).strftime("%Y-%m")
+
+def _vidfetch_read_usage():
+ month=_vidfetch_month()
+ if not VIDFETCH_USAGE_PATH.exists():
+  return {"month":month,"jobs_started":0,"bytes_used":0,"reservations":{}}
+ try:
+  state=json.loads(VIDFETCH_USAGE_PATH.read_text(encoding="utf-8"))
+ except Exception as e:
+  raise RuntimeError("VidFetch quota ledger is unreadable; refusing a download to protect the account quota.") from e
+ if not isinstance(state,dict) or not isinstance(state.get("month"),str):
+  raise RuntimeError("VidFetch quota ledger is invalid; refusing a download to protect the account quota.")
+ if state["month"]!=month:
+  return {"month":month,"jobs_started":0,"bytes_used":0,"reservations":{}}
+ if not isinstance(state.get("reservations"),dict):
+  raise RuntimeError("VidFetch quota ledger is invalid; refusing a download to protect the account quota.")
+ state.setdefault("jobs_started",0); state.setdefault("bytes_used",0)
+ return state
+
+def _vidfetch_save_usage(state):
+ VIDFETCH_USAGE_PATH.parent.mkdir(parents=True,exist_ok=True)
+ tmp=VIDFETCH_USAGE_PATH.with_suffix(".tmp")
+ tmp.write_text(json.dumps(state,separators=(",",":")),encoding="utf-8")
+ os.chmod(tmp,0o600)
+ os.replace(tmp,VIDFETCH_USAGE_PATH)
+
+def _vidfetch_reserve(estimated_bytes):
+ if estimated_bytes<=0:
+  raise RuntimeError("VidFetch did not provide a usable size estimate; refusing an unbounded download.")
+ if estimated_bytes>VIDFETCH_MAX_ESTIMATED_BYTES:
+  raise RuntimeError(f"VidFetch estimate is {estimated_bytes//(1024*1024)} MiB, above the worker's {VIDFETCH_MAX_ESTIMATED_BYTES//(1024*1024)} MiB per-job safety limit.")
+ reservation=uuid.uuid4().hex
+ padded=int(estimated_bytes*1.5)
+ with VIDFETCH_USAGE_LOCK:
+  state=_vidfetch_read_usage()
+  inflight=sum(int(v.get("reserved_bytes",0)) for v in state["reservations"].values() if isinstance(v,dict))
+  if int(state["jobs_started"])>=VIDFETCH_MONTHLY_MAX_JOBS:
+   raise RuntimeError(f"VidFetch monthly safety limit reached ({VIDFETCH_MONTHLY_MAX_JOBS} jobs).")
+  if int(state["bytes_used"])+inflight+padded>VIDFETCH_MONTHLY_MAX_BYTES:
+   used=(int(state["bytes_used"])+inflight)//(1024*1024)
+   cap=VIDFETCH_MONTHLY_MAX_BYTES//(1024*1024)
+   raise RuntimeError(f"VidFetch monthly safety budget would be exceeded ({used} MiB reserved/used of {cap} MiB).")
+  state["jobs_started"]=int(state["jobs_started"])+1
+  state["reservations"][reservation]={"reserved_bytes":padded,"estimated_bytes":estimated_bytes,"created_at":datetime.now(timezone.utc).isoformat()}
+  _vidfetch_save_usage(state)
+ return reservation
+
+def _vidfetch_finalize(reservation,actual_bytes=None,keep_reservation_as_charge=False):
+ with VIDFETCH_USAGE_LOCK:
+  state=_vidfetch_read_usage()
+  entry=state["reservations"].pop(reservation,None)
+  if entry is None: return
+  charged=int(entry.get("reserved_bytes",0)) if keep_reservation_as_charge or actual_bytes is None else max(0,int(actual_bytes))
+  state["bytes_used"]=int(state.get("bytes_used",0))+charged
+  _vidfetch_save_usage(state)
+
 def download_from_vidfetch(raw_url,work):
  if not VIDFETCH_API_KEY: raise RuntimeError("VidFetch fallback is enabled but VIDFETCH_API_KEY is not configured on the worker.")
  headers={"Authorization":f"Bearer {VIDFETCH_API_KEY}","Content-Type":"application/json"}
  for stale in work.glob("source.*"):
   if stale.is_file(): stale.unlink()
+
+ # /info is the documented preflight endpoint. It does not start a download job.
  try:
-  response=requests.post("https://api.vidfetch.dev/v1/downloads",headers=headers,json={"url":raw_url,"format":"720p"},timeout=30)
-  if not response.ok: raise RuntimeError(f"VidFetch API rejected the request (HTTP {response.status_code}): {response.text[:300]}")
-  payload=response.json()
+  response=requests.post("https://api.vidfetch.dev/v1/info",headers=headers,json={"url":raw_url},timeout=30)
+  response.raise_for_status()
+  info=response.json()
  except requests.RequestException as e:
-  raise RuntimeError("VidFetch API could not be reached.") from e
+  raise RuntimeError("VidFetch metadata preflight failed; no download was started.") from e
  except ValueError as e:
-  raise RuntimeError("VidFetch API returned invalid JSON.") from e
- if not isinstance(payload,dict): raise RuntimeError("VidFetch API returned an unexpected response.")
- job_id=payload.get("id")
- status=str(payload.get("status","queued")).lower()
- direct=payload.get("download_url")
- if not direct and not isinstance(job_id,str): raise RuntimeError("VidFetch did not return a download job ID.")
- if job_id is not None and not re.fullmatch(r"[A-Za-z0-9_-]{4,128}",str(job_id)):
-  raise RuntimeError("VidFetch returned an invalid job ID.")
- deadline=time.monotonic()+240
- while not isinstance(direct,str) or not direct:
-  if status in {"failed","cancelled","canceled","error"}:
-   detail=payload.get("error") or payload.get("message") or "The provider marked the download as failed."
-   raise RuntimeError("VidFetch download failed: "+str(detail)[:300])
-  if time.monotonic()>=deadline: raise RuntimeError("VidFetch download timed out while waiting for the provider.")
-  time.sleep(3)
+  raise RuntimeError("VidFetch metadata preflight returned invalid JSON; no download was started.") from e
+ if not isinstance(info,dict) or not isinstance(info.get("formats"),list):
+  raise RuntimeError("VidFetch metadata did not include a formats list; refusing to start a download.")
+
+ # Choose the best advertised quality at or below the configured cap.
+ match=re.match(r"^(\d+)p$",VIDFETCH_QUALITY)
+ target_height=int(match.group(1)) if match else 360
+ candidates=[]
+ for item in info["formats"]:
+  if not isinstance(item,dict): continue
+  quality=str(item.get("quality","")).lower()
+  qm=re.match(r"^(\d+)p$",quality)
+  try: size=int(item.get("size",0))
+  except (TypeError,ValueError): size=0
+  if qm and size>0 and int(qm.group(1))<=target_height:
+   candidates.append((int(qm.group(1)),size,quality))
+ if not candidates:
+  raise RuntimeError(f"VidFetch offered no known format at or below {target_height}p; refusing an unbounded download.")
+ height,estimate,quality=max(candidates,key=lambda x:x[0])
+ if estimate>MAX_BYTES:
+  raise RuntimeError("VidFetch's estimated source size exceeds this worker's download limit.")
+ reservation=_vidfetch_reserve(estimate)
+ settled=False
+ try:
   try:
-   response=requests.get("https://api.vidfetch.dev/v1/downloads/"+str(job_id),headers=headers,timeout=25)
-   if not response.ok: raise RuntimeError(f"VidFetch status check failed (HTTP {response.status_code}).")
+   response=requests.post("https://api.vidfetch.dev/v1/downloads",headers=headers,json={"url":raw_url,"format":quality},timeout=30)
+   if not response.ok:
+    # The preflight is free; retain a conservative reservation only for ambiguous server errors.
+    if response.status_code<500:
+     _vidfetch_finalize(reservation,actual_bytes=0); settled=True
+    raise RuntimeError(f"VidFetch download request failed (HTTP {response.status_code}): {response.text[:240]}")
    payload=response.json()
   except requests.RequestException as e:
-   raise RuntimeError("Could not check the VidFetch download status.") from e
+   raise RuntimeError("VidFetch download request could not be confirmed; its reserved allowance was retained for safety.") from e
   except ValueError as e:
-   raise RuntimeError("VidFetch status endpoint returned invalid JSON.") from e
-  if not isinstance(payload,dict): raise RuntimeError("VidFetch status endpoint returned an unexpected response.")
+   raise RuntimeError("VidFetch download request returned invalid JSON; its reserved allowance was retained for safety.") from e
+  if not isinstance(payload,dict): raise RuntimeError("VidFetch returned an unexpected download-job response.")
+  job_id=payload.get("id")
   status=str(payload.get("status","queued")).lower()
   direct=payload.get("download_url")
- parsed=urlparse(direct)
- if parsed.scheme!="https" or not parsed.hostname or parsed.username or parsed.password:
-  raise RuntimeError("VidFetch returned an invalid download URL.")
- dest=work/"source.mp4"; total=0
- try:
-  with requests.get(direct,stream=True,timeout=(15,90)) as download:
+  if not isinstance(direct,str) or not direct:
+   if not isinstance(job_id,str) or not re.fullmatch(r"[A-Za-z0-9_-]{4,128}",job_id):
+    raise RuntimeError("VidFetch did not return a valid download job ID.")
+   deadline=time.monotonic()+240
+   while not isinstance(direct,str) or not direct:
+    if status in {"failed","cancelled","canceled","error"}:
+     detail=payload.get("error") or payload.get("message") or payload.get("error_message") or "The provider marked the download as failed."
+     raise RuntimeError("VidFetch download failed: "+str(detail)[:300])
+    if time.monotonic()>=deadline:
+     raise RuntimeError("VidFetch download timed out while waiting for the provider.")
+    time.sleep(3)
+    try:
+     response=requests.get("https://api.vidfetch.dev/v1/downloads/"+job_id,headers=headers,timeout=25)
+     if not response.ok: raise RuntimeError(f"VidFetch status check failed (HTTP {response.status_code}).")
+     payload=response.json()
+    except requests.RequestException as e:
+     raise RuntimeError("Could not check the VidFetch download status.") from e
+    except ValueError as e:
+     raise RuntimeError("VidFetch status endpoint returned invalid JSON.") from e
+    if not isinstance(payload,dict): raise RuntimeError("VidFetch status endpoint returned an unexpected response.")
+    status=str(payload.get("status","queued")).lower()
+    direct=payload.get("download_url")
+  if status and status not in {"completed","complete","success","succeeded"}:
+   raise RuntimeError("VidFetch returned a download URL before the job was marked completed.")
+  parsed=urlparse(direct)
+  host=(parsed.hostname or "").lower().rstrip(".")
+  if parsed.scheme!="https" or not host.endswith(".r2.cloudflarestorage.com") or parsed.username or parsed.password:
+   raise RuntimeError("VidFetch returned an unexpected media-host URL; refusing to fetch it.")
+  dest=work/"source.mp4"; total=0
+  with requests.get(direct,stream=True,timeout=(15,90),allow_redirects=False) as download:
    download.raise_for_status()
    size=download.headers.get("content-length")
    if size:
     try:
-     if int(size)>MAX_BYTES: raise RuntimeError("VidFetch source exceeds the worker's 750 MB size limit.")
+     if int(size)>MAX_BYTES: raise RuntimeError("VidFetch source exceeds the worker's configured size limit.")
     except ValueError: pass
    with dest.open("wb") as handle:
     for chunk in download.iter_content(chunk_size=1024*1024):
      if not chunk: continue
      total+=len(chunk)
-     if total>MAX_BYTES: raise RuntimeError("VidFetch source exceeds the worker's 750 MB size limit.")
+     if total>MAX_BYTES: raise RuntimeError("VidFetch source exceeds the worker's configured size limit.")
      handle.write(chunk)
+  if total<=0:
+   dest.unlink(missing_ok=True)
+   raise RuntimeError("VidFetch returned an empty file.")
+  _vidfetch_finalize(reservation,actual_bytes=total); settled=True
+  return dest
  except Exception:
-  dest.unlink(missing_ok=True)
+  if not settled:
+   # A provider job may already have completed, so count its reserved estimate
+   # against the local cap rather than allowing retries to burn the allowance.
+   try: _vidfetch_finalize(reservation,keep_reservation_as_charge=True)
+   except Exception: pass
   raise
- if total<=0:
-  dest.unlink(missing_ok=True)
-  raise RuntimeError("VidFetch returned an empty file.")
- return dest
 
 def download_from_tunelio(raw_url,work):
  if not TUNELIO_API_KEY: raise RuntimeError("YouTube URL importing is not configured yet. Add the private TUNELIO_API_KEY on the AWS worker.")
@@ -289,7 +397,7 @@ def process(jid,url):
     except Exception as local_error:
      src=None; fallback_errors=[]
      if VIDFETCH_FALLBACK_ENABLED:
-      with LOCK: JOBS[jid].update(status="downloading",message="Local YouTube download failed; trying VidFetch's free monthly allowance…")
+      with LOCK: JOBS[jid].update(status="downloading",message="Local YouTube download failed; checking configured VidFetch fallback…")
       try: src=download_from_vidfetch(url,work)
       except Exception as fallback_error: fallback_errors.append("VidFetch: "+str(fallback_error)[-320:])
      if src is None and TUNELIO_FALLBACK_ENABLED:
