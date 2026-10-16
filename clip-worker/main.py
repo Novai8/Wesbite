@@ -11,6 +11,7 @@ import requests
 ROOT=Path(os.getenv("CLIP_DATA_DIR","/data")).resolve(); INBOX=ROOT/"inbox"; OUT=ROOT/"outputs"
 for p in (INBOX,OUT): p.mkdir(parents=True,exist_ok=True)
 TOKEN=os.getenv("CLIP_WORKER_TOKEN",""); PUBLIC=os.getenv("CLIP_WORKER_PUBLIC_URL","").rstrip("/"); TUNELIO_API_KEY=os.getenv("TUNELIO_API_KEY","").strip()
+TUNELIO_FALLBACK_ENABLED=os.getenv("TUNELIO_FALLBACK_ENABLED","false").strip().lower() in {"1","true","yes","on"}
 MAX_SECONDS=int(os.getenv("MAX_SOURCE_SECONDS","1800")); MAX_BYTES=int(os.getenv("MAX_DOWNLOAD_BYTES",str(750*1024*1024)))
 MAX_UPLOAD_BYTES=min(MAX_BYTES,int(os.getenv("MAX_UPLOAD_BYTES",str(10*1024*1024))))
 MODEL_NAME=os.getenv("WHISPER_MODEL","small"); POOL=ThreadPoolExecutor(max_workers=1); LOCK=threading.Lock(); MODEL_LOCK=threading.Lock(); JOBS={}; MODEL=None
@@ -35,6 +36,22 @@ def cmd(args,timeout=900):
  p=subprocess.run(args,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,timeout=timeout)
  if p.returncode: raise RuntimeError((p.stderr or p.stdout or "Media command failed")[-1200:])
  return p.stdout.strip()
+def download_from_ytdlp(raw_url,work,is_youtube=False):
+ # Uses the open-source bgutil PO-token plugin when installed locally.
+ # YouTube client choices are important on datacenter IPs; token support is not a guarantee.
+ for stale in work.glob("source.*"):
+  if stale.is_file(): stale.unlink()
+ args=["yt-dlp","--no-playlist","--no-warnings","--max-filesize",str(MAX_BYTES),"--match-filter",f"duration <= {MAX_SECONDS}","-f","bv*[height<=720]+ba/b[height<=720]/b","--merge-output-format","mp4","-o",str(work/"source.%(ext)s")]
+ if is_youtube:
+  args.extend(["--extractor-args","youtube:player-client=mweb,tv,web_safari"])
+ args.append(raw_url)
+ cmd(args,900)
+ files=[p for p in work.glob("source.*") if p.is_file() and p.stat().st_size]
+ if not files: raise RuntimeError("No source downloaded. It may be private, restricted, unsupported, or too large.")
+ src=max(files,key=lambda p:p.stat().st_size)
+ if src.stat().st_size>MAX_BYTES: raise RuntimeError("Source exceeds worker download-size limit.")
+ return src
+
 def download_from_tunelio(raw_url,work):
  if not TUNELIO_API_KEY: raise RuntimeError("YouTube URL importing is not configured yet. Add the private TUNELIO_API_KEY on the AWS worker.")
  try:
@@ -83,8 +100,50 @@ def model():
 def stamp(sec):
  ms=max(0,int(sec*1000)); h,ms=divmod(ms,3600000); m,ms=divmod(ms,60000); s,ms=divmod(ms,1000)
  return f"{h:02}:{m:02}:{s:02},{ms:03}"
+def transcript_sentences(segments):
+ """Split Whisper's word-timed transcript into sentence/long-pause chunks."""
+ sentences=[]; current=[]
+ def flush():
+  nonlocal current
+  if current:
+   text=" ".join(w["text"] for w in current).strip()
+   if text:
+    sentences.append({"start":current[0]["start"],"end":current[-1]["end"],"text":text,"words":current[:]})
+  current=[]
+ for seg in segments:
+  seg_start=float(getattr(seg,"start",0.0)); seg_end=float(getattr(seg,"end",seg_start))
+  items=getattr(seg,"words",None)
+  if items:
+   for item in items:
+    word=str(getattr(item,"word","")).strip()
+    if not word: continue
+    start=float(getattr(item,"start",seg_start) or seg_start)
+    end=float(getattr(item,"end",start+0.08) or start+0.08)
+    if current and start-current[-1]["end"]>1.2: flush()
+    current.append({"start":start,"end":max(start+0.04,end),"text":word})
+    if re.search(r"[.!?…][\\"')\\]]*$",word): flush()
+  else:
+   text=re.sub(r"\\s+"," ",str(getattr(seg,"text",""))).strip()
+   if not text: continue
+   if current and seg_start-current[-1]["end"]>1.2: flush()
+   current.append({"start":seg_start,"end":max(seg_start+0.08,seg_end),"text":text})
+   if re.search(r"[.!?…][\\"')\\]]*$",text) or len(current)>=8: flush()
+ flush()
+ return sentences
+
 def picks(transcript,duration):
- chunks=[{"start":float(s.start),"end":float(s.end),"text":re.sub(r"\s+"," ",s.text).strip()} for s in transcript if s.text.strip()]
+ chunks=[]
+ for item in transcript:
+  if isinstance(item,dict):
+   start=float(item.get("start",0)); end=float(item.get("end",0))
+   text=re.sub(r"\\s+"," ",str(item.get("text",""))).strip()
+   words=item.get("words",[])
+  else:
+   start=float(item.start); end=float(item.end)
+   text=re.sub(r"\\s+"," ",str(item.text)).strip()
+   words=[]
+  if text and end>start:
+   chunks.append({"start":start,"end":end,"text":text,"words":words})
  if not chunks: raise RuntimeError("Speech recognition found no usable spoken content.")
  target=min(45.,max(18.,duration/5)); windows=[]; cursor=chunks[0]["start"]
  while cursor<duration and len(windows)<18:
@@ -156,20 +215,25 @@ def process(jid,url):
    if src.stat().st_size>MAX_UPLOAD_BYTES: raise RuntimeError("Uploaded video exceeds the upload limit.")
   else:
    parsed_url=urlparse(url)
-   if parsed_url.hostname and parsed_url.hostname.lower().rstrip(".") in YOUTUBE_HOSTS:
-    with LOCK: JOBS[jid].update(status="downloading",message="Resolving YouTube video link…")
-    src=download_from_tunelio(url,work)
+   is_youtube=bool(parsed_url.hostname and parsed_url.hostname.lower().rstrip(".") in YOUTUBE_HOSTS)
+   with LOCK: JOBS[jid].update(status="downloading",message="Trying free local YouTube resolver…" if is_youtube else "Downloading source with yt-dlp…")
+   if is_youtube:
+    try:
+     src=download_from_ytdlp(url,work,is_youtube=True)
+    except Exception as local_error:
+     if TUNELIO_FALLBACK_ENABLED and TUNELIO_API_KEY:
+      with LOCK: JOBS[jid].update(status="downloading",message="Local resolver failed; trying configured limited-credit fallback…")
+      try: src=download_from_tunelio(url,work)
+      except Exception as fallback_error:
+       raise RuntimeError("Local YouTube download failed ("+str(local_error)[-420:]+"); Tunelio fallback also failed ("+str(fallback_error)[-300:]+").")
+     else:
+      raise RuntimeError("Free local YouTube download failed. Confirm the BgUtils PO-token provider is installed; YouTube may still restrict this server IP. Details: "+str(local_error)[-700:])
    else:
-    with LOCK: JOBS[jid].update(status="downloading",message="Downloading source with yt-dlp…")
-    cmd(["yt-dlp","--no-playlist","--no-warnings","--max-filesize",str(MAX_BYTES),"--match-filter",f"duration <= {MAX_SECONDS}","-f","bv*[height<=1080]+ba/b[height<=1080]/b","--merge-output-format","mp4","-o",str(work/"source.%(ext)s"),url],900)
-    files=[p for p in work.glob("source.*") if p.is_file() and p.stat().st_size]
-    if not files: raise RuntimeError("No source downloaded. It may be private, restricted, unsupported, or too large.")
-    src=max(files,key=lambda p:p.stat().st_size)
-    if src.stat().st_size>MAX_BYTES: raise RuntimeError("Source exceeds worker download-size limit.")
+    src=download_from_ytdlp(url,work,is_youtube=False)
   duration=float(cmd(["ffprobe","-v","error","-show_entries","format=duration","-of","default=noprint_wrappers=1:nokey=1",str(src)]))
   if duration<=0 or duration>MAX_SECONDS: raise RuntimeError(f"Source must be under {MAX_SECONDS//60} minutes.")
   with LOCK: JOBS[jid].update(status="transcribing",message="Transcribing speech locally with faster-whisper…")
-  m=model(); segments,info=m.transcribe(str(src),vad_filter=True,word_timestamps=False,beam_size=3); selections=picks(list(segments),duration)
+  m=model(); segments,info=m.transcribe(str(src),vad_filter=True,word_timestamps=True,beam_size=3); transcript=transcript_sentences(list(segments)); selections=picks(transcript,duration)
   with LOCK: JOBS[jid].update(status="rendering",message="Editing clips: smart zoom, hook titles, colored captions, and subtle sound effects…")
   results=[]
   for n,pick in enumerate(selections,1):
@@ -192,14 +256,24 @@ Format: Layer,Start,End,Style,Name,MarginL,MarginR,MarginV,Effect,Text
    events.append(f"Dialogue: 1,0:00:00.00,0:00:02.85,Hook,,0,0,0,,{{\\fad(220,260)\\an8\\pos(360,175)\\fscx78\\fscy78\\t(0,420,\\fscx100\\fscy100)\\blur(1.2)\\t(250,500,\\blur(0))}}{ass_escape(hook_text)}")
    colors=["&H0087F5FF","&H00FF91C8","&H00FFFFFF","&H008BFF9B"]
    for i,seg in enumerate(pick["segments"]):
-    a=max(0.0,float(seg["start"])-start); b=max(a+0.18,min(end-start,float(seg["end"])-start))
-    pieces=caption_chunks(seg["text"].replace("-->","→"),5)
-    if not pieces: continue
-    span=max(0.18,b-a)
-    for j,piece in enumerate(pieces):
-     pa=a+span*j/len(pieces); pb=a+span*(j+1)/len(pieces)
-     caption=ass_escape(piece)
-     events.append(f"Dialogue: 0,{ass_stamp(pa)},{ass_stamp(max(pa+0.12,pb))},Caption,,0,0,0,,{{\\fad(55,75)\\c{colors[(i+j)%len(colors)]}\\fscx92\\fscy92\\t(0,90,\\fscx100\\fscy100)}}{caption.upper()}")
+    words=seg.get("words") or []
+    if words:
+     groups=[words[k:k+4] for k in range(0,len(words),4)]
+     for j,group in enumerate(groups):
+      pa=max(0.0,float(group[0]["start"])-start)
+      pb=min(end-start,float(group[-1]["end"])-start)
+      caption=ass_escape(" ".join(w["text"] for w in group).replace("-->","→"))
+      if not caption: continue
+      events.append(f"Dialogue: 0,{ass_stamp(pa)},{ass_stamp(max(pa+0.14,pb))},Caption,,0,0,0,,{{\\fad(55,75)\\c{colors[(i+j)%len(colors)]}\\fscx92\\fscy92\\t(0,90,\\fscx100\\fscy100)}}{caption.upper()}")
+    else:
+     a=max(0.0,float(seg["start"])-start); b=max(a+0.18,min(end-start,float(seg["end"])-start))
+     pieces=caption_chunks(seg["text"].replace("-->","→"),4)
+     if not pieces: continue
+     span=max(0.18,b-a)
+     for j,piece in enumerate(pieces):
+      pa=a+span*j/len(pieces); pb=a+span*(j+1)/len(pieces)
+      caption=ass_escape(piece)
+      events.append(f"Dialogue: 0,{ass_stamp(pa)},{ass_stamp(max(pa+0.12,pb))},Caption,,0,0,0,,{{\\fad(55,75)\\c{colors[(i+j)%len(colors)]}\\fscx92\\fscy92\\t(0,90,\\fscx100\\fscy100)}}{caption.upper()}")
    ass.write_text(header+"\n".join(events)+"\n",encoding="utf-8")
    cmd(["ffmpeg","-y","-f","lavfi","-i","anoisesrc=color=white:duration=0.65:sample_rate=48000","-f","lavfi","-i","sine=frequency=82:duration=0.18:sample_rate=48000","-filter_complex","[0:a]highpass=f=450,lowpass=f=9000,afade=t=in:st=0:d=0.16,afade=t=out:st=0.18:d=0.42,volume=0.10[whoosh];[1:a]afade=t=in:st=0:d=0.01,afade=t=out:st=0.03:d=0.15,volume=0.16[thump];[whoosh][thump]amix=inputs=2:duration=longest:normalize=0,alimiter=limit=0.8[out]","-map","[out]","-ac","2",str(sfx)],60)
    ass_path=str(ass).replace("\\\\","/").replace(":","\\\\:")
@@ -207,7 +281,7 @@ Format: Layer,Start,End,Style,Name,MarginL,MarginR,MarginV,Effect,Text
    cmd(["ffmpeg","-y","-ss",str(start),"-i",str(src),"-i",str(sfx),"-t",str(end-start),"-filter_complex",f"[0:a]volume=1.0[original];[1:a]adelay=120|120[effect];[original][effect]amix=inputs=2:duration=first:dropout_transition=0:normalize=0[aout]","-vf",vf,"-map","0:v:0","-map","[aout]","-c:v","libx264","-preset","veryfast","-crf","24","-c:a","aac","-b:a","128k","-pix_fmt","yuv420p","-movflags","+faststart",str(out)],600)
    potential=min(98,max(35,round(pick["score"])))
    outlook="Strong signals" if potential>=75 else "Promising" if potential>=58 else "Niche fit"
-   results.append({"id":cid,"title":pick["title"],"hook":pick["hook"],"start":round(start,2),"end":round(end,2),"potentialScore":potential,"reachOutlook":outlook,"effects":["subtle zoom-in","opening hook title","multicolor captions","soft whoosh sound effect"],"url":f"{PUBLIC}/media/{name}" if PUBLIC else f"/media/{name}"})
+   results.append({"id":cid,"title":pick["title"],"hookTitle":pick.get("hookTitle",pick["title"]),"hook":pick["hook"],"start":round(start,2),"end":round(end,2),"potentialScore":potential,"reachOutlook":outlook,"effects":["sentence-aware selection","word-timed captions","subtle motion","animated opening hook","layered whoosh impact"],"url":f"{PUBLIC}/media/{name}" if PUBLIC else f"/media/{name}"})
   with LOCK: JOBS[jid].update(status="completed",message=f"Created {len(results)} clips.",clips=results,duration=duration,language=getattr(info,"language",None))
  except subprocess.TimeoutExpired:
   with LOCK: JOBS[jid].update(status="failed",message="Processing timed out. Try a shorter or lower-resolution source.")
