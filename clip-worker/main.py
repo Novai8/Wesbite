@@ -1,4 +1,4 @@
-import ipaddress, os, re, shutil, socket, subprocess, threading, uuid
+import ipaddress, os, re, shutil, socket, subprocess, threading, time, uuid
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from urllib.parse import unquote, urlparse
@@ -12,6 +12,8 @@ ROOT=Path(os.getenv("CLIP_DATA_DIR","/data")).resolve(); INBOX=ROOT/"inbox"; OUT
 for p in (INBOX,OUT): p.mkdir(parents=True,exist_ok=True)
 TOKEN=os.getenv("CLIP_WORKER_TOKEN",""); PUBLIC=os.getenv("CLIP_WORKER_PUBLIC_URL","").rstrip("/"); TUNELIO_API_KEY=os.getenv("TUNELIO_API_KEY","").strip()
 TUNELIO_FALLBACK_ENABLED=os.getenv("TUNELIO_FALLBACK_ENABLED","false").strip().lower() in {"1","true","yes","on"}
+VIDFETCH_API_KEY=os.getenv("VIDFETCH_API_KEY","").strip()
+VIDFETCH_FALLBACK_ENABLED=os.getenv("VIDFETCH_FALLBACK_ENABLED","false").strip().lower() in {"1","true","yes","on"}
 MAX_SECONDS=int(os.getenv("MAX_SOURCE_SECONDS","1800")); MAX_BYTES=int(os.getenv("MAX_DOWNLOAD_BYTES",str(750*1024*1024)))
 MAX_UPLOAD_BYTES=min(MAX_BYTES,int(os.getenv("MAX_UPLOAD_BYTES",str(10*1024*1024))))
 MODEL_NAME=os.getenv("WHISPER_MODEL","small"); POOL=ThreadPoolExecutor(max_workers=1); LOCK=threading.Lock(); MODEL_LOCK=threading.Lock(); JOBS={}; MODEL=None
@@ -51,6 +53,70 @@ def download_from_ytdlp(raw_url,work,is_youtube=False):
  src=max(files,key=lambda p:p.stat().st_size)
  if src.stat().st_size>MAX_BYTES: raise RuntimeError("Source exceeds worker download-size limit.")
  return src
+
+def download_from_vidfetch(raw_url,work):
+ if not VIDFETCH_API_KEY: raise RuntimeError("VidFetch fallback is enabled but VIDFETCH_API_KEY is not configured on the worker.")
+ headers={"Authorization":f"Bearer {VIDFETCH_API_KEY}","Content-Type":"application/json"}
+ for stale in work.glob("source.*"):
+  if stale.is_file(): stale.unlink()
+ try:
+  response=requests.post("https://api.vidfetch.dev/v1/downloads",headers=headers,json={"url":raw_url,"format":"720p"},timeout=30)
+  if not response.ok: raise RuntimeError(f"VidFetch API rejected the request (HTTP {response.status_code}): {response.text[:300]}")
+  payload=response.json()
+ except requests.RequestException as e:
+  raise RuntimeError("VidFetch API could not be reached.") from e
+ except ValueError as e:
+  raise RuntimeError("VidFetch API returned invalid JSON.") from e
+ if not isinstance(payload,dict): raise RuntimeError("VidFetch API returned an unexpected response.")
+ job_id=payload.get("id")
+ status=str(payload.get("status","queued")).lower()
+ direct=payload.get("download_url")
+ if not direct and not isinstance(job_id,str): raise RuntimeError("VidFetch did not return a download job ID.")
+ if job_id is not None and not re.fullmatch(r"[A-Za-z0-9_-]{4,128}",str(job_id)):
+  raise RuntimeError("VidFetch returned an invalid job ID.")
+ deadline=time.monotonic()+240
+ while not isinstance(direct,str) or not direct:
+  if status in {"failed","cancelled","canceled","error"}:
+   detail=payload.get("error") or payload.get("message") or "The provider marked the download as failed."
+   raise RuntimeError("VidFetch download failed: "+str(detail)[:300])
+  if time.monotonic()>=deadline: raise RuntimeError("VidFetch download timed out while waiting for the provider.")
+  time.sleep(3)
+  try:
+   response=requests.get("https://api.vidfetch.dev/v1/downloads/"+str(job_id),headers=headers,timeout=25)
+   if not response.ok: raise RuntimeError(f"VidFetch status check failed (HTTP {response.status_code}).")
+   payload=response.json()
+  except requests.RequestException as e:
+   raise RuntimeError("Could not check the VidFetch download status.") from e
+  except ValueError as e:
+   raise RuntimeError("VidFetch status endpoint returned invalid JSON.") from e
+  if not isinstance(payload,dict): raise RuntimeError("VidFetch status endpoint returned an unexpected response.")
+  status=str(payload.get("status","queued")).lower()
+  direct=payload.get("download_url")
+ parsed=urlparse(direct)
+ if parsed.scheme!="https" or not parsed.hostname or parsed.username or parsed.password:
+  raise RuntimeError("VidFetch returned an invalid download URL.")
+ dest=work/"source.mp4"; total=0
+ try:
+  with requests.get(direct,stream=True,timeout=(15,90)) as download:
+   download.raise_for_status()
+   size=download.headers.get("content-length")
+   if size:
+    try:
+     if int(size)>MAX_BYTES: raise RuntimeError("VidFetch source exceeds the worker's 750 MB size limit.")
+    except ValueError: pass
+   with dest.open("wb") as handle:
+    for chunk in download.iter_content(chunk_size=1024*1024):
+     if not chunk: continue
+     total+=len(chunk)
+     if total>MAX_BYTES: raise RuntimeError("VidFetch source exceeds the worker's 750 MB size limit.")
+     handle.write(chunk)
+ except Exception:
+  dest.unlink(missing_ok=True)
+  raise
+ if total<=0:
+  dest.unlink(missing_ok=True)
+  raise RuntimeError("VidFetch returned an empty file.")
+ return dest
 
 def download_from_tunelio(raw_url,work):
  if not TUNELIO_API_KEY: raise RuntimeError("YouTube URL importing is not configured yet. Add the private TUNELIO_API_KEY on the AWS worker.")
@@ -221,13 +287,20 @@ def process(jid,url):
     try:
      src=download_from_ytdlp(url,work,is_youtube=True)
     except Exception as local_error:
-     if TUNELIO_FALLBACK_ENABLED and TUNELIO_API_KEY:
-      with LOCK: JOBS[jid].update(status="downloading",message="Local resolver failed; trying configured limited-credit fallback…")
+     src=None; fallback_errors=[]
+     if VIDFETCH_FALLBACK_ENABLED:
+      with LOCK: JOBS[jid].update(status="downloading",message="Local YouTube download failed; trying VidFetch's free monthly allowance…")
+      try: src=download_from_vidfetch(url,work)
+      except Exception as fallback_error: fallback_errors.append("VidFetch: "+str(fallback_error)[-320:])
+     if src is None and TUNELIO_FALLBACK_ENABLED:
+      with LOCK: JOBS[jid].update(status="downloading",message="Trying configured Tunelio fallback…")
       try: src=download_from_tunelio(url,work)
-      except Exception as fallback_error:
-       raise RuntimeError("Local YouTube download failed ("+str(local_error)[-420:]+"); Tunelio fallback also failed ("+str(fallback_error)[-300:]+").")
-     else:
-      raise RuntimeError("Free local YouTube download failed. Confirm the BgUtils PO-token provider is installed; YouTube may still restrict this server IP. Details: "+str(local_error)[-700:])
+      except Exception as fallback_error: fallback_errors.append("Tunelio: "+str(fallback_error)[-320:])
+     if src is None:
+      details="; ".join(fallback_errors)
+      prefix="Free local YouTube download failed. YouTube may restrict this server IP. Details: "+str(local_error)[-500:]
+      raise RuntimeError(prefix+("; configured fallbacks failed: "+details if details else "; no hosted fallback is enabled."))
+
    else:
     src=download_from_ytdlp(url,work,is_youtube=False)
   duration=float(cmd(["ffprobe","-v","error","-show_entries","format=duration","-of","default=noprint_wrappers=1:nokey=1",str(src)]))
