@@ -73,6 +73,12 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const prefs = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const toastId = useRef(0);
+  const themeTransitionTimer = useRef<number | null>(null);
+
+  useEffect(() => () => {
+    if (themeTransitionTimer.current !== null) window.clearTimeout(themeTransitionTimer.current);
+    document.documentElement.classList.remove("theme-transitioning");
+  }, []);
 
   useEffect(() => {
     const stored = readStoredPrefs();
@@ -129,8 +135,15 @@ export function Providers({ children }: { children: React.ReactNode }) {
     } catch {
       // Ignore storage failures. The theme still changes for this visit.
     }
-    document.documentElement.dataset.theme = next;
+    const root = document.documentElement;
+    if (themeTransitionTimer.current !== null) window.clearTimeout(themeTransitionTimer.current);
+    root.classList.add("theme-transitioning");
+    root.dataset.theme = next;
     emit({ ...snapshot, theme: next });
+    themeTransitionTimer.current = window.setTimeout(() => {
+      root.classList.remove("theme-transitioning");
+      themeTransitionTimer.current = null;
+    }, 480);
   }, []);
 
   const value = useMemo(
