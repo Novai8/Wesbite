@@ -75,7 +75,7 @@ export function ToolDetailWorkbench({ tool }: { tool: ToolItem }) {
           <p>{tool.description} Give it the context it needs, then review the result before using it.</p>
           <div className="tool-detail-tags"><span>{tool.category}</span><span>{tool.kind === "browser" ? "Runs locally" : "AI-assisted"}</span><span>One focused task</span></div>
         </motion.div>
-        <motion.div className="tool-detail-visual" initial={{opacity:0,scale:.94}} animate={{opacity:1,scale:1}} transition={{duration:.8,delay:.1}}><ToolLaunchVisual tool={tool}/><div className="tool-detail-visual-label"><span>LIVE WORKFLOW</span><span>{tool.id.slice(0,12).toUpperCase()}</span></div></motion.div>
+        <motion.div className="tool-detail-visual" initial={{opacity:0,scale:.94}} animate={{opacity:1,scale:1}} transition={{duration:.8,delay:.1}}><ToolLaunchVisual tool={tool}/><div className="tool-detail-visual-label"><span>WORKFLOW PREVIEW</span><span>READY TO PERSONALIZE</span></div></motion.div>
       </section>
       <section className="tool-detail-workspace">
         <div className="tool-detail-workspace-head"><div><span>01 / INPUT</span><h2>Give the task some context.</h2></div><span className="tool-detail-status"><i/> READY</span></div>
