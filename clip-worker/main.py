@@ -474,8 +474,10 @@ Format: Layer,Start,End,Style,Name,MarginL,MarginR,MarginV,Effect,Text
   with LOCK: JOBS[jid].update(status="failed",message=str(e)[:1200])
  finally: shutil.rmtree(work,ignore_errors=True)
 @app.post("/jobs/upload",status_code=202)
-async def create_from_upload(request:Request,authorization:str|None=Header(default=None),x_upload_filename:str|None=Header(default=None)):
+async def create_from_upload(request:Request,authorization:str|None=Header(default=None),x_upload_filename:str|None=Header(default=None),x_edit_style:str|None=Header(default=None)):
  auth(authorization)
+ style=(x_edit_style or "punchy").strip().lower()
+ if style not in EDIT_STYLES: raise HTTPException(400,detail="Choose a valid edit style.")
  raw_name=unquote(x_upload_filename or "upload.mp4")
  filename=Path(raw_name).name
  suffix=Path(filename).suffix.lower()
