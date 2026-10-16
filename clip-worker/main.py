@@ -506,7 +506,7 @@ async def create_from_upload(request:Request,authorization:str|None=Header(defau
     target.write(chunk)
   if total<=0: raise HTTPException(400,detail="The uploaded video is empty.")
   with LOCK: JOBS[jid].update(status="queued",message="Upload received. Video queued for transcription and editing.")
-  POOL.submit(process,jid,src.as_uri())
+  POOL.submit(process,jid,src.as_uri(),style)
   return {"jobId":jid,"status":"queued","message":"Upload received. Video queued for transcription and editing."}
  except HTTPException:
   with LOCK: JOBS.pop(jid,None)
