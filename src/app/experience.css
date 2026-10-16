@@ -643,3 +643,21 @@ html[data-theme="light"] .rg-home-clip-float{border-color:rgba(70,54,110,.17);ba
 html[data-theme="light"] .rg-home-clip-float svg{color:#8c50a7}
 html[data-theme="light"] .rg-home-clip-note{color:#6b637f}
 html[data-theme="light"] .rg-home-clip-halo{opacity:.55}
+/* Full light palette for the dedicated Clip AI route. */
+html[data-theme="light"] .rg-clip-page{--clip-accent:#a74f3e;--clip-pink:#a3487b;--clip-lilac:#7055be;background:#f8f6fc;color:#272239}
+html[data-theme="light"] .rg-clip-hero{background:radial-gradient(ellipse at 77% 28%,rgba(255,122,84,.11),transparent 34%),radial-gradient(ellipse at 10% 65%,rgba(155,104,255,.09),transparent 32%),linear-gradient(135deg,#faf8fd,#f3eff9);border-color:rgba(55,42,82,.13)}
+html[data-theme="light"] .rg-clip-grid{background-image:linear-gradient(rgba(64,50,108,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(64,50,108,.045) 1px,transparent 1px)}
+html[data-theme="light"] .rg-clip-copy h1{color:#272239}
+html[data-theme="light"] .rg-clip-copy h1 em,html[data-theme="light"] .rg-clip-section-head h2 em,html[data-theme="light"] .rg-clip-feature-layout h2 em,html[data-theme="light"] .rg-clip-final h2 em{color:#8d4ab0}
+html[data-theme="light"] .rg-clip-copy>p{color:#5d596f}
+html[data-theme="light"] .rg-clip-copy>p strong{color:#272239}
+html[data-theme="light"] .rg-clip-back{color:#6b6480}
+html[data-theme="light"] .rg-clip-back:hover{color:#8d4ab0}
+html[data-theme="light"] .rg-clip-kicker{color:#655d7c}
+html[data-theme="light"] .rg-clip-kicker>span:last-child{color:#817991}
+html[data-theme="light"] .rg-clip-secondary{border-color:#d7cfe5;background:rgba(255,255,255,.72);color:#39334e}
+html[data-theme="light"] .rg-clip-secondary:hover{background:#fff}
+html[data-theme="light"] .rg-clip-platforms{color:#6d6682}
+html[data-theme="light"] .rg-clip-preview{border-color:rgba(70,54,110,.19);background:linear-gradient(140deg,rgba(255,255,255,.92),rgba(240,235,250,.74));box-shadow:0 35px 90px rgba(57,42,90,.15),inset 0 1px rgba(255,255,255,.95)}
+html[data-theme="light"] .rg-clip-preview-top,html[data-theme="light"] .rg-clip-timeline-head{color:#625a78}
+html[data-theme="light"] .rg-clip-marquee{border-color:rgba(55,42,82,.14);color:#645d79}
