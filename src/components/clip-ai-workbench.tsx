@@ -66,6 +66,7 @@ export function ClipAIWorkbench() {
     try {
       const form = new FormData();
       form.append("file", file, file.name);
+      form.append("style", editStyle);
       const response = await fetch("/api/clip-ai/upload", { method: "POST", body: form });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload.error || "Video upload failed. Try a smaller file.");
