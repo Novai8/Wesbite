@@ -79,13 +79,13 @@ export function ProblemConsole() {
   }
 
   return (
-    <div className="problem-console" aria-label="Interactive business problem prototype">
+    <div className="problem-console" aria-label="Interactive workflow explorer">
       <div className="console-topline">
         <div>
-          <span className="console-kicker"><span className="status-dot" aria-hidden /> RAPIGENTS PROTOTYPE</span>
-          <p className="console-caption">No systems connected. Simulation only.</p>
+          <span className="console-kicker"><span className="status-dot" aria-hidden /> WORKFLOW EXPLORER</span>
+          <p className="console-caption">Explore a sample workflow based on the task you describe.</p>
         </div>
-        <span className="console-status">{running ? "Prototype running" : "Prototype ready"}</span>
+        <span className="console-status">{running ? "Mapping workflow" : "Ready to explore"}</span>
       </div>
 
       <div className="console-input-wrap">
@@ -159,7 +159,7 @@ export function ProblemConsole() {
 
       <div className="console-footnote">
         <Sparkles className="h-3.5 w-3.5" aria-hidden />
-        <span>Built to expose the operation before deployment. Human approval stays in the loop.</span>
+        <span>Clear steps and handoffs, with people kept in control.</span>
       </div>
     </div>
   );
