@@ -264,8 +264,8 @@ export function ClipAIWorkbench() {
                 <div className="clip-link-result-meta"><span>{typeof clip.start==="number"&&typeof clip.end==="number"?formatTime(clip.start)+"–"+formatTime(clip.end):"HIGHLIGHT"}</span><span>9:16 · CAPTIONED</span></div>
                 <strong>{clip.title}</strong><p>{clip.hook||"A selected highlight with captions."}</p>
                 <div className="clip-link-metrics">
-                  <div className="clip-link-metric-score"><span>VIRALITY POTENTIAL</span><strong>{score === null ? "—" : score}<small>{score === null ? "" : "/100"}</small></strong><div><i style={{width:(score === null ? 0 : Math.max(0,Math.min(100,score)))+"%"}}/></div></div>
-                  <div className="clip-link-metric-reach"><span>REACH OUTLOOK</span><strong>{outlook}</strong><small>Relative signal estimate</small></div>
+                  <div className="clip-link-metric-score"><span>HOOK SIGNAL</span><strong>{score === null ? "—" : score}<small>{score === null ? "" : "/100"}</small></strong><div><i style={{width:(score === null ? 0 : Math.max(0,Math.min(100,score)))+"%"}}/></div></div>
+                  <div className="clip-link-metric-reach"><span>MOMENT TYPE</span><strong>{outlook}</strong><small>Editorial estimate, not a view prediction</small></div>
                 </div>
                 {clip.effects?.length ? <div className="clip-link-effects">{clip.effects.map(effect=><span key={effect}>{effect}</span>)}</div> : null}
                 <a href={clip.url} target="_blank" rel="noreferrer" download><Download size={14}/> Download clip <span>↗</span></a>
