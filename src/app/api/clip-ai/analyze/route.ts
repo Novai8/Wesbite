@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const MAX_VIDEO_DATA = 14 * 1024 * 1024;
+const MAX_VIDEO_DATA = 35 * 1024 * 1024;
 const RATE_WINDOW = 60_000;
 const RATE_MAX = 3;
 const requests = new Map<string, { count: number; resetAt: number }>();
@@ -28,7 +28,7 @@ export async function POST(request: Request) {
   if (!body || typeof body !== "object") return NextResponse.json({ error: "This video could not be processed." }, { status: 400 });
   const data = body as { video?: unknown; mimeType?: unknown; duration?: unknown };
   if (typeof data.video !== "string" || !data.video.startsWith("data:video/") || data.video.length > MAX_VIDEO_DATA) {
-    return NextResponse.json({ error: "Choose a supported video under 10 MB." }, { status: 413 });
+    return NextResponse.json({ error: "Choose a supported video under 25 MB." }, { status: 413 });
   }
   const duration = Number(data.duration);
   if (!Number.isFinite(duration) || duration <= 0 || duration > 600) return NextResponse.json({ error: "This version supports uploaded videos up to 10 minutes long." }, { status: 400 });
