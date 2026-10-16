@@ -31,8 +31,8 @@ class JobRequest(BaseModel):
  url: HttpUrl
  style: str = "punchy"
 def auth(value):
- if not TOKEN: raise HTTPException(503,detail="Configure CLIP_WORKER_TOKEN before accepting jobs.")
- if value!=f"Bearer {TOKEN}": raise HTTPException(401,detail="Invalid worker token.")
+ if not TOKEN: raise HTTPException(503,detail="Clip AI is temporarily unavailable. Please try again shortly.")
+ if value!=f"Bearer {TOKEN}": raise HTTPException(401,detail="This request could not be completed. Please refresh and try again.")
 def validate(raw):
  u=urlparse(raw)
  if u.scheme not in ("http","https") or not u.hostname or u.username or u.password: raise ValueError("Use a public http/https video URL.")
@@ -230,7 +230,7 @@ def download_from_vidfetch(raw_url,work):
   raise
 
 def download_from_tunelio(raw_url,work):
- if not TUNELIO_API_KEY: raise RuntimeError("YouTube URL importing is not configured yet. Add the private TUNELIO_API_KEY on the AWS worker.")
+ if not TUNELIO_API_KEY: raise RuntimeError("This video source is temporarily unavailable. Please try another link or upload a video you have permission to use.")
  try:
   response=requests.get("https://tunelio.dev/create",params={"quality":"720p","url":raw_url},headers={"Authorization":f"Bearer {TUNELIO_API_KEY}"},timeout=45)
   response.raise_for_status()
@@ -493,7 +493,8 @@ Format: Layer,Start,End,Style,Name,MarginL,MarginR,MarginV,Effect,Text
  except subprocess.TimeoutExpired:
   with LOCK: JOBS[jid].update(status="failed",message="Processing timed out. Try a shorter or lower-resolution source.")
  except Exception as e:
-  with LOCK: JOBS[jid].update(status="failed",message=str(e)[:1200])
+  print(f"Clip job {jid} failed: {type(e).__name__}: {str(e)[:500]}")
+  with LOCK: JOBS[jid].update(status="failed",message="We couldn’t finish this video. Try another public link or a shorter source video.")
  finally: shutil.rmtree(work,ignore_errors=True)
 @app.post("/jobs/upload",status_code=202)
 async def create_from_upload(request:Request,authorization:str|None=Header(default=None),x_upload_filename:str|None=Header(default=None),x_edit_style:str|None=Header(default=None)):
