@@ -105,7 +105,7 @@ def picks(transcript,duration):
     if re.search(r"\b\d+(?:[.,]\d+)?%?\b",words): score+=3
     fillers=len(re.findall(r"\b(um|uh|erm|you know|like)\b",words,re.I))
     score-=min(fillers*2,10)
-    windows.append({"start":start,"end":end,"title":title,"hook":words[:220],"score":score,"segments":selected})
+    windows.append({"start":start,"end":end,"title":title,"hookTitle":suggest_hook(words),"hook":words[:220],"score":score,"segments":selected})
   cursor+=max(12.,target*.65)
  windows.sort(key=lambda x:x["score"],reverse=True); unique=[]
  for x in windows:
@@ -124,6 +124,20 @@ def suggest_title(text):
  candidate=re.sub(r"\s+"," ",candidate).strip()
  if len(candidate)>68: candidate=candidate[:65].rsplit(" ",1)[0]+"…"
  return candidate[:90] or "The key takeaway"
+
+def suggest_hook(text):
+ words=re.sub(r"\s+"," ",text).strip()
+ if re.search(r"\b(ishowspeed|speed)\b",words,re.I) and re.search(r"\b(react|reaction|watch|saw|video|see|look)\w*\b",words,re.I): return "SPEED'S REACTION SAYS IT ALL"
+ if re.search(r"\b(reaction|reacting|reacted)\b",words,re.I): return "WAIT FOR THE REACTION"
+ if re.search(r"\b(unbelievable|insane|shocking|crazy|can't believe|cannot believe)\b",words,re.I): return "YOU'RE NOT READY FOR THIS"
+ if re.search(r"\b(secret|truth|reason|mistake)\b",words,re.I): return "THE DETAIL EVERYONE MISSES"
+ if "?" in words or re.search(r"\b(why|what happens|how did)\b",words,re.I): return "HERE'S WHY THIS MATTERS"
+ title=suggest_title(words).strip(" .!?")
+ return title.upper() if title else "THE PART YOU NEED TO SEE"
+
+def caption_chunks(text,max_words=5):
+ words=str(text).split()
+ return [" ".join(words[i:i+max_words]) for i in range(0,len(words),max_words)]
 
 def ass_stamp(sec):
  ms=max(0,int(sec*100)); h,ms=divmod(ms,360000); m,ms=divmod(ms,6000); s,cs=divmod(ms,100)
@@ -164,27 +178,32 @@ def process(jid,url):
 ScriptType: v4.00+
 PlayResX: 720
 PlayResY: 1280
-WrapStyle: 2
+WrapStyle: 0
 ScaledBorderAndShadow: yes
 [V4+ Styles]
 Format: Name,Fontname,Fontsize,PrimaryColour,SecondaryColour,OutlineColour,BackColour,Bold,Italic,Underline,StrikeOut,ScaleX,ScaleY,Spacing,Angle,BorderStyle,Outline,Shadow,Alignment,MarginL,MarginR,MarginV,Encoding
-Style: Caption,DejaVu Sans,52,&H00FFFFFF,&H0000FFFF,&HCC08090D,&H6608090D,-1,0,0,0,100,100,0,0,1,4,1,2,52,52,210,1
-Style: Hook,DejaVu Sans,58,&H0087F5FF,&H0000FFFF,&HDD08090D,&H9908090D,-1,0,0,0,100,100,0,0,1,5,2,8,54,54,145,1
+Style: Caption,DejaVu Sans,43,&H00FFFFFF,&H0000FFFF,&HDD08090D,&H8808090D,-1,0,0,0,100,100,0,0,1,4,2,2,68,68,300,1
+Style: Hook,DejaVu Sans,50,&H0087F5FF,&H0000FFFF,&HDD08090D,&H9908090D,-1,0,0,0,100,100,0,0,1,5,2,8,60,60,175,1
 [Events]
 Format: Layer,Start,End,Style,Name,MarginL,MarginR,MarginV,Effect,Text
 """
    events=[]
-   events.append(f"Dialogue: 1,0:00:00.00,0:00:02.60,Hook,,0,0,0,,{{\\fad(180,220)\\an8}}{ass_escape(pick['title'].upper())}")
+   hook_text=pick.get("hookTitle",pick["title"]).upper()
+   events.append(f"Dialogue: 1,0:00:00.00,0:00:02.85,Hook,,0,0,0,,{{\\fad(220,260)\\an8\\pos(360,175)\\fscx78\\fscy78\\t(0,420,\\fscx100\\fscy100)\\blur(1.2)\\t(250,500,\\blur(0))}}{ass_escape(hook_text)}")
    colors=["&H0087F5FF","&H00FF91C8","&H00FFFFFF","&H008BFF9B"]
    for i,seg in enumerate(pick["segments"]):
     a=max(0.0,float(seg["start"])-start); b=max(a+0.18,min(end-start,float(seg["end"])-start))
-    caption=ass_escape(seg["text"].replace("-->","→"))
-    if not caption: continue
-    events.append(f"Dialogue: 0,{ass_stamp(a)},{ass_stamp(b)},Caption,,0,0,0,,{{\\fad(70,90)\\c{colors[i%len(colors)]}}}{caption.upper()}")
+    pieces=caption_chunks(seg["text"].replace("-->","→"),5)
+    if not pieces: continue
+    span=max(0.18,b-a)
+    for j,piece in enumerate(pieces):
+     pa=a+span*j/len(pieces); pb=a+span*(j+1)/len(pieces)
+     caption=ass_escape(piece)
+     events.append(f"Dialogue: 0,{ass_stamp(pa)},{ass_stamp(max(pa+0.12,pb))},Caption,,0,0,0,,{{\\fad(55,75)\\c{colors[(i+j)%len(colors)]}\\fscx92\\fscy92\\t(0,90,\\fscx100\\fscy100)}}{caption.upper()}")
    ass.write_text(header+"\n".join(events)+"\n",encoding="utf-8")
-   cmd(["ffmpeg","-y","-f","lavfi","-i","anoisesrc=color=pink:duration=0.55:sample_rate=48000","-af","highpass=f=700,lowpass=f=6500,afade=t=in:st=0:d=0.08,afade=t=out:st=0.16:d=0.38,volume=0.08","-ac","2",str(sfx)],60)
+   cmd(["ffmpeg","-y","-f","lavfi","-i","anoisesrc=color=white:duration=0.65:sample_rate=48000","-f","lavfi","-i","sine=frequency=82:duration=0.18:sample_rate=48000","-filter_complex","[0:a]highpass=f=450,lowpass=f=9000,afade=t=in:st=0:d=0.16,afade=t=out:st=0.18:d=0.42,volume=0.10[whoosh];[1:a]afade=t=in:st=0:d=0.01,afade=t=out:st=0.03:d=0.15,volume=0.16[thump];[whoosh][thump]amix=inputs=2:duration=longest:normalize=0,alimiter=limit=0.8[out]","-map","[out]","-ac","2",str(sfx)],60)
    ass_path=str(ass).replace("\\\\","/").replace(":","\\\\:")
-   vf=f"scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,zoompan=z='min(zoom+0.0007,1.08)':d=1:s=720x1280:fps=30,ass='{ass_path}'"
+   vf=f"scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,zoompan=z='min(zoom+0.00055,1.07)':x='iw/2-(iw/zoom/2)+sin(on/95)*5':y='ih/2-(ih/zoom/2)+cos(on/125)*4':d=1:s=720x1280:fps=30,eq=contrast=1.04:saturation=1.08,unsharp=5:5:0.3:3:3:0.0,ass='{ass_path}'"
    cmd(["ffmpeg","-y","-ss",str(start),"-i",str(src),"-i",str(sfx),"-t",str(end-start),"-filter_complex",f"[0:a]volume=1.0[original];[1:a]adelay=120|120[effect];[original][effect]amix=inputs=2:duration=first:dropout_transition=0:normalize=0[aout]","-vf",vf,"-map","0:v:0","-map","[aout]","-c:v","libx264","-preset","veryfast","-crf","24","-c:a","aac","-b:a","128k","-pix_fmt","yuv420p","-movflags","+faststart",str(out)],600)
    potential=min(98,max(35,round(pick["score"])))
    outlook="Strong signals" if potential>=75 else "Promising" if potential>=58 else "Niche fit"
