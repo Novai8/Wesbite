@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 };
 
 const steps = [
-  { n: "01", icon: Waves, title: "Upload your video", body: "Paste a supported video link or upload an MP4/WebM, then let Clip AI find promising moments and adapt clip lengths to the source." },
+  { n: "01", icon: Waves, title: "Upload your video", body: "Paste a supported video link or upload a video file, then let Clip AI find promising moments and adapt clip lengths to the source." },
   { n: "02", icon: Scissors, title: "Find the moments", body: "Identify strong hooks, useful moments, and clean cut points instead of chopping randomly." },
   { n: "03", icon: Captions, title: "Style the short", body: "Add readable animated captions, vertical framing, and pacing built for mobile viewing." },
 ];
