@@ -14,14 +14,6 @@ function formatTime(seconds: number) {
   const safe = Math.max(0, Math.floor(seconds || 0));
   return Math.floor(safe / 60).toString().padStart(2, "0") + ":" + (safe % 60).toString().padStart(2, "0");
 }
-function readAsDataUrl(file: File) {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => typeof reader.result === "string" ? resolve(reader.result) : reject(new Error("Could not read this video."));
-    reader.onerror = () => reject(new Error("Could not read this video."));
-    reader.readAsDataURL(file);
-  });
-}
 
 export function ClipAIWorkbench() {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -61,20 +53,22 @@ export function ClipAIWorkbench() {
 
   const analyze = async () => {
     if (!file || !videoRef.current) { setError("Upload a video first."); return; }
-    if (duration > MAX_DURATION_SECONDS) { setError("This version supports uploaded videos up to 10 minutes long. Longer sources need a dedicated media-processing backend."); return; }
+    if (duration > MAX_DURATION_SECONDS) { setError("This version supports uploaded videos up to 10 minutes long. Try a shorter source."); return; }
     setBusy(true); setError(""); setClips([]); setOutputUrl("");
+    setLinkError(""); setLinkStatus(""); setRemoteClips([]); setLinkProjectId(""); setLinkStage("queued");
     try {
-      const videoData = await readAsDataUrl(file);
-      const response = await fetch("/api/clip-ai/analyze", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ video: videoData, mimeType: file.type, duration }),
-      });
+      const form = new FormData();
+      form.append("file", file, file.name);
+      const response = await fetch("/api/clip-ai/upload", { method: "POST", body: form });
       const payload = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(payload.error || "Clip analysis failed. Try a shorter video.");
-      if (!Array.isArray(payload.clips) || !payload.clips.length) throw new Error("No usable moments were found in this video. Try another clip.");
-      setClips(payload.clips); setSelected(0);
+      if (!response.ok) throw new Error(payload.error || "Video upload failed. Try a smaller file.");
+      const projectId = String(payload.projectId || "");
+      if (!projectId) throw new Error("The worker accepted the upload but did not return a job ID.");
+      setLinkProjectId(projectId);
+      setLinkStage((payload.status as ClipStage) || "queued");
+      setLinkStatus(payload.message || "Upload received. Your video is queued for cloud clipping.");
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Could not analyze this video.");
+      setError(caught instanceof Error ? caught.message : "Could not upload this video to Clip AI.");
     } finally { setBusy(false); }
   };
 
@@ -219,9 +213,9 @@ export function ClipAIWorkbench() {
 
   return <section className="clip-workbench" id="clip-workbench">
     <div className="clip-workbench-shell">
-      <div className="clip-workbench-heading"><div><span className="clip-workbench-kicker"><WandSparkles size={14}/> CLIP AI / WORKBENCH</span><h2>Make your first <em>short.</em></h2><p>Upload a video up to 10 minutes, let AI adapt highlight lengths to the source, then render a vertical clip with captions. The source stays in this browser except for the analysis request.</p></div><span className="clip-workbench-version">MVP / 01</span></div>
+      <div className="clip-workbench-heading"><div><span className="clip-workbench-kicker"><WandSparkles size={14}/> CLIP AI / WORKBENCH</span><h2>Make your first <em>short.</em></h2><p>Upload a short video to your AWS worker. It transcribes speech, ranks promising highlights, then renders vertical MP4 clips with burned-in captions, zoom, and subtle sound effects.</p></div><span className="clip-workbench-version">MVP / 01</span></div>
       <form className="clip-link-import" onSubmit={submitSourceLink}>
-        <div className="clip-link-copy"><span className="clip-workbench-kicker"><WandSparkles size={13}/> FREE LINK CLIPPING ENGINE</span><strong>Or paste a public video link</strong><p>Uses the self-hosted open-source worker: yt-dlp, local Whisper transcription, and FFmpeg. No paid clipping API.</p></div>
+        <div className="clip-link-copy"><span className="clip-workbench-kicker"><WandSparkles size={13}/> FREE LINK CLIPPING ENGINE</span><strong>Or paste a public video link</strong><p>URL imports use yt-dlp and may be blocked by YouTube. For a more reliable run, upload the video below to your own AWS worker.</p></div>
         <div className="clip-link-controls"><input aria-label="Public video URL" type="url" inputMode="url" autoComplete="url" placeholder="https://www.youtube.com/watch?v=…" value={sourceLink} onChange={event => setSourceLink(event.target.value)} disabled={linkBusy} required /><button type="submit" disabled={linkBusy || !sourceLink.trim()}>{linkBusy ? <><LoaderCircle size={15} className="clip-spin"/> Working…</> : <>Find clips <WandSparkles size={15}/></>}</button></div>
         {linkStatus && <p className="clip-link-status" role="status">{linkStatus}</p>}
         {linkProjectId && !remoteClips.length && !linkError && <div className="clip-job-progress" role="status" aria-live="polite">
@@ -271,9 +265,9 @@ export function ClipAIWorkbench() {
           <input id="clip-source-file" type="file" accept="video/mp4,video/webm,video/quicktime,video/*" className="clip-file-input" onChange={event => chooseFile(event.target.files?.[0] || null)}/>
           {fileUrl && <video ref={videoRef} className="clip-source-video" src={fileUrl} controls playsInline onLoadedMetadata={event => setDuration(event.currentTarget.duration || 0)} />}
           {!fileUrl && <div className="clip-empty-preview"><Clapperboard size={34}/><span>YOUR SOURCE VIDEO</span><small>Upload a video to begin</small></div>}
-          <div className="clip-source-foot"><span><Check size={13}/> No account needed</span><span>Local preview + export</span></div>
-          <button className="clip-analyze-button" type="button" onClick={analyze} disabled={!file || busy || duration <= 0 || duration > MAX_DURATION_SECONDS}>{busy ? <><LoaderCircle className="clip-spin" size={17}/> Finding the best moments…</> : <><WandSparkles size={17}/> Find my best clips <span>↗</span></>}</button>
-          {busy && <div className="clip-analysis-note">Sending this video for multimodal analysis. Free-model availability can vary.</div>}
+          <div className="clip-source-foot"><span><Check size={13}/> Cloud processing</span><span>AWS Whisper + FFmpeg</span></div>
+          <button className="clip-analyze-button" type="button" onClick={analyze} disabled={!file || busy || duration <= 0 || duration > MAX_DURATION_SECONDS}>{busy ? <><LoaderCircle className="clip-spin" size={17}/> Finding the best moments…</> : <><WandSparkles size={17}/> Upload & create clips <span>↗</span></>}</button>
+          {busy && <div className="clip-analysis-note">Uploading your file to AWS. Once the upload finishes, cloud transcription and editing continue even if you close your laptop.</div>}
         </div>
         <div className="clip-results-panel">
           <div className="clip-results-top"><span><Scissors size={15}/> HIGHLIGHT PICKS</span><span>{clips.length ? String(clips.length).padStart(2, "0") + " FOUND" : "AWAITING SOURCE"}</span></div>
@@ -283,7 +277,7 @@ export function ClipAIWorkbench() {
         </div>
       </div>
       {error && <div className="clip-workbench-error" role="alert">{error}</div>}
-      <p className="clip-workbench-disclaimer">MVP limits: uploads up to 10 MB and 10 minutes; exports WebM in supported desktop browsers. AI-generated cut points and captions are suggestions, so preview the result before publishing.</p>
+      <p className="clip-workbench-disclaimer">MVP limits: uploads up to 10 MiB and 10 minutes. Video processing runs on AWS; generated clip links are served by your worker. Uploaded files are processed only when you have the right to use them.</p>
       <canvas ref={canvasRef} className="clip-render-canvas" aria-hidden="true"/>
     </div>
   </section>;
