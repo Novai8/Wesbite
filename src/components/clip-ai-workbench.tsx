@@ -7,7 +7,7 @@ type Caption = { start: number; end: number; text: string };
 type Clip = { start: number; end: number; title: string; hook: string; captions: Caption[] };
 type RemoteClip = { id: string; title: string; url: string; thumbnail?: string; hook?: string; start?: number; end?: number; potentialScore?: number; reachOutlook?: string; effects?: string[] };
 type ClipStage = "queued" | "downloading" | "transcribing" | "rendering" | "completed" | "failed";
-const MAX_BYTES = 10 * 1024 * 1024;
+const MAX_BYTES = 25 * 1024 * 1024;
 const MAX_DURATION_SECONDS = 10 * 60;
 
 function formatTime(seconds: number) {
@@ -47,7 +47,7 @@ export function ClipAIWorkbench() {
     setFile(null); setFileUrl("");
     if (!next) return;
     if (!next.type.startsWith("video/")) { setError("Choose a video file such as MP4 or WebM."); return; }
-    if (next.size > MAX_BYTES) { setError("For this first version, choose a video under 10 MB. Larger files are not supported yet."); return; }
+    if (next.size > MAX_BYTES) { setError("For this first version, choose a video under 25 MB. Larger files are not supported yet."); return; }
     setFile(next); setFileUrl(URL.createObjectURL(next));
   };
 
@@ -260,7 +260,7 @@ export function ClipAIWorkbench() {
       <div className="clip-workbench-grid">
         <div className="clip-source-panel">
           <label className="clip-upload-zone" htmlFor="clip-source-file">
-            <span className="clip-upload-icon"><Upload size={22}/></span><strong>{file ? file.name : "Drop your video into the edit"}</strong><span>{file ? (file.size / (1024 * 1024)).toFixed(1) + " MB · " + formatTime(duration) : "MP4 or WebM · up to 10 MB · 10 minutes max"}</span><span className="clip-upload-cta"><FileVideo size={15}/> {file ? "Choose another video" : "Choose video"}</span>
+            <span className="clip-upload-icon"><Upload size={22}/></span><strong>{file ? file.name : "Drop your video into the edit"}</strong><span>{file ? (file.size / (1024 * 1024)).toFixed(1) + " MB · " + formatTime(duration) : "MP4 or WebM · up to 25 MB · 10 minutes max"}</span><span className="clip-upload-cta"><FileVideo size={15}/> {file ? "Choose another video" : "Choose video"}</span>
           </label>
           <input id="clip-source-file" type="file" accept="video/mp4,video/webm,video/quicktime,video/*" className="clip-file-input" onChange={event => chooseFile(event.target.files?.[0] || null)}/>
           {fileUrl && <video ref={videoRef} className="clip-source-video" src={fileUrl} controls playsInline onLoadedMetadata={event => setDuration(event.currentTarget.duration || 0)} />}
@@ -277,7 +277,7 @@ export function ClipAIWorkbench() {
         </div>
       </div>
       {error && <div className="clip-workbench-error" role="alert">{error}</div>}
-      <p className="clip-workbench-disclaimer">Short uploads support files up to 10 MB and 10 minutes. Link availability depends on the source platform. Only process videos you have permission to use.</p>
+      <p className="clip-workbench-disclaimer">Short uploads support files up to 25 MB and 10 minutes. Link availability depends on the source platform. Only process videos you have permission to use.</p>
       <canvas ref={canvasRef} className="clip-render-canvas" aria-hidden="true"/>
     </div>
   </section>;
