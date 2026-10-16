@@ -421,6 +421,27 @@ def process(jid,url,style="punchy"):
   m=model(); segments,info=m.transcribe(str(src),vad_filter=True,word_timestamps=True,beam_size=3); transcript=transcript_sentences(list(segments)); selections=picks(transcript,duration)
   with LOCK: JOBS[jid].update(status="rendering",message="Editing clips: smart zoom, hook titles, colored captions, and subtle sound effects…")
   results=[]
+  if style == "cinematic":
+   caption_size=40; hook_size=47; caption_margin=320; hook_color="&H00C9B6FF"
+   colors=["&H00F5F4EF","&H00C6A8FF","&H00B6E6F6","&H00FFFFFF"]
+   zoom_expr="min(zoom+0.00022,1.045)"; zoom_x="iw/2-(iw/zoom/2)+sin(on/160)*2"; zoom_y="ih/2-(ih/zoom/2)+cos(on/195)*2"
+   picture_filter="eq=contrast=1.07:saturation=0.91:brightness=0.005,vignette=PI/5,unsharp=5:5:0.2:3:3:0.0"
+   fade_in=0.30; fade_out=0.30
+   whoosh_filter="highpass=f=250,lowpass=f=6800,afade=t=in:st=0:d=0.24,afade=t=out:st=0.26:d=0.38,volume=0.06"; thump_volume="volume=0.09"
+  elif style == "clean":
+   caption_size=40; hook_size=45; caption_margin=315; hook_color="&H00FFFFFF"
+   colors=["&H00FFFFFF","&H00E6DDFF","&H00FFFFFF","&H00D9F2E4"]
+   zoom_expr="min(zoom+0.00016,1.025)"; zoom_x="iw/2-(iw/zoom/2)"; zoom_y="ih/2-(ih/zoom/2)"
+   picture_filter="eq=contrast=1.025:saturation=1.02,unsharp=5:5:0.18:3:3:0.0"
+   fade_in=0.16; fade_out=0.18
+   whoosh_filter="highpass=f=600,lowpass=f=6500,afade=t=in:st=0:d=0.10,afade=t=out:st=0.16:d=0.32,volume=0.035"; thump_volume="volume=0.05"
+  else:
+   caption_size=43; hook_size=50; caption_margin=300; hook_color="&H0087F5FF"
+   colors=["&H0087F5FF","&H00FF91C8","&H00FFFFFF","&H008BFF9B"]
+   zoom_expr="min(zoom+0.00055,1.07)"; zoom_x="iw/2-(iw/zoom/2)+sin(on/95)*5"; zoom_y="ih/2-(ih/zoom/2)+cos(on/125)*4"
+   picture_filter="eq=contrast=1.06:saturation=1.16,unsharp=5:5:0.36:3:3:0.0"
+   fade_in=0.12; fade_out=0.18
+   whoosh_filter="highpass=f=450,lowpass=f=9000,afade=t=in:st=0:d=0.16,afade=t=out:st=0.18:d=0.42,volume=0.10"; thump_volume="volume=0.16"
   for n,pick in enumerate(selections,1):
    start,end=pick["start"],pick["end"]; cid=f"{jid}-{n}"; ass=work/f"{cid}.ass"; sfx=work/f"{cid}-sfx.wav"; name=f"{cid}.mp4"; out=OUT/name
    header="""[Script Info]
