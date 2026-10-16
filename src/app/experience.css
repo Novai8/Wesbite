@@ -559,3 +559,18 @@ html[data-theme="light"] .clip-job-progress,html[data-theme="light"] .clip-link-
 html[data-theme="light"] .clip-job-stage{background:rgba(255,255,255,.55);border-color:#d3cbb9}
 html[data-theme="light"] .clip-job-stage.is-active{background:rgba(255,156,130,.13);border-color:#b76c52}
 html[data-theme="light"] .clip-link-results-count,html[data-theme="light"] .clip-link-effects span{border-color:#d3cbb9}
+/* Light theme: playful home page */
+html[data-theme="light"] .rg-home-fun{--home-ink:#211f31;--home-muted:#5d5a70;--home-line:rgba(43,36,70,.14);background:#f7f5fb!important;color:var(--home-ink)!important}
+html[data-theme="light"] .rg-fun-hero{background:radial-gradient(ellipse at 80% 12%,rgba(151,106,255,.16),transparent 31%),radial-gradient(ellipse at 3% 75%,rgba(255,92,175,.10),transparent 32%),linear-gradient(140deg,#f8f6ff,#f5f2fb 58%,#fcf1f7);border-color:var(--home-line)}
+html[data-theme="light"] .rg-fun-grid{opacity:.58;background-image:linear-gradient(rgba(64,50,108,.055) 1px,transparent 1px),linear-gradient(90deg,rgba(64,50,108,.055) 1px,transparent 1px)}
+html[data-theme="light"] .rg-fun-kicker,html[data-theme="light"] .rg-fun-trust,html[data-theme="light"] .rg-fun-scroll,html[data-theme="light"] .rg-fun-bottomline,html[data-theme="light"] .rg-scene-caption{color:var(--home-muted)}
+html[data-theme="light"] .rg-fun-copy h1,html[data-theme="light"] .rg-fun-section-head h2,html[data-theme="light"] .rg-fun-last h2{color:var(--home-ink)}
+html[data-theme="light"] .rg-fun-copy>p,html[data-theme="light"] .rg-fun-section-head>p{color:#58566b}
+html[data-theme="light"] .rg-fun-secondary{color:#3e3658;border-color:rgba(59,45,98,.2);background:rgba(255,255,255,.65)}
+html[data-theme="light"] .rg-fun-bottomline{border-color:var(--home-line)}
+html[data-theme="light"] .rg-scene-orbit{border-color:rgba(105,82,164,.25)}
+html[data-theme="light"] .rg-float-tile{background:linear-gradient(145deg,rgba(255,255,255,.93),rgba(248,245,255,.76));border-color:rgba(60,47,100,.17);box-shadow:0 28px 80px rgba(56,41,92,.14),inset 0 1px rgba(255,255,255,.95);color:#211f31}
+html[data-theme="light"] .rg-tile-label{color:#67617e}
+html[data-theme="light"] .tile-front strong{color:#211f31}
+html[data-theme="light"] .tile-front strong em{color:#a63d78}
+html[data-theme="light"] .rg-fun-sticker{background:rgba(255,255,255,.9);border-color:rgba(88,111,36,.28);color:#435b20;box-shadow:0 12px 30px rgba(38,42,28,.09)}
