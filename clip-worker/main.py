@@ -2,7 +2,7 @@ import ipaddress, os, re, shutil, socket, subprocess, threading, uuid
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from urllib.parse import urlparse
-from fastapi import FastAPI, Header, HTTPException
+from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, HttpUrl
 from faster_whisper import WhisperModel
@@ -11,6 +11,7 @@ ROOT=Path(os.getenv("CLIP_DATA_DIR","/data")).resolve(); INBOX=ROOT/"inbox"; OUT
 for p in (INBOX,OUT): p.mkdir(parents=True,exist_ok=True)
 TOKEN=os.getenv("CLIP_WORKER_TOKEN",""); PUBLIC=os.getenv("CLIP_WORKER_PUBLIC_URL","").rstrip("/")
 MAX_SECONDS=int(os.getenv("MAX_SOURCE_SECONDS","1800")); MAX_BYTES=int(os.getenv("MAX_DOWNLOAD_BYTES",str(750*1024*1024)))
+MAX_UPLOAD_BYTES=min(MAX_BYTES,int(os.getenv("MAX_UPLOAD_BYTES",str(10*1024*1024))))
 MODEL_NAME=os.getenv("WHISPER_MODEL","small"); POOL=ThreadPoolExecutor(max_workers=1); LOCK=threading.Lock(); MODEL_LOCK=threading.Lock(); JOBS={}; MODEL=None
 HOSTS={"youtube.com","www.youtube.com","m.youtube.com","youtu.be","youtube-nocookie.com","vimeo.com","www.vimeo.com","player.vimeo.com","twitch.tv","www.twitch.tv","clips.twitch.tv","loom.com","www.loom.com","drive.google.com","docs.google.com","dropbox.com","www.dropbox.com","dl.dropboxusercontent.com","archive.org","www.archive.org","rumble.com","www.rumble.com","facebook.com","www.facebook.com","fb.watch","linkedin.com","www.linkedin.com","x.com","www.x.com","twitter.com","www.twitter.com"}
 app=FastAPI(title="Rapigents Free Clip Worker",version="1.0.0"); app.mount("/media",StaticFiles(directory=str(OUT)),name="media")
@@ -92,12 +93,18 @@ def ass_escape(value):
 def process(jid,url):
  work=INBOX/jid; work.mkdir(parents=True,exist_ok=True)
  try:
-  with LOCK: JOBS[jid].update(status="downloading",message="Downloading source with yt-dlp…")
-  cmd(["yt-dlp","--no-playlist","--no-warnings","--max-filesize",str(MAX_BYTES),"--match-filter",f"duration <= {MAX_SECONDS}","-f","bv*[height<=1080]+ba/b[height<=1080]/b","--merge-output-format","mp4","-o",str(work/"source.%(ext)s"),url],900)
-  files=[p for p in work.glob("source.*") if p.is_file() and p.stat().st_size]
-  if not files: raise RuntimeError("No source downloaded. It may be private, restricted, unsupported, or too large.")
-  src=max(files,key=lambda p:p.stat().st_size)
-  if src.stat().st_size>MAX_BYTES: raise RuntimeError("Source exceeds worker download-size limit.")
+  if url.startswith("file://"):
+   with LOCK: JOBS[jid].update(status="downloading",message="Validating uploaded video…")
+   src=Path(urlparse(url).path)
+   if not src.is_file() or src.stat().st_size<=0: raise RuntimeError("Uploaded video file is missing or empty.")
+   if src.stat().st_size>MAX_UPLOAD_BYTES: raise RuntimeError("Uploaded video exceeds the upload limit.")
+  else:
+   with LOCK: JOBS[jid].update(status="downloading",message="Downloading source with yt-dlp…")
+   cmd(["yt-dlp","--no-playlist","--no-warnings","--max-filesize",str(MAX_BYTES),"--match-filter",f"duration <= {MAX_SECONDS}","-f","bv*[height<=1080]+ba/b[height<=1080]/b","--merge-output-format","mp4","-o",str(work/"source.%(ext)s"),url],900)
+   files=[p for p in work.glob("source.*") if p.is_file() and p.stat().st_size]
+   if not files: raise RuntimeError("No source downloaded. It may be private, restricted, unsupported, or too large.")
+   src=max(files,key=lambda p:p.stat().st_size)
+   if src.stat().st_size>MAX_BYTES: raise RuntimeError("Source exceeds worker download-size limit.")
   duration=float(cmd(["ffprobe","-v","error","-show_entries","format=duration","-of","default=noprint_wrappers=1:nokey=1",str(src)]))
   if duration<=0 or duration>MAX_SECONDS: raise RuntimeError(f"Source must be under {MAX_SECONDS//60} minutes.")
   with LOCK: JOBS[jid].update(status="transcribing",message="Transcribing speech locally with faster-whisper…")
@@ -141,6 +148,48 @@ Format: Layer,Start,End,Style,Name,MarginL,MarginR,MarginV,Effect,Text
  except Exception as e:
   with LOCK: JOBS[jid].update(status="failed",message=str(e)[:1200])
  finally: shutil.rmtree(work,ignore_errors=True)
+@app.post("/jobs/upload",status_code=202)
+async def create_from_upload(request:Request,authorization:str|None=Header(default=None),x_upload_filename:str|None=Header(default=None)):
+ auth(authorization)
+ raw_name=unquote(x_upload_filename or "upload.mp4")
+ filename=Path(raw_name).name
+ suffix=Path(filename).suffix.lower()
+ if suffix not in {".mp4",".mov",".webm",".m4v",".mkv"}:
+  raise HTTPException(415,detail="Upload an MP4, MOV, WebM, M4V, or MKV video.")
+ length=request.headers.get("content-length")
+ if length:
+  try: declared=int(length)
+  except ValueError: raise HTTPException(400,detail="Invalid upload content length.")
+  if declared>MAX_UPLOAD_BYTES: raise HTTPException(413,detail=f"Video uploads are limited to {MAX_UPLOAD_BYTES//(1024*1024)} MiB.")
+ with LOCK:
+  if sum(1 for j in JOBS.values() if j["status"] in {"uploading","queued","downloading","transcribing","rendering"})>=2:
+   raise HTTPException(429,detail="The free worker is busy. Wait for the current job to finish.")
+  jid=uuid.uuid4().hex
+  JOBS[jid]={"id":jid,"status":"uploading","message":"Receiving uploaded video…","clips":[]}
+ work=INBOX/jid
+ try:
+  work.mkdir(parents=True,exist_ok=False)
+  src=work/("upload"+suffix)
+  total=0
+  with src.open("wb") as target:
+   async for chunk in request.stream():
+    if not chunk: continue
+    total+=len(chunk)
+    if total>MAX_UPLOAD_BYTES: raise HTTPException(413,detail=f"Video uploads are limited to {MAX_UPLOAD_BYTES//(1024*1024)} MiB.")
+    target.write(chunk)
+  if total<=0: raise HTTPException(400,detail="The uploaded video is empty.")
+  with LOCK: JOBS[jid].update(status="queued",message="Upload received. Video queued for transcription and editing.")
+  POOL.submit(process,jid,src.as_uri())
+  return {"jobId":jid,"status":"queued","message":"Upload received. Video queued for transcription and editing."}
+ except HTTPException:
+  with LOCK: JOBS.pop(jid,None)
+  shutil.rmtree(work,ignore_errors=True)
+  raise
+ except Exception:
+  with LOCK: JOBS.pop(jid,None)
+  shutil.rmtree(work,ignore_errors=True)
+  raise HTTPException(500,detail="Could not receive the uploaded video.")
+
 @app.get("/health")
 def health(): return {"ok":True,"service":"rapigents-free-clip-worker","engine":"yt-dlp + FFmpeg + faster-whisper"}
 @app.post("/jobs",status_code=202)
@@ -149,7 +198,7 @@ def create(payload:JobRequest,authorization:str|None=Header(default=None)):
  try: url=validate(str(payload.url))
  except ValueError as e: raise HTTPException(400,detail=str(e))
  with LOCK:
-  if sum(1 for j in JOBS.values() if j["status"] in {"queued","downloading","transcribing","rendering"})>=2: raise HTTPException(429,detail="Free worker is busy. Wait for the current job to finish.")
+  if sum(1 for j in JOBS.values() if j["status"] in {"uploading","queued","downloading","transcribing","rendering"})>=2: raise HTTPException(429,detail="Free worker is busy. Wait for the current job to finish.")
   jid=uuid.uuid4().hex; JOBS[jid]={"id":jid,"status":"queued","message":"Job queued.","clips":[]}
  POOL.submit(process,jid,url); return {"jobId":jid,"status":"queued","message":"Video queued for local transcription and clip rendering."}
 @app.get("/jobs/{jid}")
