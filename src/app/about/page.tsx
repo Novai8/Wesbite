@@ -6,7 +6,7 @@ export const metadata: Metadata = { title: "How it works", description: "How to 
 
 const steps = [
   { icon: MousePointer2, title: "Choose a tool", text: "Find a utility for the task you need to finish, from writing and research to data cleanup." },
-  { icon: Blocks, title: "Add your context", text: "Give the tool the text, details, or data it needs. Browser-based utilities run locally in your browser." },
+  { icon: Blocks, title: "Add your context", text: "Give the tool the context it needs, such as text, data, or a file." },
   { icon: Sparkles, title: "Use the result", text: "Review the output, refine it, then copy what you need. You stay in control of what gets shared or sent." },
 ];
 
