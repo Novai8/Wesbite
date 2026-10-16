@@ -222,6 +222,15 @@ export function ClipAIWorkbench() {
   return <section className="clip-workbench" id="clip-workbench">
     <div className="clip-workbench-shell">
       <div className="clip-workbench-heading"><div><span className="clip-workbench-kicker"><WandSparkles size={14}/> CLIP AI / WORKBENCH</span><h2>Make your first <em>short.</em></h2><p>Drop in a video or paste a link. Clip AI finds concise highlights and turns them into vertical edits with animated captions, motion, and sound.</p></div><span className="clip-workbench-version">CREATOR STUDIO</span></div>
+      <div className="clip-style-picker">
+        <div className="clip-style-heading"><span className="clip-workbench-kicker">EDIT STYLE</span><strong>Choose the finish</strong></div>
+        <div className="clip-style-options" role="group" aria-label="Choose an edit style">
+          {editStyles.map((style) => <button key={style.id} type="button" className={"clip-style-option"+(editStyle===style.id?" is-selected":"")} aria-pressed={editStyle===style.id} onClick={() => setEditStyle(style.id)}>
+            <span className="clip-style-option-top"><strong>{style.label}</strong>{editStyle===style.id ? <CheckCircle2 size={15}/> : <span className="clip-style-mark" />}</span>
+            <span className="clip-style-option-description">{style.description}</span>
+          </button>)}
+        </div>
+      </div>
       <form className="clip-link-import" onSubmit={submitSourceLink}>
         <div className="clip-link-copy"><span className="clip-workbench-kicker"><WandSparkles size={13}/> PASTE A VIDEO LINK</span><strong>Or paste a public video link</strong><p>Paste a public video link and Clip AI will find the strongest moments, style the captions, and prepare vertical clips. Your results appear here when they are ready.</p></div>
         <div className="clip-link-controls"><input aria-label="Public video URL" type="url" inputMode="url" autoComplete="url" placeholder="https://www.youtube.com/watch?v=…" value={sourceLink} onChange={event => setSourceLink(event.target.value)} disabled={linkBusy} required /><button type="submit" disabled={linkBusy || !sourceLink.trim()}>{linkBusy ? <><LoaderCircle size={15} className="clip-spin"/> Working…</> : <>Find clips <WandSparkles size={15}/></>}</button></div>
