@@ -19,6 +19,8 @@ export async function POST(request: Request) {
   let body: unknown;
   try { body = await request.json(); } catch { return NextResponse.json({ error: "Paste a valid video URL." }, { status: 400 }); }
   const raw = isRecord(body) && typeof body.url === "string" ? body.url.trim() : "";
+  const style = isRecord(body) && typeof body.style === "string" ? body.style : "punchy";
+  if (!["punchy", "cinematic", "clean"].includes(style)) return NextResponse.json({ error: "Choose a valid edit style." }, { status: 400 });
   if (!raw || raw.length > 2048) return NextResponse.json({ error: "Paste a valid video URL (maximum 2,048 characters)." }, { status: 400 });
   let url: URL;
   try { url = new URL(raw); } catch { return NextResponse.json({ error: "That URL is not valid. Include https://." }, { status: 400 }); }
@@ -26,7 +28,7 @@ export async function POST(request: Request) {
   const worker = config();
   if (!worker) return NextResponse.json({ error: "Clip AI is temporarily unavailable. Please try again shortly." }, { status: 503 });
   try {
-    const response = await fetch(worker.base + "/jobs", { method: "POST", headers: { Authorization: "Bearer " + worker.token, "Content-Type": "application/json" }, body: JSON.stringify({ url: url.toString() }), cache: "no-store", signal: AbortSignal.timeout(15000) });
+    const response = await fetch(worker.base + "/jobs", { method: "POST", headers: { Authorization: "Bearer " + worker.token, "Content-Type": "application/json" }, body: JSON.stringify({ url: url.toString(), style }), cache: "no-store", signal: AbortSignal.timeout(15000) });
     const payload: unknown = await response.json().catch(() => ({}));
     if (!response.ok) {
       const message = response.status === 400 ? errorMessage(payload, "Try a public video link from a supported platform.") : response.status === 413 ? "This video is too large to process. Try a shorter source." : response.status === 429 ? "Clip AI is busy right now. Try again in a moment." : "Clip AI is temporarily unavailable. Please try again shortly.";
