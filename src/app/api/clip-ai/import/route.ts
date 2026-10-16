@@ -35,7 +35,7 @@ export async function POST(request: Request) {
     const data = isRecord(payload) ? payload : {};
     return NextResponse.json({ projectId: String(data.jobId || ""), message: "Your video is in the editing queue." }, { status: 202 });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error && error.name === "TimeoutError" ? "The worker took too long to accept the job. Check that it is online, then retry." : "Could not reach the free Clip AI worker. Check CLIP_WORKER_URL and worker logs." }, { status: 502 });
+    return NextResponse.json({ error: error instanceof Error && error.name === "TimeoutError" ? "Clip AI is taking longer than expected to respond. Please try again shortly." : "Could not start this edit. Please try again shortly." }, { status: 502 });
   }
 }
 
