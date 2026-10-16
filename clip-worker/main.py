@@ -456,25 +456,25 @@ def process(jid,url,style="punchy"):
   if duration<=0 or duration>MAX_SECONDS: raise RuntimeError(f"Source must be under {MAX_SECONDS//60} minutes.")
   with LOCK: JOBS[jid].update(status="transcribing",message="Transcribing speech locally with faster-whisper…")
   m=model(); segments,info=m.transcribe(str(src),vad_filter=True,word_timestamps=True,beam_size=3); transcript=transcript_sentences(list(segments)); selections=picks(transcript,duration)
-  with LOCK: JOBS[jid].update(status="rendering",message="Editing clips: smart zoom, hook titles, colored captions, and subtle sound effects…")
+  with LOCK: JOBS[jid].update(status="rendering",message="Editing clips: animated word highlights, hook titles, smart zoom, and subtle sound effects…")
   results=[]
   if style == "cinematic":
    caption_size=40; hook_size=47; caption_margin=320; hook_color="&H00C9B6FF"
-   colors=["&H00F5F4EF","&H00C6A8FF","&H00B6E6F6","&H00FFFFFF"]
+   highlight_colors=["&H00C6A8FF","&H00B6E6F6"]
    zoom_expr="min(zoom+0.00022,1.045)"; zoom_x="iw/2-(iw/zoom/2)+sin(on/160)*2"; zoom_y="ih/2-(ih/zoom/2)+cos(on/195)*2"
    picture_filter="eq=contrast=1.07:saturation=0.91:brightness=0.005,vignette=PI/5,unsharp=5:5:0.2:3:3:0.0"
    fade_in=0.30; fade_out=0.30; hook_duration=3.45; hook_fade_in=320; hook_fade_out=350; hook_start_scale=88; hook_scale_ms=650
    sfx_mix_gain=0.58
   elif style == "clean":
    caption_size=40; hook_size=45; caption_margin=315; hook_color="&H00FFFFFF"
-   colors=["&H00FFFFFF","&H00E6DDFF","&H00FFFFFF","&H00D9F2E4"]
+   highlight_colors=["&H00E6DDFF","&H00D9F2E4"]
    zoom_expr="min(zoom+0.00016,1.025)"; zoom_x="iw/2-(iw/zoom/2)"; zoom_y="ih/2-(ih/zoom/2)"
    picture_filter="eq=contrast=1.025:saturation=1.02,unsharp=5:5:0.18:3:3:0.0"
    fade_in=0.16; fade_out=0.18; hook_duration=2.55; hook_fade_in=160; hook_fade_out=220; hook_start_scale=94; hook_scale_ms=280
    sfx_mix_gain=0.24
   else:
    caption_size=43; hook_size=50; caption_margin=300; hook_color="&H0087F5FF"
-   colors=["&H0087F5FF","&H00FF91C8","&H00FFFFFF","&H008BFF9B"]
+   highlight_colors=["&H0087F5FF","&H00FF91C8","&H008BFF9B"]
    zoom_expr="min(zoom+0.00055,1.07)"; zoom_x="iw/2-(iw/zoom/2)+sin(on/95)*5"; zoom_y="ih/2-(ih/zoom/2)+cos(on/125)*4"
    picture_filter="eq=contrast=1.06:saturation=1.16,unsharp=5:5:0.36:3:3:0.0"
    fade_in=0.12; fade_out=0.18; hook_duration=2.85; hook_fade_in=220; hook_fade_out=260; hook_start_scale=78; hook_scale_ms=420
@@ -503,7 +503,7 @@ Format: Layer,Start,End,Style,Name,MarginL,MarginR,MarginV,Effect,Text
     if not words: continue
     groups=opencut_phrase_groups(words)
     for j,group in enumerate(groups):
-     active_color=colors[(i+j)%len(colors)]
+     active_color=highlight_colors[(i+j)%len(highlight_colors)]
      for active_index,active_word in enumerate(group):
       pa=max(0.0,float(active_word["start"])-start)
       if pa>=end-start: continue
@@ -530,7 +530,7 @@ Format: Layer,Start,End,Style,Name,MarginL,MarginR,MarginV,Effect,Text
    cmd(["ffmpeg","-y","-ss",str(start),"-i",str(src),"-i",str(sfx),"-t",str(end-start),"-filter_complex",f"[0:a]volume=1.0[original];[1:a]volume={sfx_mix_gain},adelay=120|120[effect];[original][effect]amix=inputs=2:duration=first:dropout_transition=0:normalize=0,alimiter=limit=0.95[aout]","-vf",vf,"-map","0:v:0","-map","[aout]","-c:v","libx264","-preset","veryfast","-crf","24","-c:a","aac","-b:a","128k","-pix_fmt","yuv420p","-movflags","+faststart",str(out)],600)
    potential=min(98,max(35,round(pick["score"])))
    outlook="Strong signals" if potential>=75 else "Promising" if potential>=58 else "Niche fit"
-   results.append({"id":cid,"title":pick["title"],"hookTitle":pick.get("hookTitle",pick["title"]),"hook":pick["hook"],"start":round(start,2),"end":round(end,2),"potentialScore":potential,"reachOutlook":outlook,"effects":["sentence-aware selection","word-timed captions","subtle motion","animated opening hook","layered whoosh impact"],"url":f"{PUBLIC}/media/{name}" if PUBLIC else f"/media/{name}"})
+   results.append({"id":cid,"title":pick["title"],"hookTitle":pick.get("hookTitle",pick["title"]),"hook":pick["hook"],"start":round(start,2),"end":round(end,2),"potentialScore":potential,"reachOutlook":outlook,"effects":["sentence-aware selection","OpenCut-style active-word captions","subtle motion","animated opening hook","layered whoosh impact"],"url":f"{PUBLIC}/media/{name}" if PUBLIC else f"/media/{name}"})
   with LOCK: JOBS[jid].update(status="completed",message=f"Created {len(results)} clips.",clips=results,duration=duration,language=getattr(info,"language",None))
  except subprocess.TimeoutExpired:
   with LOCK: JOBS[jid].update(status="failed",message="Processing timed out. Try a shorter or lower-resolution source.")
