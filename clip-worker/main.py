@@ -460,7 +460,7 @@ Format: Layer,Start,End,Style,Name,MarginL,MarginR,MarginV,Effect,Text
    events=[]
    hook_text=pick.get("hookTitle",pick["title"]).upper()
    events.append(f"Dialogue: 1,0:00:00.00,{ass_stamp(hook_duration)},Hook,,0,0,0,,{{\\fad({hook_fade_in},{hook_fade_out})\\an8\\pos(360,175)\\fscx{hook_start_scale}\\fscy{hook_start_scale}\\t(0,{hook_scale_ms},\\fscx100\\fscy100)\\blur(1.2)\\t(250,{hook_scale_ms+100},\\blur(0))}}{ass_escape(hook_text)}")
-   colors=["&H0087F5FF","&H00FF91C8","&H00FFFFFF","&H008BFF9B"]
+
    for i,seg in enumerate(pick["segments"]):
     words=seg.get("words") or []
     if words:
