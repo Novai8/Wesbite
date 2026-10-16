@@ -437,7 +437,7 @@ def process(jid,url,style="punchy"):
    whoosh_filter="highpass=f=600,lowpass=f=6500,afade=t=in:st=0:d=0.10,afade=t=out:st=0.16:d=0.32,volume=0.035"; thump_volume="volume=0.05"
   else:
    caption_size=43; hook_size=50; caption_margin=300; hook_color="&H0087F5FF"
-
+   colors=["&H0087F5FF","&H00FF91C8","&H00FFFFFF","&H008BFF9B"]
    zoom_expr="min(zoom+0.00055,1.07)"; zoom_x="iw/2-(iw/zoom/2)+sin(on/95)*5"; zoom_y="ih/2-(ih/zoom/2)+cos(on/125)*4"
    picture_filter="eq=contrast=1.06:saturation=1.16,unsharp=5:5:0.36:3:3:0.0"
    fade_in=0.12; fade_out=0.18; hook_duration=2.85; hook_fade_in=220; hook_fade_out=260; hook_start_scale=78; hook_scale_ms=420
