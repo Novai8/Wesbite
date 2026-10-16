@@ -25,7 +25,7 @@ export function ContactForm() {
   const [copiedMessage,setCopiedMessage] = useState(false);
 
   function set<K extends keyof Fields>(key:K,value:Fields[K]) { setFields(current=>({...current,[key]:value})); setErrors(current=>({...current,[key]:undefined})); }
-  function validate(next:Fields) { const errors:Partial<Record<keyof Fields,string>>={}; if(!next.name.trim()) errors.name="Add your name."; if(!next.email.trim()) errors.email="Add an email so Hussnain can reply."; else if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(next.email.trim())) errors.email="That email does not look complete."; if(next.message.trim().length===0) errors.message="Add a message so we know how to help."; else if(next.message.trim().length>2000) errors.message="Keep the note under 2000 characters."; return errors; }
+  function validate(next:Fields) { const errors:Partial<Record<keyof Fields,string>>={}; if(!next.name.trim()) errors.name="Add your name."; if(!next.email.trim()) errors.email="Add an email address so we can reply."; else if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(next.email.trim())) errors.email="That email does not look complete."; if(next.message.trim().length===0) errors.message="Add a message so we know how to help."; else if(next.message.trim().length>2000) errors.message="Keep the note under 2000 characters."; return errors; }
   function submit(e:FormEvent) {
     e.preventDefault();
     const nextErrors=validate(fields);
