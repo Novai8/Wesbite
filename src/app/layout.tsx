@@ -9,6 +9,7 @@ import { InteractionLayer } from "@/components/interaction-layer";
 import { site } from "@/lib/site";
 import "./globals.css";
 import "./experience.css";
+import "./polish.css";
 
 const instrument=localFont({src:[{path:"../fonts/InstrumentSerif-Regular.ttf",weight:"400"},{path:"../fonts/InstrumentSerif-Italic.ttf",weight:"400",style:"italic"}],variable:"--font-instrument",display:"swap"});
 
