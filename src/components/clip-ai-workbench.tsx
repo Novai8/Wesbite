@@ -42,6 +42,7 @@ export function ClipAIWorkbench() {
   const [linkProjectId, setLinkProjectId] = useState("");
   const [linkStage, setLinkStage] = useState<ClipStage>("queued");
   const [remoteClips, setRemoteClips] = useState<RemoteClip[]>([]);
+  const [editStyle, setEditStyle] = useState<EditStyle>("punchy");
 
   useEffect(() => () => { if (fileUrl) URL.revokeObjectURL(fileUrl); }, [fileUrl]);
   useEffect(() => () => { if (outputUrl) URL.revokeObjectURL(outputUrl); }, [outputUrl]);
