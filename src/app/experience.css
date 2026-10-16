@@ -629,3 +629,11 @@ html[data-theme="light"] .clip-style-mark{border-color:#aaa2ba}
 @media(max-width:760px){.clip-style-picker{grid-template-columns:1fr;gap:12px;padding:15px}.clip-style-options{gap:7px}.clip-style-option{padding:10px;min-height:90px}}
 @media(max-width:480px){.clip-style-options{grid-template-columns:1fr}.clip-style-option{min-height:0;grid-template-columns:1fr;gap:5px}.clip-style-option-description{font-size:11px}}
 @media(prefers-reduced-motion:reduce){.clip-style-option{transition:none!important}.clip-style-option:hover{transform:none}}
+html[data-theme="light"] .rg-home-clip{background:radial-gradient(ellipse at 82% 42%,rgba(255,122,84,.10),transparent 33%),radial-gradient(ellipse at 15% 80%,rgba(174,110,255,.08),transparent 35%),linear-gradient(125deg,#f9f6fc,#f4f0fa 58%,#fbf1ec);border-color:rgba(55,42,82,.13);color:#28233b}
+html[data-theme="light"] .rg-home-clip-copy h2{color:#28233b}
+html[data-theme="light"] .rg-home-clip-copy h2 em{color:#a94f3d}
+html[data-theme="light"] .rg-home-clip-copy>p{color:#5d586e}
+html[data-theme="light"] .rg-home-clip-kicker{color:#855845}
+html[data-theme="light"] .rg-home-clip-kicker>span:last-child{color:#817991}
+html[data-theme="light"] .rg-home-clip-chips{color:#6a637f}
+html[data-theme="light"] .rg-home-clip-chips svg{color:#a94f3d}
