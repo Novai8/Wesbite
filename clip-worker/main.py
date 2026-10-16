@@ -25,7 +25,7 @@ MAX_UPLOAD_BYTES=min(MAX_BYTES,int(os.getenv("MAX_UPLOAD_BYTES",str(10*1024*1024
 MODEL_NAME=os.getenv("WHISPER_MODEL","small"); POOL=ThreadPoolExecutor(max_workers=1); LOCK=threading.Lock(); MODEL_LOCK=threading.Lock(); JOBS={}; MODEL=None
 YOUTUBE_HOSTS={"youtube.com","www.youtube.com","m.youtube.com","youtu.be","youtube-nocookie.com"}
 HOSTS={"youtube.com","www.youtube.com","m.youtube.com","youtu.be","youtube-nocookie.com","vimeo.com","www.vimeo.com","player.vimeo.com","twitch.tv","www.twitch.tv","clips.twitch.tv","loom.com","www.loom.com","drive.google.com","docs.google.com","dropbox.com","www.dropbox.com","dl.dropboxusercontent.com","archive.org","www.archive.org","rumble.com","www.rumble.com","facebook.com","www.facebook.com","fb.watch","linkedin.com","www.linkedin.com","x.com","www.x.com","twitter.com","www.twitter.com"}
-app=FastAPI(title="Rapigents Free Clip Worker",version="1.0.0"); app.mount("/media",StaticFiles(directory=str(OUT)),name="media")
+app=FastAPI(title="Rapigents Clip AI", docs_url=None, redoc_url=None, openapi_url=None); app.mount("/media",StaticFiles(directory=str(OUT)),name="media")
 class JobRequest(BaseModel): url: HttpUrl
 def auth(value):
  if not TOKEN: raise HTTPException(503,detail="Configure CLIP_WORKER_TOKEN before accepting jobs.")
@@ -512,7 +512,7 @@ async def create_from_upload(request:Request,authorization:str|None=Header(defau
   raise HTTPException(500,detail="Could not receive the uploaded video.")
 
 @app.get("/health")
-def health(): return {"ok":True,"service":"rapigents-free-clip-worker","engine":"yt-dlp + FFmpeg + faster-whisper"}
+def health(): return {"ok": True}
 @app.post("/jobs",status_code=202)
 def create(payload:JobRequest,authorization:str|None=Header(default=None)):
  auth(authorization)
