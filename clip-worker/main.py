@@ -73,9 +73,9 @@ def _vidfetch_read_usage():
  try:
   state=json.loads(VIDFETCH_USAGE_PATH.read_text(encoding="utf-8"))
  except Exception as e:
-  raise RuntimeError("VidFetch quota ledger is unreadable; refusing a download to protect the account quota.") from e
+  raise RuntimeError("Video import is temporarily unavailable. Please try again later.") from e
  if not isinstance(state,dict) or not isinstance(state.get("month"),str):
-  raise RuntimeError("VidFetch quota ledger is invalid; refusing a download to protect the account quota.")
+  raise RuntimeError("Video import is temporarily unavailable. Please try again later.")
  if state["month"]!=month:
   return {"month":month,"jobs_started":0,"bytes_used":0,"reservations":{}}
  if not isinstance(state.get("reservations"),dict):
@@ -167,9 +167,9 @@ def download_from_vidfetch(raw_url,work):
     raise RuntimeError(f"VidFetch download request failed (HTTP {response.status_code}): {response.text[:240]}")
    payload=response.json()
   except requests.RequestException as e:
-   raise RuntimeError("VidFetch download request could not be confirmed; its reserved allowance was retained for safety.") from e
+   raise RuntimeError("Video import could not be confirmed. Please try again later.") from e
   except ValueError as e:
-   raise RuntimeError("VidFetch download request returned invalid JSON; its reserved allowance was retained for safety.") from e
+   raise RuntimeError("Video import returned an unexpected response. Please try again later.") from e
   if not isinstance(payload,dict): raise RuntimeError("VidFetch returned an unexpected download-job response.")
   job_id=payload.get("id")
   status=str(payload.get("status","queued")).lower()
@@ -183,7 +183,7 @@ def download_from_vidfetch(raw_url,work):
      detail=payload.get("error") or payload.get("message") or payload.get("error_message") or "The provider marked the download as failed."
      raise RuntimeError("VidFetch download failed: "+str(detail)[:300])
     if time.monotonic()>=deadline:
-     raise RuntimeError("VidFetch download timed out while waiting for the provider.")
+     raise RuntimeError("Video import took too long. Please try again with a shorter video.")
     time.sleep(3)
     try:
      response=requests.get("https://api.vidfetch.dev/v1/downloads/"+job_id,headers=headers,timeout=25)
@@ -193,7 +193,7 @@ def download_from_vidfetch(raw_url,work):
      raise RuntimeError("Could not check the VidFetch download status.") from e
     except ValueError as e:
      raise RuntimeError("VidFetch status endpoint returned invalid JSON.") from e
-    if not isinstance(payload,dict): raise RuntimeError("VidFetch status endpoint returned an unexpected response.")
+    if not isinstance(payload,dict): raise RuntimeError("Video import returned an unexpected response. Please try again later.")
     status=str(payload.get("status","queued")).lower()
     direct=payload.get("download_url")
   if status and status not in {"completed","complete","success","succeeded"}:
@@ -394,23 +394,23 @@ def process(jid,url,style="punchy"):
   else:
    parsed_url=urlparse(url)
    is_youtube=bool(parsed_url.hostname and parsed_url.hostname.lower().rstrip(".") in YOUTUBE_HOSTS)
-   with LOCK: JOBS[jid].update(status="downloading",message="Trying free local YouTube resolver…" if is_youtube else "Downloading source with yt-dlp…")
+   with LOCK: JOBS[jid].update(status="downloading",message="Preparing your video…")
    if is_youtube:
     try:
      src=download_from_ytdlp(url,work,is_youtube=True)
     except Exception as local_error:
      src=None; fallback_errors=[]
      if VIDFETCH_FALLBACK_ENABLED:
-      with LOCK: JOBS[jid].update(status="downloading",message="Local YouTube download failed; checking configured VidFetch fallback…")
+      with LOCK: JOBS[jid].update(status="downloading",message="Trying another supported source route…")
       try: src=download_from_vidfetch(url,work)
       except Exception as fallback_error: fallback_errors.append("VidFetch: "+str(fallback_error)[-320:])
      if src is None and TUNELIO_FALLBACK_ENABLED:
-      with LOCK: JOBS[jid].update(status="downloading",message="Trying configured Tunelio fallback…")
+      with LOCK: JOBS[jid].update(status="downloading",message="Trying another supported source route…")
       try: src=download_from_tunelio(url,work)
       except Exception as fallback_error: fallback_errors.append("Tunelio: "+str(fallback_error)[-320:])
      if src is None:
       details="; ".join(fallback_errors)
-      prefix="Free local YouTube download failed. YouTube may restrict this server IP. Details: "+str(local_error)[-500:]
+      prefix="The source video could not be retrieved. Details: "+str(local_error)[-500:]
       raise RuntimeError(prefix+("; configured fallbacks failed: "+details if details else "; no hosted fallback is enabled."))
 
    else:
