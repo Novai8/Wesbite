@@ -371,6 +371,43 @@ def suggest_hook(text):
  title=suggest_title(words).strip(" .!?")
  return title.upper() if title else "THE PART YOU NEED TO SEE"
 
+def opencut_words(seg):
+ """Normalize Whisper output into word-timed tokens for OpenCut-style captions."""
+ source=seg.get("words") or [{"start":seg.get("start",0.0),"end":seg.get("end",0.0),"text":seg.get("text","")}]
+ result=[]
+ for item in source:
+  token_text=re.sub(r"\s+"," ",str(item.get("text",""))).strip()
+  tokens=token_text.split()
+  if not tokens: continue
+  try: word_start=float(item.get("start",seg.get("start",0.0)))
+  except (TypeError,ValueError): word_start=float(seg.get("start",0.0))
+  try: word_end=float(item.get("end",seg.get("end",word_start+0.08)))
+  except (TypeError,ValueError): word_end=word_start+0.08
+  if word_end<=word_start: word_end=word_start+max(0.08,0.055*len(tokens))
+  span=word_end-word_start
+  for index,token in enumerate(tokens):
+   a=word_start+span*index/len(tokens)
+   b=word_start+span*(index+1)/len(tokens)
+   result.append({"text":token,"start":a,"end":max(a+0.04,b)})
+ return result
+
+def opencut_phrase_groups(words,min_words=3,max_words=5):
+ """Group timed words into readable 3–5 word caption phrases."""
+ groups=[]; current=[]
+ for word in words:
+  current.append(word)
+  token=str(word.get("text","")).strip()
+  sentence_end=bool(re.search(r"""[.!?…]["')\]]*$""",token))
+  comma_end=bool(re.search(r""",["')\]]*$""",token))
+  if len(current)>=max_words or (sentence_end and len(current)>=min_words) or (comma_end and len(current)>=4):
+   groups.append(current); current=[]
+ if current:
+  if len(current)<=2 and groups:
+   groups[-1].extend(current)
+  else:
+   groups.append(current)
+ return groups
+
 def caption_chunks(text,max_words=5):
  words=str(text).split()
  return [" ".join(words[i:i+max_words]) for i in range(0,len(words),max_words)]
@@ -462,24 +499,29 @@ Format: Layer,Start,End,Style,Name,MarginL,MarginR,MarginV,Effect,Text
    events.append(f"Dialogue: 1,0:00:00.00,{ass_stamp(hook_duration)},Hook,,0,0,0,,{{\\fad({hook_fade_in},{hook_fade_out})\\an8\\pos(360,175)\\fscx{hook_start_scale}\\fscy{hook_start_scale}\\t(0,{hook_scale_ms},\\fscx100\\fscy100)\\blur(1.2)\\t(250,{hook_scale_ms+100},\\blur(0))}}{ass_escape(hook_text)}")
 
    for i,seg in enumerate(pick["segments"]):
-    words=seg.get("words") or []
-    if words:
-     groups=[words[k:k+4] for k in range(0,len(words),4)]
-     for j,group in enumerate(groups):
-      pa=max(0.0,float(group[0]["start"])-start)
-      pb=min(end-start,float(group[-1]["end"])-start)
-      caption=ass_escape(" ".join(w["text"] for w in group).replace("-->","→"))
-      if not caption: continue
-      events.append(f"Dialogue: 0,{ass_stamp(pa)},{ass_stamp(max(pa+0.14,pb))},Caption,,0,0,0,,{{\\fad(55,75)\\c{colors[(i+j)%len(colors)]}\\fscx92\\fscy92\\t(0,90,\\fscx100\\fscy100)}}{caption.upper()}")
-    else:
-     a=max(0.0,float(seg["start"])-start); b=max(a+0.18,min(end-start,float(seg["end"])-start))
-     pieces=caption_chunks(seg["text"].replace("-->","→"),4)
-     if not pieces: continue
-     span=max(0.18,b-a)
-     for j,piece in enumerate(pieces):
-      pa=a+span*j/len(pieces); pb=a+span*(j+1)/len(pieces)
-      caption=ass_escape(piece)
-      events.append(f"Dialogue: 0,{ass_stamp(pa)},{ass_stamp(max(pa+0.12,pb))},Caption,,0,0,0,,{{\\fad(55,75)\\c{colors[(i+j)%len(colors)]}\\fscx92\\fscy92\\t(0,90,\\fscx100\\fscy100)}}{caption.upper()}")
+    words=opencut_words(seg)
+    if not words: continue
+    groups=opencut_phrase_groups(words)
+    for j,group in enumerate(groups):
+     active_color=colors[(i+j)%len(colors)]
+     for active_index,active_word in enumerate(group):
+      pa=max(0.0,float(active_word["start"])-start)
+      if pa>=end-start: continue
+      if active_index+1<len(group):
+       next_start=max(0.0,float(group[active_index+1]["start"])-start)
+       pb=min(end-start,max(pa+0.05,next_start))
+      else:
+       pb=min(end-start,max(pa+0.12,float(active_word["end"])-start+0.10))
+      pb=max(pa+0.05,pb)
+      phrase=[]
+      for word_index,word in enumerate(group):
+       token=ass_escape(str(word["text"]).replace("-->","→")).upper()
+       if word_index==active_index:
+        phrase.append(f"{{\\c{active_color}\\fscx104\\fscy104}}{token}{{\\c&H00FFFFFF&\\fscx100\\fscy100}}")
+       else:
+        phrase.append(f"{{\\c&H00FFFFFF&}}{token}{{\\c&H00FFFFFF&}}")
+      caption=" ".join(phrase)
+      events.append(f"Dialogue: 0,{ass_stamp(pa)},{ass_stamp(max(pa+0.08,pb))},Caption,,0,0,0,,{{\\fad(18,16)\\blur(0.15)}}{caption}")
    ass.write_text(header+"\n".join(events)+"\n",encoding="utf-8")
    cmd(["ffmpeg","-y","-f","lavfi","-i","anoisesrc=color=white:duration=0.65:sample_rate=48000","-f","lavfi","-i","sine=frequency=82:duration=0.18:sample_rate=48000","-filter_complex","[0:a]highpass=f=450,lowpass=f=9000,afade=t=in:st=0:d=0.16,afade=t=out:st=0.18:d=0.42,volume=0.10[whoosh];[1:a]afade=t=in:st=0:d=0.01,afade=t=out:st=0.03:d=0.15,volume=0.16[thump];[whoosh][thump]amix=inputs=2:duration=longest:normalize=0,alimiter=limit=0.8[out]","-map","[out]","-ac","2",str(sfx)],60)
    ass_path=str(ass).replace("\\\\","/").replace(":","\\\\:")
