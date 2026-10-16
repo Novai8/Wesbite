@@ -148,3 +148,23 @@ a:focus-visible,button:focus-visible{outline-color:var(--page-accent)}
 
 /* Free open-source Clip AI link worker */
 .clip-link-import{margin:0 0 24px;padding:22px;border:1px solid rgba(216,255,99,.24);border-radius:18px;background:linear-gradient(130deg,rgba(216,255,99,.055),rgba(255,255,255,.018))}.clip-link-copy .clip-workbench-kicker{display:flex;align-items:center;gap:7px;color:#d8ff63}.clip-link-copy>strong{display:block;margin-top:10px;font-size:17px;letter-spacing:-.025em}.clip-link-copy>p{margin:7px 0 14px;color:var(--muted,#9ca19f);font-size:12px;line-height:1.6}.clip-link-controls{display:flex;gap:9px}.clip-link-controls input{flex:1;min-width:0;padding:13px 14px;border:1px solid rgba(255,255,255,.17);border-radius:10px;background:rgba(0,0,0,.16);color:inherit;font:inherit;font-size:13px}.clip-link-controls input:focus{outline:2px solid rgba(216,255,99,.35);border-color:#d8ff63}.clip-link-controls button{display:flex;align-items:center;justify-content:center;gap:8px;padding:0 16px;border:0;border-radius:10px;background:#d8ff63;color:#11140a;font-size:12px;font-weight:750;white-space:nowrap}.clip-link-controls button:disabled{opacity:.55;cursor:wait}.clip-link-status{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:12px 0 0;padding:11px 12px;border:1px solid rgba(216,255,99,.18);border-radius:9px;background:rgba(216,255,99,.045);font-size:12px;line-height:1.55}.clip-link-status button{flex-shrink:0;border:1px solid currentColor;border-radius:7px;background:transparent;color:inherit;padding:6px 8px;font-size:10px}.clip-link-error{margin:12px 0 0;padding:11px 12px;border:1px solid rgba(255,100,100,.35);border-radius:9px;color:#ffb5b5;font-size:12px;line-height:1.55}.clip-link-results{display:grid;gap:8px;margin-top:15px}.clip-link-result{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:13px;border:1px solid var(--line,rgba(255,255,255,.12));border-radius:10px;background:rgba(0,0,0,.12)}.clip-link-result>div{min-width:0}.clip-link-result>div>span{display:block;margin-bottom:6px;color:#d8ff63;font:600 9px/1.5 var(--font-geist-mono),monospace;letter-spacing:.08em}.clip-link-result strong{display:block;font-size:12px;overflow-wrap:anywhere}.clip-link-result p{margin:5px 0 0;color:var(--muted,#9ca19f);font-size:11px;line-height:1.5;overflow-wrap:anywhere}.clip-link-result>a{display:flex;align-items:center;gap:6px;flex-shrink:0;color:#d8ff63;text-decoration:none;font-size:11px;font-weight:650}.clip-link-result>a:hover{text-decoration:underline}@media(max-width:620px){.clip-link-import{padding:16px}.clip-link-controls{flex-direction:column}.clip-link-controls button{min-height:43px}.clip-link-result{align-items:flex-start;flex-direction:column}.clip-link-status{align-items:flex-start;flex-direction:column}}
+
+/* Cross-theme interpolation: enabled only while a visitor changes appearance. */
+html.theme-transitioning,
+html.theme-transitioning body,
+html.theme-transitioning *,
+html.theme-transitioning *::before,
+html.theme-transitioning *::after {
+  transition-property: background-color, color, border-color, box-shadow, fill, stroke, outline-color;
+  transition-duration: 420ms;
+  transition-timing-function: cubic-bezier(.22, 1, .36, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  html.theme-transitioning,
+  html.theme-transitioning body,
+  html.theme-transitioning *,
+  html.theme-transitioning *::before,
+  html.theme-transitioning *::after {
+    transition-duration: 0ms !important;
+  }
+}
