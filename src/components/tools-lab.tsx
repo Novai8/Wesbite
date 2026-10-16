@@ -213,7 +213,8 @@ export function ToolsLab() {
       if (!response.ok) throw new Error(payload.error || "The tool could not complete this request.");
       setResult(payload.result || "No result returned.");
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Something went wrong. Try again.");
+      const message = caught instanceof Error ? caught.message : "Something went wrong. Try again.";
+      setError(/openrouter|free model|model selected|video model|provider|backend|api key/i.test(message) ? "This tool could not complete the request right now. Please try again." : message);
     } finally {
       setLoading(false);
     }
