@@ -382,7 +382,8 @@ def ass_stamp(sec):
 def ass_escape(value):
  return str(value).replace("\\","\\\\").replace("{","\\{").replace("}","\\}").replace("\n"," ").strip()
 
-def process(jid,url):
+def process(jid,url,style="punchy"):
+ style=style if style in EDIT_STYLES else "punchy"
  work=INBOX/jid; work.mkdir(parents=True,exist_ok=True)
  try:
   if url.startswith("file://"):
