@@ -121,13 +121,13 @@ def transcript_sentences(segments):
     end=float(getattr(item,"end",start+0.08) or start+0.08)
     if current and start-current[-1]["end"]>1.2: flush()
     current.append({"start":start,"end":max(start+0.04,end),"text":word})
-    if re.search(r"[.!?…][\\"')\\]]*$",word): flush()
+    if re.search(r"""[.!?…]["')\]]*$""",word): flush()
   else:
-   text=re.sub(r"\\s+"," ",str(getattr(seg,"text",""))).strip()
+   text=re.sub(r"\s+"," ",str(getattr(seg,"text",""))).strip()
    if not text: continue
    if current and seg_start-current[-1]["end"]>1.2: flush()
    current.append({"start":seg_start,"end":max(seg_start+0.08,seg_end),"text":text})
-   if re.search(r"[.!?…][\\"')\\]]*$",text) or len(current)>=8: flush()
+   if re.search(r"""[.!?…]["')\]]*$""",text) or len(current)>=8: flush()
  flush()
  return sentences
 
@@ -136,11 +136,11 @@ def picks(transcript,duration):
  for item in transcript:
   if isinstance(item,dict):
    start=float(item.get("start",0)); end=float(item.get("end",0))
-   text=re.sub(r"\\s+"," ",str(item.get("text",""))).strip()
+   text=re.sub(r"\s+"," ",str(item.get("text",""))).strip()
    words=item.get("words",[])
   else:
    start=float(item.start); end=float(item.end)
-   text=re.sub(r"\\s+"," ",str(item.text)).strip()
+   text=re.sub(r"\s+"," ",str(item.text)).strip()
    words=[]
   if text and end>start:
    chunks.append({"start":start,"end":end,"text":text,"words":words})
