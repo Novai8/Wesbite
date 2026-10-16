@@ -72,7 +72,7 @@ export async function POST(request: Request) {
     }
     const data = isRecord(payload) ? payload : {};
     const projectId = typeof data.jobId === "string" ? data.jobId : "";
-    if (!projectId) return NextResponse.json({ error: "The worker accepted the request but returned no job ID." }, { status: 502 });
+    if (!projectId) return NextResponse.json({ error: "We could not start this edit. Please try again." }, { status: 502 });
     return NextResponse.json({
       projectId,
       status: typeof data.status === "string" ? data.status : "queued",
