@@ -7,6 +7,12 @@ type Caption = { start: number; end: number; text: string };
 type Clip = { start: number; end: number; title: string; hook: string; captions: Caption[] };
 type RemoteClip = { id: string; title: string; url: string; thumbnail?: string; hook?: string; start?: number; end?: number; potentialScore?: number; reachOutlook?: string; effects?: string[] };
 type ClipStage = "queued" | "downloading" | "transcribing" | "rendering" | "completed" | "failed";
+type EditStyle = "punchy" | "cinematic" | "clean";
+const editStyles = [
+  { id: "punchy", label: "Punchy", description: "Bold hooks, vivid captions, lively motion." },
+  { id: "cinematic", label: "Cinematic", description: "Softer color, gentle zoom, film-like fades." },
+  { id: "clean", label: "Clean", description: "Steady framing, clear captions, subtle effects." },
+] as const;
 const MAX_BYTES = 25 * 1024 * 1024;
 const MAX_DURATION_SECONDS = 10 * 60;
 
