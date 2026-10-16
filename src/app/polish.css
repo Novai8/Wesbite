@@ -1,0 +1,68 @@
+/* Shared polish: consistent controls, calmer motion, and legible cross-theme surfaces. */
+:root {
+  --ui-motion-fast: 160ms;
+  --ui-motion-base: 240ms;
+  --ui-motion-slow: 420ms;
+}
+html { scrollbar-gutter: stable; }
+body, .site-header, .mobile-menu, .site-footer, .toast, input, textarea, select, button,
+[role="button"], .magnetic-button, .header-cta, .icon-button, .sound-button {
+  transition-timing-function: cubic-bezier(.22, 1, .36, 1);
+}
+button:disabled, [role="button"][aria-disabled="true"] {
+  cursor: not-allowed;
+}
+input, textarea, select {
+  accent-color: var(--accent);
+}
+::placeholder { color: color-mix(in srgb, var(--muted) 78%, transparent); }
+@media (hover: hover) and (pointer: fine) {
+  button:not(:disabled):active, a[class*="button"]:active, .header-cta:active {
+    transform: translateY(1px) scale(.99);
+  }
+}
+html.theme-transitioning,
+html.theme-transitioning body,
+html.theme-transitioning body :is(header, main, footer, section, article, aside, nav, form, input, textarea, select, button, a, [role="button"], [class*="card"], [class*="panel"], [class*="surface"]),
+html.theme-transitioning body :is(header, main, footer, section, article, aside, nav, form, input, textarea, select, button, a, [role="button"], [class*="card"], [class*="panel"], [class*="surface"])::before,
+html.theme-transitioning body :is(header, main, footer, section, article, aside, nav, form, input, textarea, select, button, a, [role="button"], [class*="card"], [class*="panel"], [class*="surface"])::after {
+  transition-property: color, background-color, border-color, box-shadow, fill, stroke, outline-color;
+  transition-duration: 420ms;
+  transition-timing-function: cubic-bezier(.22, 1, .36, 1);
+}
+/* The playful home art remains recognizable in both themes, but its surfaces
+   and copy now follow the visitor's chosen appearance instead of forcing dark mode. */
+html[data-theme="light"] .rg-home-fun {
+  background: var(--paper) !important;
+  color: var(--ink) !important;
+}
+html[data-theme="light"] .rg-home-fun .rg-fun-hero {
+  background:
+    radial-gradient(ellipse at 80% 12%, rgba(151,106,255,.12), transparent 32%),
+    radial-gradient(ellipse at 3% 75%, rgba(255,92,175,.08), transparent 31%),
+    var(--paper) !important;
+  color: var(--ink) !important;
+  border-color: var(--line) !important;
+}
+html[data-theme="light"] .rg-home-fun :is(h1,h2,h3,h4,p,li,small,strong,label) {
+  color: var(--ink);
+}
+html[data-theme="light"] .rg-home-fun :is(.rg-fun-grid, .rg-fun-glow) { opacity: .22; }
+html[data-theme="light"] .rg-home-fun :is(a,button) { color: inherit; }
+html[data-theme="light"] .rg-home-fun :is(.rg-fun-hero em, .rg-fun-accent, .rg-fun-kicker) {
+  color: var(--accent) !important;
+}
+html[data-theme="light"] .rg-home-fun :is(.rg-fun-card, .rg-fun-panel, .rg-fun-console, .rg-fun-tile) {
+  background-color: var(--surface) !important;
+  color: var(--ink) !important;
+  border-color: var(--line) !important;
+  box-shadow: 0 16px 40px rgba(16,32,34,.07);
+}
+@media (prefers-reduced-motion: reduce) {
+  html, body, *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
