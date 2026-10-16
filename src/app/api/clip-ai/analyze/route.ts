@@ -78,7 +78,7 @@ export async function POST(request: Request) {
       })).filter((caption: { start: number; end: number; text: string }) => Number.isFinite(caption.start) && Number.isFinite(caption.end) && caption.end > caption.start && caption.text) : [],
     })).filter((clip: ClipCandidate) => Number.isFinite(clip.start) && Number.isFinite(clip.end) && clip.end > clip.start && clip.end - clip.start >= 5 && clip.start < duration) : [];
     if (!clips.length) return NextResponse.json({ error: "No usable clips were identified. Try a different video." }, { status: 422 });
-    return NextResponse.json({ clips, model: payload?.model || "openrouter/free" });
+    return NextResponse.json({ clips });
   } catch {
     return NextResponse.json({ error: "Clip AI could not reach a compatible free video model. Retry, or try a shorter MP4." }, { status: 502 });
   }
