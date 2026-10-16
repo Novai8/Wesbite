@@ -254,7 +254,7 @@ export function ToolsLab() {
           </motion.div>
 
           <motion.div className="tools-hero-art" initial={{ opacity: 0, scale: 0.92, rotate: 2 }} animate={{ opacity: 1, scale: 1, rotate: 0 }} transition={{ duration: 1, delay: 0.12, ease: [0.22, 1, 0.36, 1] }}>
-            <div className="tools-art-top"><span><span className="tools-live-dot" /> SYSTEM ONLINE</span><span>RG / 001</span></div>
+            <div className="tools-art-top"><span><span className="tools-live-dot" /> YOUR WORKSPACE</span><span>RG / 001</span></div>
             <div className="tools-art-orbit tools-art-orbit-outer" />
             <div className="tools-art-orbit tools-art-orbit-inner" />
             <div className="tools-art-core"><WandSparkles size={30} strokeWidth={1.4} /></div>
