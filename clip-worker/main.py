@@ -6,13 +6,15 @@ from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, HttpUrl
 from faster_whisper import WhisperModel
+import requests
 
 ROOT=Path(os.getenv("CLIP_DATA_DIR","/data")).resolve(); INBOX=ROOT/"inbox"; OUT=ROOT/"outputs"
 for p in (INBOX,OUT): p.mkdir(parents=True,exist_ok=True)
-TOKEN=os.getenv("CLIP_WORKER_TOKEN",""); PUBLIC=os.getenv("CLIP_WORKER_PUBLIC_URL","").rstrip("/")
+TOKEN=os.getenv("CLIP_WORKER_TOKEN",""); PUBLIC=os.getenv("CLIP_WORKER_PUBLIC_URL","").rstrip("/"); TUNELIO_API_KEY=os.getenv("TUNELIO_API_KEY","").strip()
 MAX_SECONDS=int(os.getenv("MAX_SOURCE_SECONDS","1800")); MAX_BYTES=int(os.getenv("MAX_DOWNLOAD_BYTES",str(750*1024*1024)))
 MAX_UPLOAD_BYTES=min(MAX_BYTES,int(os.getenv("MAX_UPLOAD_BYTES",str(10*1024*1024))))
 MODEL_NAME=os.getenv("WHISPER_MODEL","small"); POOL=ThreadPoolExecutor(max_workers=1); LOCK=threading.Lock(); MODEL_LOCK=threading.Lock(); JOBS={}; MODEL=None
+YOUTUBE_HOSTS={"youtube.com","www.youtube.com","m.youtube.com","youtu.be","youtube-nocookie.com"}
 HOSTS={"youtube.com","www.youtube.com","m.youtube.com","youtu.be","youtube-nocookie.com","vimeo.com","www.vimeo.com","player.vimeo.com","twitch.tv","www.twitch.tv","clips.twitch.tv","loom.com","www.loom.com","drive.google.com","docs.google.com","dropbox.com","www.dropbox.com","dl.dropboxusercontent.com","archive.org","www.archive.org","rumble.com","www.rumble.com","facebook.com","www.facebook.com","fb.watch","linkedin.com","www.linkedin.com","x.com","www.x.com","twitter.com","www.twitter.com"}
 app=FastAPI(title="Rapigents Free Clip Worker",version="1.0.0"); app.mount("/media",StaticFiles(directory=str(OUT)),name="media")
 class JobRequest(BaseModel): url: HttpUrl
@@ -33,6 +35,46 @@ def cmd(args,timeout=900):
  p=subprocess.run(args,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,timeout=timeout)
  if p.returncode: raise RuntimeError((p.stderr or p.stdout or "Media command failed")[-1200:])
  return p.stdout.strip()
+def download_from_tunelio(raw_url,work):
+ if not TUNELIO_API_KEY: raise RuntimeError("YouTube URL importing is not configured yet. Add the private TUNELIO_API_KEY on the AWS worker.")
+ try:
+  response=requests.get("https://tunelio.dev/create",params={"quality":"720p","url":raw_url},headers={"Authorization":f"Bearer {TUNELIO_API_KEY}"},timeout=45)
+  response.raise_for_status()
+  payload=response.json()
+ except requests.RequestException as e:
+  raise RuntimeError("The YouTube link resolver could not be reached. Try again later.") from e
+ except ValueError as e:
+  raise RuntimeError("The YouTube link resolver returned an invalid response.") from e
+ direct=payload.get("url") if isinstance(payload,dict) else None
+ if not isinstance(payload,dict) or payload.get("status")!="ok" or not isinstance(direct,str):
+  detail=payload.get("error","No downloadable video was returned.") if isinstance(payload,dict) else "No downloadable video was returned."
+  if isinstance(detail,dict): detail=detail.get("message","No downloadable video was returned.")
+  raise RuntimeError("YouTube link resolver: "+str(detail)[:240])
+ parsed=urlparse(direct)
+ if parsed.scheme!="https" or not parsed.hostname: raise RuntimeError("The resolver returned an invalid media URL.")
+ dest=work/"source.mp4"; total=0
+ try:
+  with requests.get(direct,stream=True,timeout=(15,90)) as download:
+   download.raise_for_status()
+   size=download.headers.get("content-length")
+   if size:
+    try:
+     if int(size)>MAX_BYTES: raise RuntimeError("Source video exceeds the worker's 750 MB size limit.")
+    except ValueError: pass
+   with dest.open("wb") as handle:
+    for chunk in download.iter_content(chunk_size=1024*1024):
+     if not chunk: continue
+     total+=len(chunk)
+     if total>MAX_BYTES: raise RuntimeError("Source video exceeds the worker's 750 MB size limit.")
+     handle.write(chunk)
+ except requests.RequestException as e:
+  dest.unlink(missing_ok=True)
+  raise RuntimeError("Could not download the resolved video. Try a shorter video or another quality.") from e
+ if total<=0:
+  dest.unlink(missing_ok=True)
+  raise RuntimeError("The resolver returned an empty video file.")
+ return dest
+
 def model():
  global MODEL
  with MODEL_LOCK:
@@ -99,12 +141,17 @@ def process(jid,url):
    if not src.is_file() or src.stat().st_size<=0: raise RuntimeError("Uploaded video file is missing or empty.")
    if src.stat().st_size>MAX_UPLOAD_BYTES: raise RuntimeError("Uploaded video exceeds the upload limit.")
   else:
-   with LOCK: JOBS[jid].update(status="downloading",message="Downloading source with yt-dlp…")
-   cmd(["yt-dlp","--no-playlist","--no-warnings","--max-filesize",str(MAX_BYTES),"--match-filter",f"duration <= {MAX_SECONDS}","-f","bv*[height<=1080]+ba/b[height<=1080]/b","--merge-output-format","mp4","-o",str(work/"source.%(ext)s"),url],900)
-   files=[p for p in work.glob("source.*") if p.is_file() and p.stat().st_size]
-   if not files: raise RuntimeError("No source downloaded. It may be private, restricted, unsupported, or too large.")
-   src=max(files,key=lambda p:p.stat().st_size)
-   if src.stat().st_size>MAX_BYTES: raise RuntimeError("Source exceeds worker download-size limit.")
+   parsed_url=urlparse(url)
+   if parsed_url.hostname and parsed_url.hostname.lower().rstrip(".") in YOUTUBE_HOSTS:
+    with LOCK: JOBS[jid].update(status="downloading",message="Resolving YouTube video link…")
+    src=download_from_tunelio(url,work)
+   else:
+    with LOCK: JOBS[jid].update(status="downloading",message="Downloading source with yt-dlp…")
+    cmd(["yt-dlp","--no-playlist","--no-warnings","--max-filesize",str(MAX_BYTES),"--match-filter",f"duration <= {MAX_SECONDS}","-f","bv*[height<=1080]+ba/b[height<=1080]/b","--merge-output-format","mp4","-o",str(work/"source.%(ext)s"),url],900)
+    files=[p for p in work.glob("source.*") if p.is_file() and p.stat().st_size]
+    if not files: raise RuntimeError("No source downloaded. It may be private, restricted, unsupported, or too large.")
+    src=max(files,key=lambda p:p.stat().st_size)
+    if src.stat().st_size>MAX_BYTES: raise RuntimeError("Source exceeds worker download-size limit.")
   duration=float(cmd(["ffprobe","-v","error","-show_entries","format=duration","-of","default=noprint_wrappers=1:nokey=1",str(src)]))
   if duration<=0 or duration>MAX_SECONDS: raise RuntimeError(f"Source must be under {MAX_SECONDS//60} minutes.")
   with LOCK: JOBS[jid].update(status="transcribing",message="Transcribing speech locally with faster-whisper…")
