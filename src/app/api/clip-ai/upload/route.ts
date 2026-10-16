@@ -20,7 +20,7 @@ export async function POST(request: Request) {
   const worker = workerConfig();
   if (!worker) {
     return NextResponse.json(
-      { error: "The Clip AI worker is not connected. Configure CLIP_WORKER_URL and CLIP_WORKER_TOKEN." },
+      { error: "Clip AI is temporarily unavailable. Please try again shortly." },
       { status: 503 },
     );
   }
@@ -66,8 +66,9 @@ export async function POST(request: Request) {
     const payload: unknown = await response.json().catch(() => ({}));
     if (!response.ok) {
       const data = isRecord(payload) ? payload : {};
-      const message = typeof data.detail === "string" ? data.detail : typeof data.message === "string" ? data.message : "The worker rejected this upload.";
-      return NextResponse.json({ error: message }, { status: response.status });
+      const workerMessage = typeof data.detail === "string" ? data.detail : typeof data.message === "string" ? data.message : "";
+      const message = response.status === 413 ? "This video is too large to upload. Choose a shorter or smaller file." : response.status === 415 ? "Use an MP4, MOV, WebM, M4V, or MKV video." : response.status === 429 ? "Clip AI is busy right now. Try again shortly." : response.status >= 500 ? "Clip AI is temporarily unavailable. Please try again shortly." : workerMessage && !/worker|token|environment|configure|exception|traceback|ffmpeg|whisper|yt-dlp/i.test(workerMessage) ? workerMessage : "This upload could not be processed. Try a different video file.";
+      return NextResponse.json({ error: message }, { status: response.status >= 500 ? 503 : response.status });
     }
     const data = isRecord(payload) ? payload : {};
     const projectId = typeof data.jobId === "string" ? data.jobId : "";
@@ -75,12 +76,12 @@ export async function POST(request: Request) {
     return NextResponse.json({
       projectId,
       status: typeof data.status === "string" ? data.status : "queued",
-      message: typeof data.message === "string" ? data.message : "Upload received. Your video is queued for clipping.",
+      message: "Your video is queued for editing.",
     }, { status: 202 });
   } catch (error) {
     const message = error instanceof Error && error.name === "TimeoutError"
       ? "Uploading took too long. Try a smaller video or a more stable connection."
-      : "Could not reach the Clip AI worker. Check the worker health endpoint and try again.";
+       : "Clip AI is temporarily unavailable. Please try again shortly.";
     return NextResponse.json({ error: message }, { status: 502 });
   }
 }
