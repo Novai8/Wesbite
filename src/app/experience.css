@@ -719,3 +719,8 @@ html[data-theme="light"] .clip-link-result-preview{border-color:#d7d0e3}
 html[data-theme="light"] .clip-link-result-body>strong{color:#272239}
 html[data-theme="light"] .clip-link-metrics>div{background:rgba(108,85,202,.055)}
 html[data-theme="light"] .clip-link-metric-score>strong{color:#39304f}
+/* Keep the shared About-page closing band in the selected theme. */
+html[data-theme="light"] .section-dark{background:radial-gradient(ellipse at 85% 30%,rgba(137,111,255,.10),transparent 38%),linear-gradient(135deg,#ece8f5,#f8f3fa 60%,#f8efe9);color:#211e32}
+html[data-theme="light"] .section-dark:before{background:radial-gradient(circle,rgba(255,122,84,.10),transparent 68%)}
+html[data-theme="light"] .section-dark .method-statement p,html[data-theme="light"] .section-dark .section-intro.light p{color:#5e5a70}
+html[data-theme="light"] .section-dark .magnetic-button-light{background:#fff;color:#39334e;border:1px solid #d8d0e6}
