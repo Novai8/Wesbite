@@ -42,7 +42,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Uploads are currently limited to 10 MiB. Choose a shorter or smaller video." }, { status: 413 });
   }
 
-  const safeName = file.name.replace(/[\\/\r\n"]/g, "_").slice(0, 160) || "upload.mp4";
+  const safeName = file.name.replace(/[\/\\\r\n"]/g, "_").slice(0, 160) || "upload.mp4";
   const extension = safeName.split(".").pop()?.toLowerCase() || "";
   if (!ALLOWED_EXTENSIONS.has(extension)) {
     return NextResponse.json({ error: "Use an MP4, MOV, WebM, M4V, or MKV video." }, { status: 415 });
