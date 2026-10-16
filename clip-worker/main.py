@@ -528,7 +528,7 @@ def create(payload:JobRequest,authorization:str|None=Header(default=None)):
  with LOCK:
   if sum(1 for j in JOBS.values() if j["status"] in {"uploading","queued","downloading","transcribing","rendering"})>=2: raise HTTPException(429,detail="Free worker is busy. Wait for the current job to finish.")
   jid=uuid.uuid4().hex; JOBS[jid]={"id":jid,"status":"queued","message":"Job queued.","clips":[]}
- POOL.submit(process,jid,url); return {"jobId":jid,"status":"queued","message":"Video queued for local transcription and clip rendering."}
+ POOL.submit(process,jid,url,payload.style); return {"jobId":jid,"status":"queued","message":"Video queued for local transcription and clip rendering."}
 @app.get("/jobs/{jid}")
 def status(jid:str,authorization:str|None=Header(default=None)):
  auth(authorization)
