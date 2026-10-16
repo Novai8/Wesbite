@@ -661,3 +661,22 @@ html[data-theme="light"] .rg-clip-platforms{color:#6d6682}
 html[data-theme="light"] .rg-clip-preview{border-color:rgba(70,54,110,.19);background:linear-gradient(140deg,rgba(255,255,255,.92),rgba(240,235,250,.74));box-shadow:0 35px 90px rgba(57,42,90,.15),inset 0 1px rgba(255,255,255,.95)}
 html[data-theme="light"] .rg-clip-preview-top,html[data-theme="light"] .rg-clip-timeline-head{color:#625a78}
 html[data-theme="light"] .rg-clip-marquee{border-color:rgba(55,42,82,.14);color:#645d79}
+html[data-theme="light"] .rg-clip-how{background:radial-gradient(ellipse at 95% 5%,rgba(156,140,255,.09),transparent 35%),#f2eff8}
+html[data-theme="light"] .rg-clip-section-head h2,html[data-theme="light"] .rg-clip-feature-layout h2,html[data-theme="light"] .rg-clip-final h2{color:#272239}
+html[data-theme="light"] .rg-clip-section-head>p{color:#5e5a70}
+html[data-theme="light"] .rg-clip-step{border-color:rgba(55,42,82,.14);background:linear-gradient(145deg,rgba(255,255,255,.96),rgba(248,246,252,.78));box-shadow:0 15px 44px rgba(48,37,77,.035)}
+html[data-theme="light"] .rg-clip-step-top{color:#716a87}
+html[data-theme="light"] .rg-clip-step-top svg{color:#8d4ab0}
+html[data-theme="light"] .rg-clip-step h3{color:#272239}
+html[data-theme="light"] .rg-clip-step p{color:#5e5a70}
+html[data-theme="light"] .rg-clip-step-line{background:linear-gradient(90deg,#bda8ed,rgba(189,168,237,0))}
+html[data-theme="light"] .rg-clip-features{background:radial-gradient(ellipse at 10% 60%,rgba(158,108,255,.075),transparent 35%),linear-gradient(180deg,#faf8fd,#f2eff8)}
+html[data-theme="light"] .rg-clip-feature-layout>div:first-child>p{color:#5e5a70}
+html[data-theme="light"] .rg-clip-feature-list{border-color:rgba(55,42,82,.15)}
+html[data-theme="light"] .rg-clip-feature-list>div{border-color:rgba(55,42,82,.15)}
+html[data-theme="light"] .rg-clip-feature-list>div>span{border-color:rgba(141,74,176,.22);background:rgba(141,74,176,.07);color:#8d4ab0}
+html[data-theme="light"] .rg-clip-feature-list strong{color:#272239}
+html[data-theme="light"] .rg-clip-feature-list p{color:#625d74}
+html[data-theme="light"] .rg-clip-feature-list>div>svg{color:#8d4ab0}
+html[data-theme="light"] .rg-clip-final{background:linear-gradient(115deg,#ece5f8,#f6e8f1 58%,#e9f0f8);border-color:rgba(55,42,82,.14)}
+html[data-theme="light"] .rg-clip-final p{color:#5e5a70}
