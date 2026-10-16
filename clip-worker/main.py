@@ -522,6 +522,7 @@ def health(): return {"ok": True}
 @app.post("/jobs",status_code=202)
 def create(payload:JobRequest,authorization:str|None=Header(default=None)):
  auth(authorization)
+ if payload.style not in EDIT_STYLES: raise HTTPException(400,detail="Choose a valid edit style.")
  try: url=validate(str(payload.url))
  except ValueError as e: raise HTTPException(400,detail=str(e))
  with LOCK:
