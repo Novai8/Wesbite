@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
+const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
 const ALLOWED_EXTENSIONS = new Set(["mp4", "mov", "webm", "m4v", "mkv"]);
 
 function workerConfig() {
@@ -39,7 +39,7 @@ export async function POST(request: Request) {
   const file = entry as File;
   if (!file.size) return NextResponse.json({ error: "The selected video is empty." }, { status: 400 });
   if (file.size > MAX_UPLOAD_BYTES) {
-    return NextResponse.json({ error: "Uploads are currently limited to 10 MiB. Choose a shorter or smaller video." }, { status: 413 });
+    return NextResponse.json({ error: "Uploads are limited to 25 MiB. Choose a shorter or smaller video." }, { status: 413 });
   }
 
   const safeName = file.name.replace(/[\/\\\r\n"]/g, "_").slice(0, 160) || "upload.mp4";
