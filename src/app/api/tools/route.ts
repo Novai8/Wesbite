@@ -106,7 +106,7 @@ export async function POST(request: Request) {
     const result = payload?.choices?.[0]?.message?.content;
     const textResult = typeof result === "string" ? result : Array.isArray(result) ? result.map((part: { text?: string }) => part.text || "").join("\n") : "";
     if (!textResult.trim()) return NextResponse.json({ error: "No result came back this time. Please try again." }, { status: 502 });
-    return NextResponse.json({ result: textResult.trim(), model: payload?.model || model });
+    return NextResponse.json({ result: textResult.trim() });
   } catch (error) {
     const timedOut = error instanceof Error && error.name === "TimeoutError";
     return NextResponse.json({ error: timedOut ? "This is taking longer than expected. Try a shorter input or smaller file." : "We couldn’t reach the AI service. Please try again." }, { status: 502 });
