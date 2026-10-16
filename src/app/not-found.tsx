@@ -7,16 +7,16 @@ export default function NotFound() {
       <p className="text-xs font-medium tracking-[0.18em] text-accent-ink uppercase">
         404
       </p>
-      <h1 className="mt-3 text-4xl font-medium tracking-tight">This page is not in the prototype.</h1>
+      <h1 className="mt-3 text-4xl font-medium tracking-tight">This page isn’t here.</h1>
       <p className="mt-3 max-w-md text-muted">
-        The link may be old, or the pattern no longer exists in the library.
+        The link may be out of date, or the page may have moved.
       </p>
       <div className="mt-6 flex flex-wrap gap-3">
         <Button asChild>
           <Link href="/">Back home</Link>
         </Button>
         <Button asChild variant="secondary">
-          <Link href="/demos">View patterns</Link>
+          <Link href="/demos">Explore tools</Link>
         </Button>
       </div>
     </main>
