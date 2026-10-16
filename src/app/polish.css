@@ -66,3 +66,48 @@ html[data-theme="light"] .rg-home-fun :is(.rg-fun-card, .rg-fun-panel, .rg-fun-c
     transition-duration: .01ms !important;
   }
 }
+
+/* Bring the complete homepage sections, not just the hero, into light mode. */
+html[data-theme="light"] .rg-home-fun .rg-fun-toolkit {
+  background: radial-gradient(ellipse at 4% 40%, rgba(137,111,255,.07), transparent 32%), var(--surface) !important;
+  color: var(--ink) !important;
+}
+html[data-theme="light"] .rg-home-fun .rg-fun-last {
+  background: radial-gradient(ellipse at 85% 20%, rgba(156,75,48,.08), transparent 36%), var(--paper) !important;
+  border-color: var(--line) !important;
+  color: var(--ink) !important;
+}
+html[data-theme="light"] .rg-home-fun .rg-fun-card {
+  background: linear-gradient(145deg, var(--surface), color-mix(in srgb, var(--surface) 82%, var(--accent-soft))) !important;
+  border-color: var(--line) !important;
+}
+html[data-theme="light"] .rg-home-fun .rg-fun-card-top,
+html[data-theme="light"] .rg-home-fun .rg-fun-card p,
+html[data-theme="light"] .rg-home-fun .rg-fun-section-head > p,
+html[data-theme="light"] .rg-home-fun .rg-fun-cta-band p,
+html[data-theme="light"] .rg-home-fun .rg-fun-trust,
+html[data-theme="light"] .rg-home-fun .rg-fun-scroll,
+html[data-theme="light"] .rg-home-fun .rg-fun-bottomline {
+  color: var(--muted) !important;
+}
+html[data-theme="light"] .rg-home-fun .rg-fun-secondary {
+  background: color-mix(in srgb, var(--surface) 88%, transparent) !important;
+  color: var(--ink) !important;
+  border-color: var(--line) !important;
+  backdrop-filter: blur(12px);
+}
+html[data-theme="light"] .rg-home-fun .rg-fun-cta-band {
+  background: var(--surface) !important;
+  border-color: var(--line) !important;
+}
+html[data-theme="light"] .rg-home-fun .rg-fun-bottomline {
+  border-color: var(--line) !important;
+}
+html[data-theme="light"] .rg-home-fun .rg-fun-copy h1 em,
+html[data-theme="light"] .rg-home-fun .rg-fun-section-head h2 em,
+html[data-theme="light"] .rg-home-fun .rg-fun-last h2 em {
+  color: var(--accent) !important;
+}
+html[data-theme="light"] .rg-home-fun .rg-fun-primary {
+  color: #10170c !important;
+}
