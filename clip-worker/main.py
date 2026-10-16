@@ -481,6 +481,11 @@ Format: Layer,Start,End,Style,Name,MarginL,MarginR,MarginV,Effect,Text
       caption=ass_escape(piece)
       events.append(f"Dialogue: 0,{ass_stamp(pa)},{ass_stamp(max(pa+0.12,pb))},Caption,,0,0,0,,{{\\fad(55,75)\\c{colors[(i+j)%len(colors)]}\\fscx92\\fscy92\\t(0,90,\\fscx100\\fscy100)}}{caption.upper()}")
    ass.write_text(header+"\n".join(events)+"\n",encoding="utf-8")
+   sfx_graph="[0:a]highpass=f=450,lowpass=f=9000,afade=t=in:st=0:d=0.16,afade=t=out:st=0.18:d=0.42,volume=0.10[whoosh];[1:a]afade=t=in:st=0:d=0.01,afade=t=out:st=0.03:d=0.15,volume=0.16[thump];[whoosh][thump]amix=inputs=2:duration=longest:normalize=0,alimiter=limit=0.8[out]"
+   if style == "cinematic":
+    sfx_graph=sfx_graph.replace("highpass=f=450","highpass=f=250").replace("lowpass=f=9000","lowpass=f=6800").replace("volume=0.10","volume=0.06").replace("volume=0.16","volume=0.09")
+   elif style == "clean":
+    sfx_graph=sfx_graph.replace("highpass=f=450","highpass=f=600").replace("volume=0.10","volume=0.035").replace("volume=0.16","volume=0.05")
    cmd(["ffmpeg","-y","-f","lavfi","-i","anoisesrc=color=white:duration=0.65:sample_rate=48000","-f","lavfi","-i","sine=frequency=82:duration=0.18:sample_rate=48000","-filter_complex","[0:a]highpass=f=450,lowpass=f=9000,afade=t=in:st=0:d=0.16,afade=t=out:st=0.18:d=0.42,volume=0.10[whoosh];[1:a]afade=t=in:st=0:d=0.01,afade=t=out:st=0.03:d=0.15,volume=0.16[thump];[whoosh][thump]amix=inputs=2:duration=longest:normalize=0,alimiter=limit=0.8[out]","-map","[out]","-ac","2",str(sfx)],60)
    ass_path=str(ass).replace("\\\\","/").replace(":","\\\\:")
    fade_out_at=max(0.0,(end-start)-fade_out)
