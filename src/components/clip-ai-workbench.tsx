@@ -89,7 +89,7 @@ export function ClipAIWorkbench() {
     try {
       const response = await fetch("/api/clip-ai/import", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url }),
+        body: JSON.stringify({ url, style: editStyle }),
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload.error || "This source could not be submitted.");
