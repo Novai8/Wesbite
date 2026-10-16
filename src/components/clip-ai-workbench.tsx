@@ -213,15 +213,15 @@ export function ClipAIWorkbench() {
 
   return <section className="clip-workbench" id="clip-workbench">
     <div className="clip-workbench-shell">
-      <div className="clip-workbench-heading"><div><span className="clip-workbench-kicker"><WandSparkles size={14}/> CLIP AI / WORKBENCH</span><h2>Make your first <em>short.</em></h2><p>Drop in a video or paste a link. Clip AI finds concise highlights and turns them into vertical edits with animated captions, motion, and sound.</p></div><span className="clip-workbench-version">MVP / 01</span></div>
+      <div className="clip-workbench-heading"><div><span className="clip-workbench-kicker"><WandSparkles size={14}/> CLIP AI / WORKBENCH</span><h2>Make your first <em>short.</em></h2><p>Drop in a video or paste a link. Clip AI finds concise highlights and turns them into vertical edits with animated captions, motion, and sound.</p></div><span className="clip-workbench-version">CREATOR STUDIO</span></div>
       <form className="clip-link-import" onSubmit={submitSourceLink}>
-        <div className="clip-link-copy"><span className="clip-workbench-kicker"><WandSparkles size={13}/> FREE LINK CLIPPING ENGINE</span><strong>Or paste a public video link</strong><p>Paste a public video link and Clip AI will find the strongest moments, style the captions, and prepare vertical clips. Your results appear here when they are ready.</p></div>
+        <div className="clip-link-copy"><span className="clip-workbench-kicker"><WandSparkles size={13}/> PASTE A VIDEO LINK</span><strong>Or paste a public video link</strong><p>Paste a public video link and Clip AI will find the strongest moments, style the captions, and prepare vertical clips. Your results appear here when they are ready.</p></div>
         <div className="clip-link-controls"><input aria-label="Public video URL" type="url" inputMode="url" autoComplete="url" placeholder="https://www.youtube.com/watch?v=…" value={sourceLink} onChange={event => setSourceLink(event.target.value)} disabled={linkBusy} required /><button type="submit" disabled={linkBusy || !sourceLink.trim()}>{linkBusy ? <><LoaderCircle size={15} className="clip-spin"/> Working…</> : <>Find clips <WandSparkles size={15}/></>}</button></div>
         {linkStatus && <p className="clip-link-status" role="status">{linkStatus}</p>}
         {linkProjectId && !remoteClips.length && !linkError && <div className="clip-job-progress" role="status" aria-live="polite">
-          <div className="clip-job-progress-head"><span><span className="clip-job-live-dot" /> EDIT IN PROGRESS</span><strong>{linkBusy ? "SYNCING" : linkStage.toUpperCase()}</strong></div>
+          <div className="clip-job-progress-head"><span><span className="clip-job-live-dot" /> EDIT IN PROGRESS</span><strong>{linkBusy ? "UPDATING" : linkStage === "queued" ? "PREPARING" : linkStage === "downloading" ? "READING SOURCE" : linkStage === "transcribing" ? "FINDING MOMENTS" : linkStage === "rendering" ? "FINISHING EDIT" : linkStage === "completed" ? "READY" : "CHECKING"}</strong></div>
           <div className="clip-job-stages">
-            {([{id:"downloading",label:"Downloading",detail:"Fetching source video",icon:Download},{id:"transcribing",label:"Transcribing",detail:"Finding spoken hooks",icon:AudioLines},{id:"rendering",label:"Editing clips",detail:"Zoom, captions & sound",icon:WandSparkles}] as const).map((stage)=>{
+            {([{id:"downloading",label:"Read the source",detail:"Preparing the video",icon:Download},{id:"transcribing",label:"Find the moments",detail:"Looking for the story",icon:AudioLines},{id:"rendering",label:"Finish the edit",detail:"Captions, framing & motion",icon:WandSparkles}] as const).map((stage)=>{
               const order: ClipStage[] = ["queued","downloading","transcribing","rendering","completed"];
               const current = order.indexOf(linkStage), stageIndex = order.indexOf(stage.id);
               const active = linkStage === stage.id, done = linkStage === "completed" || (current > stageIndex && linkStage !== "failed");
@@ -233,11 +233,11 @@ export function ClipAIWorkbench() {
               </div>;
             })}
           </div>
-          <div className="clip-job-progress-foot"><span className="clip-job-pulse-bars"><i/><i/><i/><i/><i/></span><span>Stages update automatically. Video transcription may take a few minutes.</span></div>
+          <div className="clip-job-progress-foot"><span className="clip-job-pulse-bars"><i/><i/><i/><i/><i/></span><span>This can take a few minutes, depending on the length of your video.</span></div>
         </div>}
         {linkError && <p className="clip-link-error" role="alert">{linkError}</p>}
         {remoteClips.length > 0 && <div className="clip-link-results-wrap">
-          <div className="clip-link-results-heading"><div><span className="clip-workbench-kicker"><CheckCircle2 size={14}/> EDITING COMPLETE</span><h3>Your clips, ranked by hook potential.</h3><p>Scores use transcript-based signals, not guaranteed views or a promise of viral reach.</p></div><span className="clip-link-results-count">{String(remoteClips.length).padStart(2,"0")} CLIPS</span></div>
+          <div className="clip-link-results-heading"><div><span className="clip-workbench-kicker"><CheckCircle2 size={14}/> EDITING COMPLETE</span><h3>Your clips, ranked by hook potential.</h3><p>Scores are editing suggestions, not predictions of views or guaranteed reach.</p></div><span className="clip-link-results-count">{String(remoteClips.length).padStart(2,"0")} CLIPS</span></div>
           <div className="clip-link-results">{remoteClips.map((clip,index)=>{
             const score = typeof clip.potentialScore === "number" ? clip.potentialScore : null;
             const outlook = clip.reachOutlook || (score !== null && score >= 75 ? "Strong signals" : score !== null && score >= 58 ? "Promising" : "Niche fit");
@@ -245,7 +245,7 @@ export function ClipAIWorkbench() {
               <div className="clip-link-result-preview"><video src={clip.url} controls playsInline preload="metadata" aria-label={"Preview of clip "+(index+1)} /><span>CLIP {String(index+1).padStart(2,"0")}</span></div>
               <div className="clip-link-result-body">
                 <div className="clip-link-result-meta"><span>{typeof clip.start==="number"&&typeof clip.end==="number"?formatTime(clip.start)+"–"+formatTime(clip.end):"HIGHLIGHT"}</span><span>9:16 · CAPTIONED</span></div>
-                <strong>{clip.title}</strong><p>{clip.hook||"Locally transcribed highlight with burned-in captions."}</p>
+                <strong>{clip.title}</strong><p>{clip.hook||"A selected highlight with captions."}</p>
                 <div className="clip-link-metrics">
                   <div className="clip-link-metric-score"><span>VIRALITY POTENTIAL</span><strong>{score === null ? "—" : score}<small>{score === null ? "" : "/100"}</small></strong><div><i style={{width:(score === null ? 0 : Math.max(0,Math.min(100,score)))+"%"}}/></div></div>
                   <div className="clip-link-metric-reach"><span>REACH OUTLOOK</span><strong>{outlook}</strong><small>Relative signal estimate</small></div>
@@ -265,9 +265,9 @@ export function ClipAIWorkbench() {
           <input id="clip-source-file" type="file" accept="video/mp4,video/webm,video/quicktime,video/*" className="clip-file-input" onChange={event => chooseFile(event.target.files?.[0] || null)}/>
           {fileUrl && <video ref={videoRef} className="clip-source-video" src={fileUrl} controls playsInline onLoadedMetadata={event => setDuration(event.currentTarget.duration || 0)} />}
           {!fileUrl && <div className="clip-empty-preview"><Clapperboard size={34}/><span>YOUR SOURCE VIDEO</span><small>Upload a video to begin</small></div>}
-          <div className="clip-source-foot"><span><Check size={13}/> Cloud processing</span><span>AWS Whisper + FFmpeg</span></div>
+          <div className="clip-source-foot"><span><Check size={13}/> Ready to edit</span><span>Vertical video output</span></div>
           <button className="clip-analyze-button" type="button" onClick={analyze} disabled={!file || busy || duration <= 0 || duration > MAX_DURATION_SECONDS}>{busy ? <><LoaderCircle className="clip-spin" size={17}/> Finding the best moments…</> : <><WandSparkles size={17}/> Upload & create clips <span>↗</span></>}</button>
-          {busy && <div className="clip-analysis-note">Uploading your file to AWS. Once the upload finishes, cloud transcription and editing continue even if you close your laptop.</div>}
+          {busy && <div className="clip-analysis-note">Your video is being prepared. Keep this page open to follow the progress.</div>}
         </div>
         <div className="clip-results-panel">
           <div className="clip-results-top"><span><Scissors size={15}/> HIGHLIGHT PICKS</span><span>{clips.length ? String(clips.length).padStart(2, "0") + " FOUND" : "AWAITING SOURCE"}</span></div>
