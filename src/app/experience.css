@@ -609,3 +609,23 @@ html[data-theme="light"] .clip-link-metrics>div>span{color:#666078}
 html[data-theme="light"] .clip-link-metric-score>strong small,html[data-theme="light"] .clip-link-metric-reach>small{color:#666078}
 html[data-theme="light"] .clip-link-effects span{color:#4d4863}
 html[data-theme="light"] .clip-link-result-body>a{background:#6c4bc1;color:#fff}
+/* Compact creative direction selector for Clip AI. */
+.clip-style-picker{display:grid;grid-template-columns:155px minmax(0,1fr);align-items:center;gap:18px;margin:0 0 20px;padding:16px 18px;border:1px solid rgba(255,255,255,.11);border-radius:17px;background:rgba(255,255,255,.025)}
+.clip-style-heading{display:grid;gap:7px}.clip-style-heading .clip-workbench-kicker{margin:0;color:#b8a8ff}.clip-style-heading>strong{font-size:14px;letter-spacing:-.025em}
+.clip-style-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.clip-style-option{display:grid;align-content:start;gap:9px;min-width:0;min-height:84px;padding:12px;border:1px solid rgba(255,255,255,.13);border-radius:12px;background:rgba(255,255,255,.025);color:inherit;text-align:left;cursor:pointer;transition:transform .24s cubic-bezier(.2,.8,.2,1),border-color .24s,background .24s,box-shadow .24s}
+.clip-style-option:hover{transform:translateY(-2px);border-color:rgba(198,168,255,.45)}
+.clip-style-option.is-selected{border-color:#c6a8ff;background:linear-gradient(135deg,rgba(198,168,255,.12),rgba(255,145,200,.055));box-shadow:0 7px 25px rgba(156,104,255,.08)}
+.clip-style-option-top{display:flex;align-items:center;justify-content:space-between;gap:8px}.clip-style-option-top strong{font-size:12px;letter-spacing:-.015em}.clip-style-option-top svg{color:#c6a8ff;flex-shrink:0}
+.clip-style-mark{width:13px;height:13px;border:1px solid rgba(255,255,255,.28);border-radius:50%;flex-shrink:0}
+.clip-style-option-description{font-size:10px;line-height:1.5;color:#a9a3b6}
+html[data-theme="light"] .clip-style-picker{background:rgba(255,255,255,.66);border-color:#d8d0e6;box-shadow:0 14px 40px rgba(50,35,81,.035)}
+html[data-theme="light"] .clip-style-heading .clip-workbench-kicker{color:#6c55ca}
+html[data-theme="light"] .clip-style-option{background:rgba(255,255,255,.8);border-color:#ddd6e9;color:#29243f}
+html[data-theme="light"] .clip-style-option-description{color:#625e74}
+html[data-theme="light"] .clip-style-option.is-selected{background:linear-gradient(135deg,rgba(108,85,202,.10),rgba(255,145,200,.055));border-color:#8068d1;box-shadow:0 8px 26px rgba(108,85,202,.09)}
+html[data-theme="light"] .clip-style-option-top svg{color:#6c55ca}
+html[data-theme="light"] .clip-style-mark{border-color:#aaa2ba}
+@media(max-width:760px){.clip-style-picker{grid-template-columns:1fr;gap:12px;padding:15px}.clip-style-options{gap:7px}.clip-style-option{padding:10px;min-height:90px}}
+@media(max-width:480px){.clip-style-options{grid-template-columns:1fr}.clip-style-option{min-height:0;grid-template-columns:1fr;gap:5px}.clip-style-option-description{font-size:11px}}
+@media(prefers-reduced-motion:reduce){.clip-style-option{transition:none!important}.clip-style-option:hover{transform:none}}
