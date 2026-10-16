@@ -63,7 +63,7 @@ export function ClipAIWorkbench() {
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload.error || "Video upload failed. Try a smaller file.");
       const projectId = String(payload.projectId || "");
-      if (!projectId) throw new Error("The worker accepted the upload but did not return a job ID.");
+      if (!projectId) throw new Error("We could not start this edit. Please try again.");
       setLinkProjectId(projectId);
       setLinkStage((payload.status as ClipStage) || "queued");
       setLinkStatus(payload.message || "Upload received. Preparing your clips.");
@@ -87,7 +87,7 @@ export function ClipAIWorkbench() {
       if (!response.ok) throw new Error(payload.error || "This source could not be submitted.");
       setLinkProjectId(String(payload.projectId || ""));
       setLinkStage((payload.status as ClipStage) || "queued");
-      setLinkStatus(payload.message || "Video accepted. Waiting for the clipping engine to process it.");
+      setLinkStatus(payload.message || "Your video is queued for editing.");
     } catch (caught) {
       setLinkError(caught instanceof Error ? caught.message : "Could not submit this link.");
       setLinkStatus("");
@@ -102,7 +102,7 @@ export function ClipAIWorkbench() {
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload.error || "Could not check the processing status.");
       setLinkStage((payload.status as ClipStage) || "queued");
-      if (payload.status === "failed") { setLinkProjectId(""); throw new Error(payload.message || "The worker could not process this source."); }
+      if (payload.status === "failed") { setLinkProjectId(""); throw new Error(payload.message || "We could not finish this edit. Try a different public video link or a shorter source."); }
       const items = Array.isArray(payload.clips) ? payload.clips : [];
       setRemoteClips(items);
       setLinkStatus(items.length ? "Your clips are ready. Preview or download each edit below." : (payload.message || "Finding the strongest moments and building your edits…"));
