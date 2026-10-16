@@ -426,25 +426,25 @@ def process(jid,url,style="punchy"):
    colors=["&H00F5F4EF","&H00C6A8FF","&H00B6E6F6","&H00FFFFFF"]
    zoom_expr="min(zoom+0.00022,1.045)"; zoom_x="iw/2-(iw/zoom/2)+sin(on/160)*2"; zoom_y="ih/2-(ih/zoom/2)+cos(on/195)*2"
    picture_filter="eq=contrast=1.07:saturation=0.91:brightness=0.005,vignette=PI/5,unsharp=5:5:0.2:3:3:0.0"
-   fade_in=0.30; fade_out=0.30
+   fade_in=0.30; fade_out=0.30; hook_duration=3.45; hook_fade_in=320; hook_fade_out=350; hook_start_scale=88; hook_scale_ms=650
    whoosh_filter="highpass=f=250,lowpass=f=6800,afade=t=in:st=0:d=0.24,afade=t=out:st=0.26:d=0.38,volume=0.06"; thump_volume="volume=0.09"
   elif style == "clean":
    caption_size=40; hook_size=45; caption_margin=315; hook_color="&H00FFFFFF"
    colors=["&H00FFFFFF","&H00E6DDFF","&H00FFFFFF","&H00D9F2E4"]
    zoom_expr="min(zoom+0.00016,1.025)"; zoom_x="iw/2-(iw/zoom/2)"; zoom_y="ih/2-(ih/zoom/2)"
    picture_filter="eq=contrast=1.025:saturation=1.02,unsharp=5:5:0.18:3:3:0.0"
-   fade_in=0.16; fade_out=0.18
+   fade_in=0.16; fade_out=0.18; hook_duration=2.55; hook_fade_in=160; hook_fade_out=220; hook_start_scale=94; hook_scale_ms=280
    whoosh_filter="highpass=f=600,lowpass=f=6500,afade=t=in:st=0:d=0.10,afade=t=out:st=0.16:d=0.32,volume=0.035"; thump_volume="volume=0.05"
   else:
    caption_size=43; hook_size=50; caption_margin=300; hook_color="&H0087F5FF"
-   colors=["&H0087F5FF","&H00FF91C8","&H00FFFFFF","&H008BFF9B"]
+
    zoom_expr="min(zoom+0.00055,1.07)"; zoom_x="iw/2-(iw/zoom/2)+sin(on/95)*5"; zoom_y="ih/2-(ih/zoom/2)+cos(on/125)*4"
    picture_filter="eq=contrast=1.06:saturation=1.16,unsharp=5:5:0.36:3:3:0.0"
-   fade_in=0.12; fade_out=0.18
+   fade_in=0.12; fade_out=0.18; hook_duration=2.85; hook_fade_in=220; hook_fade_out=260; hook_start_scale=78; hook_scale_ms=420
    whoosh_filter="highpass=f=450,lowpass=f=9000,afade=t=in:st=0:d=0.16,afade=t=out:st=0.18:d=0.42,volume=0.10"; thump_volume="volume=0.16"
   for n,pick in enumerate(selections,1):
    start,end=pick["start"],pick["end"]; cid=f"{jid}-{n}"; ass=work/f"{cid}.ass"; sfx=work/f"{cid}-sfx.wav"; name=f"{cid}.mp4"; out=OUT/name
-   header="""[Script Info]
+   header=f"""[Script Info]
 ScriptType: v4.00+
 PlayResX: 720
 PlayResY: 1280
@@ -452,14 +452,14 @@ WrapStyle: 0
 ScaledBorderAndShadow: yes
 [V4+ Styles]
 Format: Name,Fontname,Fontsize,PrimaryColour,SecondaryColour,OutlineColour,BackColour,Bold,Italic,Underline,StrikeOut,ScaleX,ScaleY,Spacing,Angle,BorderStyle,Outline,Shadow,Alignment,MarginL,MarginR,MarginV,Encoding
-Style: Caption,DejaVu Sans,43,&H00FFFFFF,&H0000FFFF,&HDD08090D,&H8808090D,-1,0,0,0,100,100,0,0,1,4,2,2,68,68,300,1
-Style: Hook,DejaVu Sans,50,&H0087F5FF,&H0000FFFF,&HDD08090D,&H9908090D,-1,0,0,0,100,100,0,0,1,5,2,8,60,60,175,1
+Style: Caption,DejaVu Sans,{caption_size},&H00FFFFFF,&H0000FFFF,&HDD08090D,&H8808090D,-1,0,0,0,100,100,0,0,1,4,2,2,68,68,{caption_margin},1
+Style: Hook,DejaVu Sans,{hook_size},{hook_color},&H0000FFFF,&HDD08090D,&H9908090D,-1,0,0,0,100,100,0,0,1,5,2,8,60,60,175,1
 [Events]
 Format: Layer,Start,End,Style,Name,MarginL,MarginR,MarginV,Effect,Text
 """
    events=[]
    hook_text=pick.get("hookTitle",pick["title"]).upper()
-   events.append(f"Dialogue: 1,0:00:00.00,0:00:02.85,Hook,,0,0,0,,{{\\fad(220,260)\\an8\\pos(360,175)\\fscx78\\fscy78\\t(0,420,\\fscx100\\fscy100)\\blur(1.2)\\t(250,500,\\blur(0))}}{ass_escape(hook_text)}")
+   events.append(f"Dialogue: 1,0:00:00.00,{ass_stamp(hook_duration)},Hook,,0,0,0,,{{\\fad({hook_fade_in},{hook_fade_out})\\an8\\pos(360,175)\\fscx{hook_start_scale}\\fscy{hook_start_scale}\\t(0,{hook_scale_ms},\\fscx100\\fscy100)\\blur(1.2)\\t(250,{hook_scale_ms+100},\\blur(0))}}{ass_escape(hook_text)}")
    colors=["&H0087F5FF","&H00FF91C8","&H00FFFFFF","&H008BFF9B"]
    for i,seg in enumerate(pick["segments"]):
     words=seg.get("words") or []
