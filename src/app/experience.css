@@ -574,3 +574,20 @@ html[data-theme="light"] .rg-tile-label{color:#67617e}
 html[data-theme="light"] .tile-front strong{color:#211f31}
 html[data-theme="light"] .tile-front strong em{color:#a63d78}
 html[data-theme="light"] .rg-fun-sticker{background:rgba(255,255,255,.9);border-color:rgba(88,111,36,.28);color:#435b20;box-shadow:0 12px 30px rgba(38,42,28,.09)}
+html[data-theme="light"] .rg-fun-toolkit{background:radial-gradient(ellipse at 4% 40%,rgba(137,111,255,.075),transparent 32%),linear-gradient(180deg,#f3f0fa,#f8f6fb)}
+html[data-theme="light"] .rg-fun-section-head h2 em,html[data-theme="light"] .rg-fun-last h2 em{color:#6c4bc1}
+html[data-theme="light"] .rg-fun-card{background:linear-gradient(145deg,rgba(255,255,255,.97),rgba(250,248,255,.82));border-color:rgba(43,36,70,.12);box-shadow:0 15px 45px rgba(48,37,77,.035)}
+html[data-theme="light"] .rg-fun-card-top,html[data-theme="light"] .rg-fun-card p{color:#5e5a70}
+html[data-theme="light"] .rg-fun-card h3{color:#262239}
+html[data-theme="light"] .rg-fun-card a{color:#5d45a6}
+html[data-theme="light"] .rg-fun-cta-band{background:rgba(255,255,255,.75);border-color:rgba(43,36,70,.13)}
+html[data-theme="light"] .rg-fun-cta-band strong{color:#29243f}
+html[data-theme="light"] .rg-fun-cta-band p{color:#5e5a70}
+html[data-theme="light"] .rg-cta-icon{background:rgba(156,140,255,.12);color:#6d51c8}
+html[data-theme="light"] .rg-cta-link{color:#5a449e}
+html[data-theme="light"] .rg-fun-last{background:linear-gradient(115deg,#e9e3fb,#f5e6f0 57%,#e4f4f0);border-color:var(--home-line)}
+html[data-theme="light"] .rg-last-orb{border-color:rgba(93,72,163,.18);box-shadow:0 0 0 35px rgba(93,72,163,.025),0 0 0 75px rgba(93,72,163,.018)}
+html[data-theme="light"] .rg-clip-launch-overlay{background:rgba(241,238,249,.88)}
+html[data-theme="light"] .rg-clip-launch-card{background:#fff;border-color:rgba(69,53,112,.18);color:#252139;box-shadow:0 28px 90px rgba(50,35,81,.18)}
+html[data-theme="light"] .rg-clip-launch-top,html[data-theme="light"] .rg-clip-launch-card>span:last-child{color:#666078}
+@media(prefers-reduced-motion:reduce){html[data-theme="light"] .rg-fun-scene{filter:none}}
