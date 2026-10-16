@@ -66,7 +66,7 @@ export function ClipAIWorkbench() {
       if (!projectId) throw new Error("The worker accepted the upload but did not return a job ID.");
       setLinkProjectId(projectId);
       setLinkStage((payload.status as ClipStage) || "queued");
-      setLinkStatus(payload.message || "Upload received. Your video is queued for cloud clipping.");
+      setLinkStatus(payload.message || "Upload received. Preparing your clips.");
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Could not upload this video to Clip AI.");
     } finally { setBusy(false); }
@@ -77,7 +77,7 @@ export function ClipAIWorkbench() {
     setLinkError(""); setLinkStatus(""); setRemoteClips([]); setLinkProjectId(""); setLinkStage("queued");
     const url = sourceLink.trim();
     if (!/^https?:\/\//i.test(url)) { setLinkError("Paste a complete https:// video or supported platform link."); return; }
-    setLinkBusy(true); setLinkStage("queued"); setLinkStatus("Preparing your video job…");
+    setLinkBusy(true); setLinkStage("queued"); setLinkStatus("Preparing your edit…");
     try {
       const response = await fetch("/api/clip-ai/import", {
         method: "POST", headers: { "Content-Type": "application/json" },
@@ -105,7 +105,7 @@ export function ClipAIWorkbench() {
       if (payload.status === "failed") { setLinkProjectId(""); throw new Error(payload.message || "The worker could not process this source."); }
       const items = Array.isArray(payload.clips) ? payload.clips : [];
       setRemoteClips(items);
-      setLinkStatus(items.length ? "Your clips are ready. Open or download them from your free Clip AI worker." : (payload.message || "Still processing. Check again in a little while."));
+      setLinkStatus(items.length ? "Your clips are ready. Preview or download each edit below." : (payload.message || "Finding the strongest moments and building your edits…"));
       if (payload.status === "completed") setLinkProjectId("");
     } catch (caught) {
       setLinkError(caught instanceof Error ? caught.message : "Could not check clip status.");
@@ -213,13 +213,13 @@ export function ClipAIWorkbench() {
 
   return <section className="clip-workbench" id="clip-workbench">
     <div className="clip-workbench-shell">
-      <div className="clip-workbench-heading"><div><span className="clip-workbench-kicker"><WandSparkles size={14}/> CLIP AI / WORKBENCH</span><h2>Make your first <em>short.</em></h2><p>Upload a short video to your AWS worker. It transcribes speech, ranks promising highlights, then renders vertical MP4 clips with burned-in captions, zoom, and subtle sound effects.</p></div><span className="clip-workbench-version">MVP / 01</span></div>
+      <div className="clip-workbench-heading"><div><span className="clip-workbench-kicker"><WandSparkles size={14}/> CLIP AI / WORKBENCH</span><h2>Make your first <em>short.</em></h2><p>Drop in a video or paste a link. Clip AI finds concise highlights and turns them into vertical edits with animated captions, motion, and sound.</p></div><span className="clip-workbench-version">MVP / 01</span></div>
       <form className="clip-link-import" onSubmit={submitSourceLink}>
-        <div className="clip-link-copy"><span className="clip-workbench-kicker"><WandSparkles size={13}/> FREE LINK CLIPPING ENGINE</span><strong>Or paste a public video link</strong><p>YouTube links use a configured source resolver; other supported links use yt-dlp. Your AWS worker still handles transcription, highlight selection, captions, zoom, and rendering. Direct upload is the fallback.</p></div>
+        <div className="clip-link-copy"><span className="clip-workbench-kicker"><WandSparkles size={13}/> FREE LINK CLIPPING ENGINE</span><strong>Or paste a public video link</strong><p>Paste a public video link and Clip AI will find the strongest moments, style the captions, and prepare vertical clips. Your results appear here when they are ready.</p></div>
         <div className="clip-link-controls"><input aria-label="Public video URL" type="url" inputMode="url" autoComplete="url" placeholder="https://www.youtube.com/watch?v=…" value={sourceLink} onChange={event => setSourceLink(event.target.value)} disabled={linkBusy} required /><button type="submit" disabled={linkBusy || !sourceLink.trim()}>{linkBusy ? <><LoaderCircle size={15} className="clip-spin"/> Working…</> : <>Find clips <WandSparkles size={15}/></>}</button></div>
         {linkStatus && <p className="clip-link-status" role="status">{linkStatus}</p>}
         {linkProjectId && !remoteClips.length && !linkError && <div className="clip-job-progress" role="status" aria-live="polite">
-          <div className="clip-job-progress-head"><span><span className="clip-job-live-dot" /> LIVE EDITING PIPELINE</span><strong>{linkBusy ? "SYNCING" : linkStage.toUpperCase()}</strong></div>
+          <div className="clip-job-progress-head"><span><span className="clip-job-live-dot" /> EDIT IN PROGRESS</span><strong>{linkBusy ? "SYNCING" : linkStage.toUpperCase()}</strong></div>
           <div className="clip-job-stages">
             {([{id:"downloading",label:"Downloading",detail:"Fetching source video",icon:Download},{id:"transcribing",label:"Transcribing",detail:"Finding spoken hooks",icon:AudioLines},{id:"rendering",label:"Editing clips",detail:"Zoom, captions & sound",icon:WandSparkles}] as const).map((stage)=>{
               const order: ClipStage[] = ["queued","downloading","transcribing","rendering","completed"];
@@ -277,7 +277,7 @@ export function ClipAIWorkbench() {
         </div>
       </div>
       {error && <div className="clip-workbench-error" role="alert">{error}</div>}
-      <p className="clip-workbench-disclaimer">MVP limits: uploads up to 10 MiB and 10 minutes. Video processing runs on AWS; generated clip links are served by your worker. Uploaded files are processed only when you have the right to use them.</p>
+      <p className="clip-workbench-disclaimer">Short uploads support files up to 10 MB and 10 minutes. Link availability depends on the source platform. Only process videos you have permission to use.</p>
       <canvas ref={canvasRef} className="clip-render-canvas" aria-hidden="true"/>
     </div>
   </section>;
