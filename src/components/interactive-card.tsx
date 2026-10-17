@@ -1,9 +1,9 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, type PointerEvent, type ReactNode } from "react";
 
 type InteractiveCardProps = {
-  children: React.ReactNode;
+  children: ReactNode;
   className?: string;
   label?: string;
 };
@@ -11,7 +11,7 @@ type InteractiveCardProps = {
 export function InteractiveCard({ children, className = "", label }: InteractiveCardProps) {
   const cardRef = useRef<HTMLElement>(null);
 
-  function move(event: React.PointerEvent<HTMLElement>) {
+  function move(event: PointerEvent<HTMLElement>) {
     if (event.pointerType !== "mouse" || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const card = cardRef.current;
     if (!card) return;
