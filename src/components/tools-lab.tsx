@@ -11,6 +11,7 @@ import {
 import { browserToolIds, toolCatalog, type ToolItem } from "@/data/tool-catalog";
 import { localTransform } from "@/lib/local-tool-transform";
 import { ToolLaunchVisual } from "@/components/tool-motion-visual";
+import { FloatingCardScene } from "@/components/floating-card-scene";
 
 const categories = ["All tools", ...Array.from(new Set(toolCatalog.map((tool) => tool.category)))];
 
@@ -235,6 +236,7 @@ export function ToolsLab() {
 
   return (
     <main className="tools-page" id="content">
+      <FloatingCardScene kind="tools" />
       <div className="tools-ambient" aria-hidden="true">
         <div className="tools-ambient-orb tools-ambient-orb-a" />
         <div className="tools-ambient-orb tools-ambient-orb-b" />
