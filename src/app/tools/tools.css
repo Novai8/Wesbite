@@ -277,3 +277,22 @@ html[data-theme="light"] .tools-page .tool-card.is-selected {
 @media (prefers-reduced-motion: reduce) {
   .tools-page .tool-card { transition: none !important; }
 }
+
+
+/* The tool grid uses the same pointer-tracked perspective as the landing scene. */
+@media (pointer: fine) and (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .tools-page .tool-card.rg-interactive-card {
+    --rg-card-tilt-x: 0deg;
+    --rg-card-tilt-y: 0deg;
+    --rg-card-glow-x: 50%;
+    --rg-card-glow-y: 50%;
+    transform: perspective(900px) rotateX(var(--rg-card-tilt-x)) rotateY(var(--rg-card-tilt-y));
+    transform-style: preserve-3d;
+  }
+  .tools-page .tool-card.rg-interactive-card:hover {
+    transform: perspective(900px) rotateX(var(--rg-card-tilt-x)) rotateY(var(--rg-card-tilt-y)) translateY(-5px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tools-page .tool-card.rg-interactive-card { transform: none !important; }
+}
