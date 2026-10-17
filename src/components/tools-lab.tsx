@@ -44,7 +44,7 @@ function ToolCardArtwork({ tool }: { tool: ToolItem }) {
   const kind = cardVisualKind(tool);
   const Icon = kind === "timeline" ? FileVideo : kind === "wave" ? AudioLines : kind === "document" ? FileText : kind === "nodes" ? Code2 : tool.kind === "browser" ? Code2 : Sparkles;
   return (
-    <div className={"tool-card-artwork artwork-" + kind} aria-hidden="true">
+    <div className={"tool-card-artwork artwork-" + kind + " artwork-variant-" + (tool.id.split("").reduce((sum, char) => sum + char.charCodeAt(0), 0) % 5)} aria-hidden="true">
       <div className="artwork-backdrop-grid" />
       <div className="artwork-orbit artwork-orbit-a" />
       <div className="artwork-orbit artwork-orbit-b" />
