@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft, Mail, Sparkles } from "lucide-react";
+import { ArrowLeft, Mail } from "lucide-react";
 import { ContactForm } from "@/components/contact-form";
 import { site } from "@/lib/site";
 import { FloatingCardScene } from "@/components/floating-card-scene";
@@ -14,5 +14,5 @@ export default function ContactPage() {
     <h1>Have a question or an idea?</h1>
     <p>Send feedback, report an issue, or tell us which tool would make your day easier.</p>
     <a href={"mailto:" + site.email} className="contact-direct"><Mail aria-hidden/> {site.email}</a>
-  </div></section><section className="section-block"><div className="container-page"><div className="rg-contact-intro"><Sparkles size={18}/><span>Feedback helps us make the toolkit more useful.</span></div><ContactForm/></div></section></main>;
+  </div></section><section className="section-block"><div className="container-page"><ContactForm/></div></section></main>;
 }
