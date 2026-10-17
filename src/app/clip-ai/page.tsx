@@ -3,7 +3,6 @@ import Link from "next/link";
 import { ArrowDown, ArrowLeft, ArrowUpRight, Captions, Clapperboard, Film, Play, Scissors, Sparkles, WandSparkles, Waves, Zap } from "lucide-react";
 import { ClipAIWorkbench } from "@/components/clip-ai-workbench";
 import { InteractiveCard } from "@/components/interactive-card";
-import { FloatingCardScene } from "@/components/floating-card-scene";
 
 export const metadata: Metadata = {
   title: "Clip AI | Turn long videos into short-form edits",
@@ -19,7 +18,7 @@ const steps = [
 
 export default function ClipAIPage() {
   return <main id="content" className="rg-clip-page">
-    <section className="rg-clip-hero"><FloatingCardScene kind="clip" />
+    <section className="rg-clip-hero">
       <div className="rg-clip-grid" aria-hidden="true" />
       <div className="rg-clip-orb rg-clip-orb-a" aria-hidden="true" /><div className="rg-clip-orb rg-clip-orb-b" aria-hidden="true" />
       <div className="rg-clip-shell rg-clip-hero-layout">
