@@ -25,6 +25,44 @@ function attachmentAccept(tool: ToolItem) {
   if (/pdf|document|invoice|receipt|resume|spreadsheet|file/.test(name)) return "application/pdf,image/*,audio/*,video/*";
   return "image/*,audio/mpeg,audio/wav,video/*,application/pdf,.mp3,.wav";
 }
+
+function cardVisualKind(tool: ToolItem) {
+  const text = (tool.name + " " + tool.category).toLowerCase();
+  if (/clip|video|shorts|subtitle|caption|storyboard|shot|thumbnail/.test(text)) return "timeline";
+  if (/audio|podcast|voice|speech|pronunciation|transcri|sound|filler/.test(text)) return "wave";
+  if (/image|photo|visual|logo|poster|background|upscal|restor|color palette/.test(text)) return "image";
+  if (/pdf|document|invoice|receipt|resume|contract|handwritten|extract|redact|paper|citation|bibliography|report|proposal/.test(text)) return "document";
+  if (/spreadsheet|csv|json|table|data|calculator|margin|percentage|inventory|analytics|survey|metric|chart/.test(text)) return "data";
+  if (/code|api|sql|regex|webhook|database|workflow|automation|debug|developer|schema|html|css/.test(text)) return "nodes";
+  if (/study|education|quiz|flashcard|tutor|exam|vocabulary|lecture|science|math|learning|scholarship/.test(text)) return "cards";
+  if (/email|message|reply|chat|customer|support|social|post|writer|writing|essay|blog|copy|translation|grammar|tone/.test(text)) return "writing";
+  if (/search|research|competitor|seo|fact-check|audit|compare|review|analysis|analyzer/.test(text)) return "scan";
+  return "flow";
+}
+
+function ToolCardArtwork({ tool }: { tool: ToolItem }) {
+  const kind = cardVisualKind(tool);
+  const Icon = kind === "timeline" ? FileVideo : kind === "wave" ? AudioLines : kind === "document" ? FileText : kind === "nodes" ? Code2 : tool.kind === "browser" ? Code2 : Sparkles;
+  return (
+    <div className={"tool-card-artwork artwork-" + kind} aria-hidden="true">
+      <div className="artwork-backdrop-grid" />
+      <div className="artwork-orbit artwork-orbit-a" />
+      <div className="artwork-orbit artwork-orbit-b" />
+      <div className="artwork-central-icon"><Icon size={21} strokeWidth={1.6} /></div>
+      <div className="artwork-graphic">
+        {kind === "wave" && <div className="artwork-wave">{Array.from({length:15},(_,i)=><i key={i} className={"bar-" + (i % 5)} />)}</div>}
+        {kind === "timeline" && <div className="artwork-timeline"><div><i/><i/><i/></div><div><i/><i/><i/><i/></div><span/></div>}
+        {(kind === "document" || kind === "writing") && <div className="artwork-paper"><i/><i/><i/><i/><i/><span/></div>}
+        {kind === "data" && <div className="artwork-chart">{Array.from({length:8},(_,i)=><i key={i} className={"bar-" + (i % 5)} />)}</div>}
+        {(kind === "nodes" || kind === "flow") && <div className="artwork-nodes"><i/><i/><i/><span/></div>}
+        {kind === "cards" && <div className="artwork-flashcards"><i>Q</i><i>A</i></div>}
+        {kind === "image" && <div className="artwork-image"><i/><span/></div>}
+        {kind === "scan" && <div className="artwork-scan"><i/><span/></div>}
+      </div>
+      <span className="artwork-index">RG / {String(tool.id.length * 7 % 99).padStart(2,"0")}</span>
+    </div>
+  );
+}
 function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -291,8 +329,9 @@ export function ToolsLab() {
 
         <div className="tools-card-grid">
           {filtered.slice(0, showAll ? filtered.length : 24).map((tool, index) => (
-            <motion.button type="button" key={tool.id} className={"tool-card rg-interactive-card " + (selected?.id === tool.id ? "is-selected" : "")} onClick={() => openToolPage(tool)} onPointerMove={(event) => { if (event.pointerType !== "mouse" || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return; const rect = event.currentTarget.getBoundingClientRect(); const x = (event.clientX - rect.left) / rect.width - 0.5; const y = (event.clientY - rect.top) / rect.height - 0.5; event.currentTarget.style.setProperty("--pointer-x", ((x + 0.5) * 100).toFixed(1) + "%"); event.currentTarget.style.setProperty("--pointer-y", ((y + 0.5) * 100).toFixed(1) + "%"); event.currentTarget.style.setProperty("--rg-card-tilt-x", (y * -4.5).toFixed(2) + "deg"); event.currentTarget.style.setProperty("--rg-card-tilt-y", (x * 5.5).toFixed(2) + "deg"); event.currentTarget.style.setProperty("--rg-card-glow-x", ((x + 0.5) * 100).toFixed(1) + "%"); event.currentTarget.style.setProperty("--rg-card-glow-y", ((y + 0.5) * 100).toFixed(1) + "%"); }} onPointerLeave={(event) => { event.currentTarget.style.setProperty("--pointer-x", "50%"); event.currentTarget.style.setProperty("--pointer-y", "50%"); event.currentTarget.style.setProperty("--rg-card-tilt-x", "0deg"); event.currentTarget.style.setProperty("--rg-card-tilt-y", "0deg"); event.currentTarget.style.setProperty("--rg-card-glow-x", "50%"); event.currentTarget.style.setProperty("--rg-card-glow-y", "50%"); }} initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.12 }} transition={{ duration: 0.45, delay: Math.min(index % 6, 5) * 0.035 }} whileHover={{ y: -5, transition: { duration: 0.2 } }}>
+            <motion.button type="button" key={tool.id} className={"tool-card rg-interactive-card tool-card-layout-" + (index % 9) + " " + (selected?.id === tool.id ? "is-selected" : "")} onClick={() => openToolPage(tool)} onPointerMove={(event) => { if (event.pointerType !== "mouse" || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return; const rect = event.currentTarget.getBoundingClientRect(); const x = (event.clientX - rect.left) / rect.width - 0.5; const y = (event.clientY - rect.top) / rect.height - 0.5; event.currentTarget.style.setProperty("--pointer-x", ((x + 0.5) * 100).toFixed(1) + "%"); event.currentTarget.style.setProperty("--pointer-y", ((y + 0.5) * 100).toFixed(1) + "%"); event.currentTarget.style.setProperty("--rg-card-tilt-x", (y * -4.5).toFixed(2) + "deg"); event.currentTarget.style.setProperty("--rg-card-tilt-y", (x * 5.5).toFixed(2) + "deg"); event.currentTarget.style.setProperty("--rg-card-glow-x", ((x + 0.5) * 100).toFixed(1) + "%"); event.currentTarget.style.setProperty("--rg-card-glow-y", ((y + 0.5) * 100).toFixed(1) + "%"); }} onPointerLeave={(event) => { event.currentTarget.style.setProperty("--pointer-x", "50%"); event.currentTarget.style.setProperty("--pointer-y", "50%"); event.currentTarget.style.setProperty("--rg-card-tilt-x", "0deg"); event.currentTarget.style.setProperty("--rg-card-tilt-y", "0deg"); event.currentTarget.style.setProperty("--rg-card-glow-x", "50%"); event.currentTarget.style.setProperty("--rg-card-glow-y", "50%"); }} initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.12 }} transition={{ duration: 0.45, delay: Math.min(index % 6, 5) * 0.035 }} whileHover={{ y: -5, transition: { duration: 0.2 } }}>
               <div className="tool-card-top"><span className="tool-card-icon">{tool.kind === "browser" ? <Code2 size={17}/> : <Sparkles size={17}/>}</span><span className={tool.kind === "browser" ? "tool-type-tag local" : "tool-type-tag"}>{tool.kind === "browser" ? "LOCAL" : "AI POWERED"}</span></div>
+              <ToolCardArtwork tool={tool} />
               <span className="tool-card-category">{tool.category}</span>
               <strong>{tool.name}</strong>
               <p>{tool.description}</p>
