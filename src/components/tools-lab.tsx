@@ -50,14 +50,24 @@ function ToolCardArtwork({ tool }: { tool: ToolItem }) {
       <div className="artwork-orbit artwork-orbit-b" />
       <div className="artwork-central-icon"><Icon size={21} strokeWidth={1.6} /></div>
       <div className="artwork-graphic">
-        {kind === "wave" && <div className="artwork-wave">{Array.from({length:15},(_,i)=><i key={i} className={"bar-" + (i % 5)} />)}</div>}
-        {kind === "timeline" && <div className="artwork-timeline"><div><i/><i/><i/></div><div><i/><i/><i/><i/></div><span/></div>}
-        {(kind === "document" || kind === "writing") && <div className="artwork-paper"><i/><i/><i/><i/><i/><span/></div>}
-        {kind === "data" && <div className="artwork-chart">{Array.from({length:8},(_,i)=><i key={i} className={"bar-" + (i % 5)} />)}</div>}
-        {(kind === "nodes" || kind === "flow") && <div className="artwork-nodes"><i/><i/><i/><span/></div>}
-        {kind === "cards" && <div className="artwork-flashcards"><i>Q</i><i>A</i></div>}
-        {kind === "image" && <div className="artwork-image"><i/><span/></div>}
-        {kind === "scan" && <div className="artwork-scan"><i/><span/></div>}
+        {kind === "wave" && <div className="artwork-wave">{Array.from({length:21},(_,i)=><i key={i} className={"bar-" + (i % 5)} />)}</div>}
+        {kind === "timeline" && <div className="artwork-timeline"><div><i/><i/><i/></div><div><i/><i/><i/><i/></div><span/><b/><em/></div>}
+        {(kind === "document" || kind === "writing") && <div className="artwork-paper"><i/><i/><i/><i/><i/><span/><b/></div>}
+        {kind === "data" && <div className="artwork-chart">{Array.from({length:10},(_,i)=><i key={i} className={"bar-" + (i % 5)} />)}<span className="artwork-chart-line"/></div>}
+        {(kind === "nodes" || kind === "flow") && <div className="artwork-nodes"><i/><i/><i/><span/><b/><em/></div>}
+        {kind === "cards" && <div className="artwork-flashcards"><i>Q</i><i>A</i><span>RECALL / 08</span></div>}
+        {kind === "image" && <div className="artwork-image"><i/><span/><b/><em/></div>}
+        {kind === "scan" && <div className="artwork-scan"><i/><span/><b/><em/></div>}
+      </div>
+      <div className="artwork-detail-panel">
+        <div className="artwork-detail-top"><span>LIVE TOOL PREVIEW</span><span className="artwork-detail-status"><i/> ACTIVE</span></div>
+        <div className={"artwork-detail-scene detail-" + kind}>
+          <div className="artwork-detail-core"><Icon size={19}/></div>
+          <span className="detail-rail detail-rail-a"/><span className="detail-rail detail-rail-b"/><span className="detail-rail detail-rail-c"/>
+          <i className="detail-particle detail-particle-a"/><i className="detail-particle detail-particle-b"/><i className="detail-particle detail-particle-c"/>
+          <div className="artwork-detail-readout"><strong>{tool.category.toUpperCase()}</strong><span>{tool.name}</span><small>INPUT → PROCESS → RESULT</small></div>
+        </div>
+        <div className="artwork-detail-footer"><span>RG / {String(tool.id.length * 7 % 99).padStart(2,"0")}</span><span className="detail-meter"><i/></span><span>READY</span></div>
       </div>
       <span className="artwork-index">RG / {String(tool.id.length * 7 % 99).padStart(2,"0")}</span>
     </div>
