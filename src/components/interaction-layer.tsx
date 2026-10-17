@@ -34,6 +34,7 @@ export function InteractionLayer() {
     let frame = 0;
     let burstTimer = 0;
     const move = (event: PointerEvent) => {
+      if (event.pointerType !== "mouse") return;
       target.current = { x: event.clientX, y: event.clientY };
       setCursorSeen(true);
       if (coreRef.current) coreRef.current.style.transform = `translate3d(${event.clientX}px,${event.clientY}px,0)`;
