@@ -814,3 +814,49 @@ html[data-theme="light"] .section-dark .magnetic-button-light{background:#fff;co
   }
   .rg-interactive-card.rg-fun-card::after { border-radius: inherit; }
 }
+
+
+/* One card language across every route: the global interaction layer supplies the live pointer coordinates. */
+@media (pointer: fine) and (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .rg-site-card {
+    --rg-card-tilt-x: 0deg;
+    --rg-card-tilt-y: 0deg;
+    --rg-card-glow-x: 50%;
+    --rg-card-glow-y: 50%;
+    position: relative;
+    isolation: isolate;
+    transform: perspective(900px) rotateX(var(--rg-card-tilt-x)) rotateY(var(--rg-card-tilt-y));
+    transform-style: preserve-3d;
+    transition: transform 160ms ease-out, border-color 220ms ease, box-shadow 220ms ease;
+    will-change: transform;
+  }
+  .rg-site-card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 1;
+    background:
+      radial-gradient(280px circle at var(--rg-card-glow-x) var(--rg-card-glow-y), color-mix(in srgb, var(--page-accent, #b8ff6a), transparent 82%), transparent 70%),
+      linear-gradient(135deg, rgba(255,255,255,.065), transparent 44%, color-mix(in srgb, var(--page-accent, #b8ff6a), transparent 95%));
+    transition: opacity 180ms ease;
+  }
+  .rg-site-card:hover {
+    border-color: color-mix(in srgb, var(--page-accent, #b8ff6a), transparent 32%);
+    box-shadow: 0 18px 46px rgba(0,0,0,.16), 0 0 30px color-mix(in srgb, var(--page-accent, #b8ff6a), transparent 89%);
+  }
+  html[data-theme="light"] .rg-site-card::after {
+    background:
+      radial-gradient(280px circle at var(--rg-card-glow-x) var(--rg-card-glow-y), rgba(108,85,202,.13), transparent 70%),
+      linear-gradient(135deg, rgba(255,255,255,.34), transparent 46%, rgba(108,85,202,.035));
+  }
+  html[data-theme="light"] .rg-site-card:hover {
+    box-shadow: 0 18px 46px rgba(48,37,77,.08), 0 0 30px rgba(108,85,202,.08);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rg-site-card { transform: none !important; transition: none !important; }
+  .rg-site-card::after { display: none !important; }
+}
