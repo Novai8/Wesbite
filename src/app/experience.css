@@ -744,3 +744,13 @@ html[data-theme="light"] .section-dark .magnetic-button-light{background:#fff;co
 @media (prefers-reduced-motion: reduce) {
   .rg-interactive-card { transform: none !important; transition: none !important; }
 }
+
+
+@media (pointer: fine) and (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .rg-interactive-card.rg-how-card:hover {
+    transform: perspective(900px) rotateX(var(--rg-card-tilt-x, 0deg)) rotateY(var(--rg-card-tilt-y, 0deg)) translateY(-4px);
+  }
+  .rg-interactive-card.rg-clip-step:hover {
+    transform: perspective(900px) rotateX(var(--rg-card-tilt-x, 0deg)) rotateY(var(--rg-card-tilt-y, 0deg)) translateY(-4px);
+  }
+}
