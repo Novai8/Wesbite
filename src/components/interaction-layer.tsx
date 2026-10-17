@@ -39,6 +39,7 @@ export function InteractionLayer() {
       card.style.setProperty("--rg-card-tilt-y", "0deg");
       card.style.setProperty("--rg-card-glow-x", "50%");
       card.style.setProperty("--rg-card-glow-y", "50%");
+      card.classList.remove("rg-site-card");
     };
     const move = (event: PointerEvent) => {
       target.current = { x: event.clientX, y: event.clientY };
