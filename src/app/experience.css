@@ -891,3 +891,23 @@ html[data-theme="light"] .rg-atom-bit,html[data-theme="light"] .rg-flow-node,htm
 @media(max-width:980px) { .rg-floating-scene { width:min(48vw,420px); height:330px; right:2%; opacity:.95; } .rg-how-hero .rg-floating-scene,.rg-contact-hero .rg-floating-scene { top:64%; } .rg-motion-scene-tools { top:240px; } }
 @media(max-width:700px) { .rg-floating-scene { position:relative; top:auto!important; right:auto!important; transform:none; width:100%; max-width:390px; height:300px; margin:10px auto 28px; } .rg-motion-label { font-size:6px; } .rg-motion-label strong { font-size:20px; } .rg-atom-core,.rg-signal-core { width:70px; height:70px; } .rg-atom-bit { width:37px; height:37px; } .rg-clip-caption { font-size:7px; } .rg-clip-aperture { width:42%; left:29%; } .rg-clip-wave { bottom:8%; } .rg-clip-playhead { top:65%; height:38px; } .rg-clip-hero .rg-floating-scene { margin-top:0; } }
 @media(prefers-reduced-motion:reduce) { .rg-motion-scene::before,.rg-motion-scene::after,.rg-motion-spark,.rg-atom-ring,.rg-atom-core,.rg-atom-bit,.rg-flow-map path,.rg-flow-node,.rg-flow-particle,.rg-signal-ring,.rg-signal-core,.rg-signal-dot,.rg-clip-aperture i,.rg-clip-wave i,.rg-clip-scanline,.rg-clip-playhead,.rg-clip-caption { animation:none!important; } .rg-motion-halo,.rg-atom-system,.rg-flow-map,.rg-signal-scene,.rg-clip-motion { transition:none!important; } }
+
+/* Route-specific transition choreography, so navigation is not the same canned spinner everywhere. */
+.rg-page-flash-home .rg-flash-orb-one { animation-name:rg-load-home; }
+.rg-page-flash-tools .rg-flash-orb-one { animation-name:rg-load-tools; }
+.rg-page-flash-about .rg-flash-orb-one { animation-name:rg-load-about; }
+.rg-page-flash-contact .rg-flash-orb-one { animation-name:rg-load-contact; }
+.rg-page-flash-clip .rg-flash-orb-one { animation-name:rg-load-clip; }
+.rg-page-flash-demos .rg-flash-orb-one { animation-name:rg-load-tools; }
+.rg-page-flash-reviews .rg-flash-orb-one { animation-name:rg-load-contact; }
+.rg-page-flash-home .rg-flash-orb-two { border-radius:35%; }
+.rg-page-flash-tools .rg-flash-orb-two { border-radius:8px; }
+.rg-page-flash-about .rg-flash-orb-two { border-style:solid; border-radius:50%; }
+.rg-page-flash-contact .rg-flash-orb-two { border-radius:50%; border-style:dotted; }
+.rg-page-flash-clip .rg-flash-orb-two { border-radius:5px; border-style:solid; }
+@keyframes rg-load-home { to { transform:rotate(145deg) scaleY(.72) translateY(-16px) scale(1.08); } }
+@keyframes rg-load-tools { to { transform:rotate(240deg) scaleY(.42) translateY(-9px); } }
+@keyframes rg-load-about { to { transform:rotate(70deg) scaleY(.9) translateX(22px); } }
+@keyframes rg-load-contact { to { transform:rotate(180deg) scaleY(.65) translateY(18px); } }
+@keyframes rg-load-clip { to { transform:rotate(90deg) scaleY(.32) translateX(25px); } }
+@media(prefers-reduced-motion:reduce) { .rg-page-flash-orb-one,.rg-page-flash-orb-two,.rg-flash-icon { animation:none!important; } }
