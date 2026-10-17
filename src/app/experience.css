@@ -754,3 +754,55 @@ html[data-theme="light"] .section-dark .magnetic-button-light{background:#fff;co
     transform: perspective(900px) rotateX(var(--rg-card-tilt-x, 0deg)) rotateY(var(--rg-card-tilt-y, 0deg)) translateY(-4px);
   }
 }
+
+
+/* Shared landing-page card feel: mouse-following light, perspective, and a soft specular edge. */
+@media (pointer: fine) and (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .rg-interactive-card {
+    --rg-card-glow-x: 50%;
+    --rg-card-glow-y: 50%;
+    --rg-card-tilt-x: 0deg;
+    --rg-card-tilt-y: 0deg;
+    position: relative;
+    isolation: isolate;
+    transform: perspective(900px) rotateX(var(--rg-card-tilt-x)) rotateY(var(--rg-card-tilt-y));
+    transform-style: preserve-3d;
+    transition: transform 160ms ease-out, border-color 220ms ease, box-shadow 220ms ease;
+    will-change: transform;
+  }
+  .rg-interactive-card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 0;
+    background:
+      radial-gradient(280px circle at var(--rg-card-glow-x) var(--rg-card-glow-y), rgba(190, 255, 125, .16), transparent 68%),
+      linear-gradient(135deg, rgba(255,255,255,.09), transparent 42%, rgba(190,255,125,.045));
+    mix-blend-mode: screen;
+    transition: opacity 220ms ease;
+  }
+  .rg-interactive-card:hover::after { opacity: 1; }
+  .rg-interactive-card:hover {
+    border-color: color-mix(in srgb, var(--page-accent, #b8ff6a), transparent 34%);
+    box-shadow: 0 20px 48px rgba(0,0,0,.18), 0 0 32px color-mix(in srgb, var(--page-accent, #b8ff6a), transparent 88%);
+  }
+  html[data-theme="light"] .rg-interactive-card::after {
+    background:
+      radial-gradient(280px circle at var(--rg-card-glow-x) var(--rg-card-glow-y), rgba(108,85,202,.14), transparent 68%),
+      linear-gradient(135deg, rgba(255,255,255,.48), transparent 48%, rgba(108,85,202,.035));
+    mix-blend-mode: normal;
+  }
+  html[data-theme="light"] .rg-interactive-card:hover {
+    box-shadow: 0 20px 48px rgba(48,37,77,.09), 0 0 32px rgba(108,85,202,.08);
+  }
+  .rg-interactive-card.rg-how-card:hover,
+  .rg-interactive-card.rg-clip-step:hover {
+    transform: perspective(900px) rotateX(var(--rg-card-tilt-x, 0deg)) rotateY(var(--rg-card-tilt-y, 0deg)) translateY(-4px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rg-interactive-card { transform: none !important; transition: none !important; }
+  .rg-interactive-card::after { display: none !important; }
+}
