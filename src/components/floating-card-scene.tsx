@@ -52,7 +52,7 @@ export function FloatingCardScene({ kind }: { kind: SceneKind }) {
     </div>}
     {kind === "clip" && <div className="rg-clip-motion" aria-hidden="true">
       <div className="rg-clip-aperture"><span/><span/><span/><i/></div>
-      <div className="rg-clip-wave">{Array.from({ length: 35 }, (_, i) => <i key={i} style={{ "--bar-i": i } as React.CSSProperties}/>)}</div>
+      <div className="rg-clip-wave">{Array.from({ length: 35 }, (_, i) => <i key={i} style={{ "--bar-i": i, "--bar-height": (5 + (i % 7) * 3) + "px" } as React.CSSProperties}/>)}</div>
       <div className="rg-clip-scanline"/>
       <span className="rg-clip-playhead"/>
       <span className="rg-clip-caption">HOOK FOUND <Sparkles size={13}/></span>
