@@ -816,107 +816,11 @@ html[data-theme="light"] .section-dark .magnetic-button-light{background:#fff;co
 }
 
 
-/* One card language across every route: the global interaction layer supplies the live pointer coordinates. */
-@media (pointer: fine) and (hover: hover) and (prefers-reduced-motion: no-preference) {
-  .rg-site-card {
-    --rg-card-tilt-x: 0deg;
-    --rg-card-tilt-y: 0deg;
-    --rg-card-glow-x: 50%;
-    --rg-card-glow-y: 50%;
-    position: relative;
-    isolation: isolate;
-    transform: perspective(900px) rotateX(var(--rg-card-tilt-x)) rotateY(var(--rg-card-tilt-y));
-    transform-style: preserve-3d;
-    transition: transform 160ms ease-out, border-color 220ms ease, box-shadow 220ms ease;
-    will-change: transform;
-  }
-  .rg-site-card::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    border-radius: inherit;
-    pointer-events: none;
-    opacity: 1;
-    background:
-      radial-gradient(280px circle at var(--rg-card-glow-x) var(--rg-card-glow-y), color-mix(in srgb, var(--page-accent, #b8ff6a), transparent 82%), transparent 70%),
-      linear-gradient(135deg, rgba(255,255,255,.065), transparent 44%, color-mix(in srgb, var(--page-accent, #b8ff6a), transparent 95%));
-    transition: opacity 180ms ease;
-  }
-  .rg-site-card:hover {
-    border-color: color-mix(in srgb, var(--page-accent, #b8ff6a), transparent 32%);
-    box-shadow: 0 18px 46px rgba(0,0,0,.16), 0 0 30px color-mix(in srgb, var(--page-accent, #b8ff6a), transparent 89%);
-  }
-  html[data-theme="light"] .rg-site-card::after {
-    background:
-      radial-gradient(280px circle at var(--rg-card-glow-x) var(--rg-card-glow-y), rgba(108,85,202,.13), transparent 70%),
-      linear-gradient(135deg, rgba(255,255,255,.34), transparent 46%, rgba(108,85,202,.035));
-  }
-  html[data-theme="light"] .rg-site-card:hover {
-    box-shadow: 0 18px 46px rgba(48,37,77,.08), 0 0 30px rgba(108,85,202,.08);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .rg-site-card { transform: none !important; transition: none !important; }
-  .rg-site-card::after { display: none !important; }
-}
-
-
-/* Distinct floating-card motion language across the main product tabs. */
-@keyframes rg-tab-card-drift-a {
-  0%,100% { translate: 0 0; rotate: -1.2deg; }
-  50% { translate: 0 -11px; rotate: .8deg; }
-}
-@keyframes rg-tab-card-drift-b {
-  0%,100% { translate: 0 0; rotate: 1.4deg; }
-  50% { translate: 0 9px; rotate: -.7deg; }
-}
-@keyframes rg-tab-orbit-drift {
-  0%,100% { translate: 0 0; scale: 1; }
-  50% { translate: 7px -8px; scale: 1.025; }
-}
-/* About: input / thinking / done nodes behave like a connected floating stack. */
-.rg-how-node {
-  transform-style: preserve-3d;
-  box-shadow: 0 14px 34px rgba(0,0,0,.08), inset 0 1px rgba(255,255,255,.1);
-  transition: border-color .25s ease, box-shadow .25s ease, background-color .25s ease;
-}
-.rg-how-node-a { animation: rg-how-breathe 4.8s ease-in-out infinite, rg-tab-card-drift-a 7s ease-in-out infinite; }
-.rg-how-node-b { animation: rg-how-breathe 4.8s ease-in-out -1.6s infinite, rg-tab-card-drift-b 8s ease-in-out -2s infinite; }
-.rg-how-node-c { animation: rg-how-breathe 4.8s ease-in-out -3s infinite, rg-tab-card-drift-a 7.5s ease-in-out -3s infinite; }
-/* Contact: orbiting signals have different speeds and depth instead of one generic pulse. */
-.rg-contact-core { filter: drop-shadow(0 14px 30px color-mix(in srgb,var(--accent,#9c8cff) 18%,transparent)); }
-.rg-contact-signal { box-shadow: 0 0 0 5px color-mix(in srgb,var(--accent,#9c8cff) 9%,transparent), 0 0 20px color-mix(in srgb,var(--accent,#9c8cff) 30%,transparent); animation: rg-tab-orbit-drift 4.2s ease-in-out infinite; }
-.rg-contact-signal.signal-b { animation-delay: -1.4s; }
-.rg-contact-signal.signal-c { animation-delay: -2.8s; }
-/* Clip AI: make the editing preview feel like a floating mini-workspace. */
-.rg-clip-preview {
-  transform-style: preserve-3d;
-  transform-origin: 50% 50%;
-  transition: border-color .25s ease, box-shadow .25s ease;
-  will-change: translate, transform;
-}
-.rg-clip-preview::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  background: radial-gradient(360px circle at var(--rg-card-glow-x,50%) var(--rg-card-glow-y,50%),rgba(255,154,121,.15),transparent 68%);
-  opacity: 0;
-  transition: opacity .3s ease;
-}
-.rg-clip-preview.rg-site-card::after { opacity: 1; }
-.rg-clip-floating { transform-style: preserve-3d; }
-.rg-clip-float-a { animation: rg-home-clip-float 5s ease-in-out infinite, rg-tab-card-drift-a 8s ease-in-out infinite; }
-.rg-clip-float-b { animation: rg-home-clip-float 5.7s ease-in-out -1.2s infinite, rg-tab-card-drift-b 7.5s ease-in-out -2s infinite; }
-/* Tools Lab: staggered cards get subtle independent drift; hover remains user-driven. */
-.tools-particle-canvas { pointer-events: none; }
-@media (prefers-reduced-motion: reduce) {
-  .rg-how-node-a,.rg-how-node-b,.rg-how-node-c,.rg-contact-signal,.rg-clip-float-a,.rg-clip-float-b { animation: none !important; }
-  .rg-clip-preview { transition: none !important; }
-}
-
+/* Click feedback: a tiny route-accent burst replaces generic whole-card tilt. */
+.rg-click-burst { position:fixed; z-index:10030; width:1px; height:1px; pointer-events:none; }
+.rg-click-burst i { position:absolute; left:0; top:0; width:5px; height:5px; border-radius:2px; background:var(--burst-accent,var(--page-accent)); box-shadow:0 0 10px var(--burst-accent,var(--page-accent)); animation:rg-click-spark .58s cubic-bezier(.16,.8,.25,1) both; animation-delay:calc(var(--burst-i) * 8ms); }
+@keyframes rg-click-spark { from { opacity:1; transform:rotate(calc(var(--burst-i) * 45deg)) translateY(0) scale(1); } to { opacity:0; transform:rotate(calc(var(--burst-i) * 45deg)) translateY(-27px) scale(.15); } }
+@media(prefers-reduced-motion:reduce) { .rg-click-burst { display:none!important; } }
 
 /* Page-specific kinetic scenes: no floating panels/cards. Each route gets its own visual metaphor. */
 .rg-floating-scene {
@@ -964,7 +868,7 @@ html[data-theme="light"] .section-dark .magnetic-button-light{background:#fff;co
 .rg-clip-aperture span { position:absolute; left:-20%; right:-20%; height:35%; bottom:0; background:color-mix(in srgb,var(--scene-accent) 35%,transparent); clip-path:polygon(0 100%,35% 0,54% 70%,76% 18%,100% 100%); }.rg-clip-aperture span:nth-child(2) { bottom:0; opacity:.6; transform:translateX(12px) scale(.8); }.rg-clip-aperture span:nth-child(3) { bottom:0; opacity:.35; transform:translateX(-15px) scale(.65); }
 .rg-clip-aperture i { position:absolute; left:0; right:0; height:2px; top:0; background:var(--scene-accent); box-shadow:0 0 20px var(--scene-accent); animation:rg-clip-scan 3s ease-in-out infinite; }
 .rg-clip-wave { position:absolute; left:0; right:0; bottom:10%; height:32px; display:flex; align-items:center; justify-content:center; gap:3px; }
-.rg-clip-wave i { flex:1; max-width:7px; height:calc(5px + (var(--bar-i) % 7) * 3px); border-radius:9px; background:var(--scene-accent); opacity:.75; transform-origin:center; animation:rg-wave-pulse 1s ease-in-out infinite alternate; animation-delay:calc(var(--bar-i) * -35ms); }
+.rg-clip-wave i { flex:1; max-width:7px; height:calc(5px + var(--bar-i) * 1px); border-radius:9px; background:var(--scene-accent); opacity:.75; transform-origin:center; animation:rg-wave-pulse 1s ease-in-out infinite alternate; animation-delay:calc(var(--bar-i) * -35ms); }
 .rg-clip-scanline { position:absolute; left:0; right:0; top:0; height:1px; background:color-mix(in srgb,var(--scene-accent) 70%,transparent); animation:rg-clip-scan 4s ease-in-out infinite; }
 .rg-clip-playhead { position:absolute; left:8%; top:64%; width:2px; height:52px; background:var(--scene-accent); box-shadow:0 0 16px var(--scene-accent); animation:rg-playhead 5s ease-in-out infinite alternate; }
 .rg-clip-caption { position:absolute; right:0; top:17%; display:flex; align-items:center; gap:7px; padding:9px 12px; border-radius:999px; background:var(--surface); border:1px solid var(--line); color:var(--ink); font:700 8px var(--font-geist-mono),monospace; letter-spacing:.08em; box-shadow:0 10px 30px rgba(0,0,0,.08); animation:rg-bit-float 4s ease-in-out infinite; }
