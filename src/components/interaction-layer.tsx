@@ -21,7 +21,7 @@ export function InteractionLayer() {
   const current = useRef({ x: -80, y: -80 });
   const [hovering, setHovering] = useState(false);
   const [cursorSeen, setCursorSeen] = useState(false);
-  const [transition, setTransition] = useState<{ label: string; accent: string } | null>(null);
+  const [transition, setTransition] = useState<{ label: string; accent: string; kind: string } | null>(null);
   const [burst, setBurst] = useState<{ x: number; y: number; id: number } | null>(null);
   const navigating = useRef(false);
   const accent = accents[pathname] ?? accents["/"];
@@ -79,7 +79,17 @@ export function InteractionLayer() {
       if (navigating.current) return;
       navigating.current = true;
       const nextAccent = accents[url.pathname] ?? accents["/"];
-      setTransition({ label: url.pathname === "/tools" ? "Let’s make something useful" : "Moving things into place", accent: nextAccent });
+      const pageTransitions: Record<string, { label: string; kind: string }> = {
+        "/": { label: "A little more imagination", kind: "home" },
+        "/tools": { label: "Ideas, meet useful tools", kind: "tools" },
+        "/about": { label: "Follow the signal", kind: "about" },
+        "/contact": { label: "Opening a channel", kind: "contact" },
+        "/clip-ai": { label: "Finding the right moment", kind: "clip" },
+        "/demos": { label: "Workflows in motion", kind: "demos" },
+        "/reviews": { label: "Checking the details", kind: "reviews" },
+      };
+      const page = pageTransitions[url.pathname] ?? { label: "Making room for what’s next", kind: "default" };
+      setTransition({ ...page, accent: nextAccent });
       navigateTimer = window.setTimeout(() => router.push(url.pathname + url.search + url.hash), 160);
       finishTimer = window.setTimeout(() => {
         setTransition(null);
@@ -98,7 +108,7 @@ export function InteractionLayer() {
     <div ref={auraRef} className={"rg-pointer-aura" + (cursorSeen ? " is-visible" : "") + (hovering ? " is-hovering" : "")} aria-hidden="true"><span>✳</span></div>
     <div ref={coreRef} className={`rg-pointer-core${cursorSeen ? " is-visible" : ""}${hovering ? " is-hovering" : ""}`} aria-hidden="true" />
     {burst && <span key={burst.id} className="rg-click-burst" aria-hidden="true" style={{ left: burst.x, top: burst.y, "--burst-accent": accent } as React.CSSProperties}>{Array.from({ length: 8 }, (_, i) => <i key={i} style={{ "--burst-i": i } as React.CSSProperties} />)}</span>}
-    {transition && <div className="rg-page-flash" role="status" aria-live="polite" style={{ "--flash-accent": transition.accent } as React.CSSProperties}>
+    {transition && <div className={"rg-page-flash rg-page-flash-" + transition.kind} role="status" aria-live="polite" style={{ "--flash-accent": transition.accent } as React.CSSProperties}>
       <div className="rg-flash-orb rg-flash-orb-one" /><div className="rg-flash-orb rg-flash-orb-two" />
       <div className="rg-flash-content"><span className="rg-flash-icon"><Sparkles size={24}/></span><span className="rg-flash-label">RAPIGENTS / IN MOTION</span><h2>{transition.label}</h2><span className="rg-flash-arrow"><ArrowRight size={16}/> ONE MOMENT</span></div>
     </div>}
