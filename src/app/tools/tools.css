@@ -255,3 +255,25 @@ html[data-theme="light"] .tool-launch-sub{color:#625e74}
 html[data-theme="light"] .tool-launch-label{color:#211e32}
 html[data-theme="light"] .tool-motion-visual{background:radial-gradient(ellipse at 50% 48%,color-mix(in srgb,var(--tool-accent) 14%,transparent),transparent 56%),linear-gradient(135deg,#fff,#f1eef8)}
 html[data-theme="light"] .tool-motion-core{background:#fff}
+
+
+/* Pointer-lit cards make the tool explorer feel tactile without tilting or moving text. */
+.tools-page .tool-card {
+  --pointer-x: 50%;
+  --pointer-y: 50%;
+  background: radial-gradient(240px circle at var(--pointer-x) var(--pointer-y), rgba(216,255,99,.075), rgba(255,255,255,.012) 72%);
+}
+.tools-page .tool-card:hover,
+.tools-page .tool-card.is-selected {
+  background: radial-gradient(280px circle at var(--pointer-x) var(--pointer-y), rgba(216,255,99,.12), rgba(216,255,99,.025) 70%);
+}
+html[data-theme="light"] .tools-page .tool-card {
+  background: radial-gradient(240px circle at var(--pointer-x) var(--pointer-y), rgba(108,85,202,.10), rgba(255,255,255,.56) 72%);
+}
+html[data-theme="light"] .tools-page .tool-card:hover,
+html[data-theme="light"] .tools-page .tool-card.is-selected {
+  background: radial-gradient(280px circle at var(--pointer-x) var(--pointer-y), rgba(108,85,202,.15), rgba(255,255,255,.78) 70%);
+}
+@media (prefers-reduced-motion: reduce) {
+  .tools-page .tool-card { transition: none !important; }
+}
