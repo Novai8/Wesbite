@@ -406,3 +406,47 @@ html[data-theme="light"] .tools-page .artwork-detail-core{background:rgba(255,25
 @media(max-width:680px){.tools-page .tools-shell,.tools-page .tools-hero>.tools-shell{width:calc(100% - 28px)}.tools-page .tools-hero{padding:22px 0 16px}.tools-page .tools-hero h1{font-size:clamp(36px,10vw,52px);margin:12px 0 8px}.tools-page .tools-hero-lede{font-size:11px}.tools-page .tools-hero-stats{gap:13px;margin-top:11px;padding-top:10px}.tools-page .tools-hero-stats strong{font-size:15px}.tools-page .tools-workspace{padding-top:19px}.tools-page .tools-section-heading>p{display:none}.tools-page .tools-controls{gap:8px}.tools-page .tools-card-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.tools-page .tool-card,.tools-page .tool-card-layout-0,.tools-page .tool-card-layout-1,.tools-page .tool-card-layout-2,.tools-page .tool-card-layout-3,.tools-page .tool-card-layout-4,.tools-page .tool-card-layout-5,.tools-page .tool-card-layout-6,.tools-page .tool-card-layout-7,.tools-page .tool-card-layout-8{min-height:218px;padding:9px}.tools-page .tool-card:hover .tool-card-artwork,.tools-page .tool-card:focus-visible .tool-card-artwork{height:155px}.tools-page .tool-card p{font-size:9px}}
 @media(max-width:380px){.tools-page .tools-card-grid{grid-template-columns:1fr}.tools-page .tool-card{min-height:220px}}
 @media(prefers-reduced-motion:reduce){.tools-page .artwork-detail-panel,.tools-page .artwork-detail-panel *,.tools-page .tool-card-artwork *{animation:none!important;transition:none!important}}
+
+
+/* First-screen density: keep the toolkit visible immediately, not buried under a cinematic intro. */
+.tools-page .tools-hero{padding:15px 0 12px}
+.tools-page .tools-hero h1{font-size:clamp(32px,4vw,48px);margin:8px 0 5px}
+.tools-page .tools-hero-lede{font-size:10px;line-height:1.4;max-width:760px}
+.tools-page .tools-hero-stats{display:none}
+.tools-page .tools-eyebrow{font-size:8px}
+.tools-page .tools-workspace{padding-top:15px}
+.tools-page .tools-section-heading{padding-bottom:10px}
+.tools-page .tools-section-heading h2{font-size:clamp(21px,2.6vw,30px)}
+.tools-page .tools-section-heading>p{font-size:9px}
+.tools-page .tools-controls{padding:9px 0 5px}
+.tools-page .tools-search{min-height:35px}
+.tools-page .tools-category-row{padding:4px 0 7px}
+.tools-page .tools-category-row button{padding:6px 8px}
+.tools-page .tools-results-meta{padding:7px 0}
+.tools-page .tools-card-grid{gap:7px}
+.tools-page .tool-card,.tools-page .tool-card-layout-0,.tools-page .tool-card-layout-1,.tools-page .tool-card-layout-2,.tools-page .tool-card-layout-3,.tools-page .tool-card-layout-4,.tools-page .tool-card-layout-5,.tools-page .tool-card-layout-6,.tools-page .tool-card-layout-7,.tools-page .tool-card-layout-8{min-height:184px;padding:9px}
+.tools-page .tool-card-artwork{height:76px;margin:7px 0 0}
+.tools-page .tool-card:hover .tool-card-artwork,.tools-page .tool-card:focus-visible .tool-card-artwork{height:150px}
+.tools-page .tool-card p{display:none}
+.tools-page .tool-card:hover p,.tools-page .tool-card:focus-visible p{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.tools-page .tool-card strong{font-size:11px}
+.tools-page .tool-card-category{margin-top:8px}
+.tools-page .tool-card-open{font-size:6px}
+.tools-page .artwork-detail-panel{padding:7px}
+.tools-page .artwork-detail-readout span{max-width:100%}
+.tools-page .artwork-variant-0 .artwork-orbit-a{transform:translate(-50%,-50%) rotate(42deg) scaleX(.76)}
+.tools-page .artwork-variant-1 .artwork-orbit-b{width:78px;height:48px;border-radius:6px;transform:translate(-50%,-50%) rotate(-38deg)}
+.tools-page .artwork-variant-2 .artwork-backdrop-grid{background-size:13px 19px;transform:rotate(9deg) scale(1.2)}
+.tools-page .artwork-variant-3 .artwork-orbit-a{width:115px;height:34px;transform:translate(-50%,-50%) rotate(61deg)}
+.tools-page .artwork-variant-4 .artwork-orbit-b{border-style:solid;width:52px;height:74px;transform:translate(-50%,-50%) rotate(68deg)}
+.tools-page .artwork-variant-0 .artwork-central-icon{animation:tool-detail-core 2.8s ease-in-out infinite}
+.tools-page .artwork-variant-1 .artwork-central-icon{border-radius:50%;animation:tool-detail-core 3.4s ease-in-out infinite reverse}
+.tools-page .artwork-variant-2 .artwork-central-icon{transform:translate(-50%,-50%) rotate(45deg);animation:tool-detail-core 2.2s ease-in-out infinite}
+.tools-page .artwork-variant-3 .artwork-central-icon{border-radius:2px 12px 2px 12px;animation:tool-detail-core 4s ease-in-out infinite}
+.tools-page .artwork-variant-4 .artwork-central-icon{width:35px;height:35px;animation:tool-detail-core 3.1s ease-in-out infinite reverse}
+.tools-page .artwork-variant-0 .artwork-detail-scene{background-size:9px 9px}
+.tools-page .artwork-variant-1 .artwork-detail-scene{background-size:18px 18px;transform:skewX(-3deg)}
+.tools-page .artwork-variant-2 .artwork-detail-scene{background-size:12px 20px}
+.tools-page .artwork-variant-3 .artwork-detail-scene{background-size:22px 10px}
+.tools-page .artwork-variant-4 .artwork-detail-scene{background-size:15px 15px;transform:skewX(3deg)}
+@media(max-width:680px){.tools-page .tools-hero{padding:16px 0 10px}.tools-page .tools-hero h1{font-size:clamp(31px,9vw,44px)}.tools-page .tools-hero-lede{font-size:10px}.tools-page .tools-section-heading h2{font-size:22px}.tools-page .tool-card,.tools-page .tool-card-layout-0,.tools-page .tool-card-layout-1,.tools-page .tool-card-layout-2,.tools-page .tool-card-layout-3,.tools-page .tool-card-layout-4,.tools-page .tool-card-layout-5,.tools-page .tool-card-layout-6,.tools-page .tool-card-layout-7,.tools-page .tool-card-layout-8{min-height:192px}.tools-page .tool-card-artwork{height:80px}.tools-page .tool-card:hover .tool-card-artwork,.tools-page .tool-card:focus-visible .tool-card-artwork{height:142px}}
