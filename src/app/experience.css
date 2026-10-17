@@ -806,3 +806,11 @@ html[data-theme="light"] .section-dark .magnetic-button-light{background:#fff;co
   .rg-interactive-card { transform: none !important; transition: none !important; }
   .rg-interactive-card::after { display: none !important; }
 }
+
+
+@media (pointer: fine) and (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .rg-interactive-card.rg-fun-card:hover {
+    transform: perspective(900px) rotateX(var(--rg-card-tilt-x, 0deg)) rotateY(var(--rg-card-tilt-y, 0deg)) translateY(-7px);
+  }
+  .rg-interactive-card.rg-fun-card::after { border-radius: inherit; }
+}
