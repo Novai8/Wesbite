@@ -31,15 +31,39 @@ export function InteractionLayer() {
 
   useEffect(() => {
     let frame = 0;
+    let activeCard: HTMLElement | null = null;
+    const cardSelector = '[class*="card"], [class*="tile"], [class*="step"]';
+    const resetCard = (card: HTMLElement | null) => {
+      if (!card) return;
+      card.style.setProperty("--rg-card-tilt-x", "0deg");
+      card.style.setProperty("--rg-card-tilt-y", "0deg");
+      card.style.setProperty("--rg-card-glow-x", "50%");
+      card.style.setProperty("--rg-card-glow-y", "50%");
+    };
     const move = (event: PointerEvent) => {
       target.current = { x: event.clientX, y: event.clientY };
       setCursorSeen(true);
       if (coreRef.current) {
         coreRef.current.style.transform = `translate3d(${event.clientX}px,${event.clientY}px,0)`;
       }
-      const interactive = document.elementFromPoint(event.clientX, event.clientY)?.closest("a,button,[role=button],input,textarea,select,label");
+      const targetElement = document.elementFromPoint(event.clientX, event.clientY);
+      const interactive = targetElement?.closest("a,button,[role=button],input,textarea,select,label");
       setHovering(Boolean(interactive));
+      if (event.pointerType !== "mouse" || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      const nextCard = targetElement instanceof Element ? targetElement.closest<HTMLElement>(cardSelector) : null;
+      if (nextCard !== activeCard) { resetCard(activeCard); activeCard = nextCard; }
+      if (!activeCard) return;
+      activeCard.classList.add("rg-site-card");
+      const rect = activeCard.getBoundingClientRect();
+      if (!rect.width || !rect.height) return;
+      const x = (event.clientX - rect.left) / rect.width - 0.5;
+      const y = (event.clientY - rect.top) / rect.height - 0.5;
+      activeCard.style.setProperty("--rg-card-tilt-x", (y * -4.5).toFixed(2) + "deg");
+      activeCard.style.setProperty("--rg-card-tilt-y", (x * 5.5).toFixed(2) + "deg");
+      activeCard.style.setProperty("--rg-card-glow-x", ((x + 0.5) * 100).toFixed(1) + "%");
+      activeCard.style.setProperty("--rg-card-glow-y", ((y + 0.5) * 100).toFixed(1) + "%");
     };
+    const leave = () => { resetCard(activeCard); activeCard = null; };
     const animate = () => {
       current.current.x += (target.current.x - current.current.x) * 0.19;
       current.current.y += (target.current.y - current.current.y) * 0.19;
@@ -49,9 +73,12 @@ export function InteractionLayer() {
       frame = window.requestAnimationFrame(animate);
     };
     window.addEventListener("pointermove", move, { passive: true });
+    window.addEventListener("pointerleave", leave);
     frame = window.requestAnimationFrame(animate);
     return () => {
       window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerleave", leave);
+      resetCard(activeCard);
       window.cancelAnimationFrame(frame);
     };
   }, []);
