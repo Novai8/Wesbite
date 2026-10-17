@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent, type PointerEvent as ReactPointerEvent } from "react";
 import { Check, Copy } from "lucide-react";
 import { usePrefs } from "@/components/providers";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,25 @@ import { contactBody, contactGmailCompose, contactMailto, site } from "@/lib/sit
 const interests = ["AI tool feedback", "Tool not working", "Feature request", "Writing and research", "Data and developer utilities", "Other question"];
 type Fields = { name: string; email: string; company: string; interest: string; message: string };
 const empty: Fields = { name:"", email:"", company:"", interest:interests[0], message:"" };
+
+function moveCardPointer(event: ReactPointerEvent<HTMLElement>) {
+  if (event.pointerType !== "mouse" || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const card = event.currentTarget;
+  const rect = card.getBoundingClientRect();
+  const x = (event.clientX - rect.left) / rect.width - 0.5;
+  const y = (event.clientY - rect.top) / rect.height - 0.5;
+  card.style.setProperty("--rg-card-tilt-x", (y * -2.8).toFixed(2) + "deg");
+  card.style.setProperty("--rg-card-tilt-y", (x * 3.2).toFixed(2) + "deg");
+  card.style.setProperty("--rg-card-glow-x", ((x + 0.5) * 100).toFixed(1) + "%");
+  card.style.setProperty("--rg-card-glow-y", ((y + 0.5) * 100).toFixed(1) + "%");
+}
+function resetCardPointer(event: ReactPointerEvent<HTMLElement>) {
+  const card = event.currentTarget;
+  card.style.setProperty("--rg-card-tilt-x", "0deg");
+  card.style.setProperty("--rg-card-tilt-y", "0deg");
+  card.style.setProperty("--rg-card-glow-x", "50%");
+  card.style.setProperty("--rg-card-glow-y", "50%");
+}
 
 async function copyText(value:string) { try { await navigator.clipboard.writeText(value); return true; } catch { try { const area=document.createElement("textarea"); area.value=value; area.setAttribute("readonly",""); area.style.position="fixed"; area.style.left="-9999px"; document.body.appendChild(area); area.select(); const ok=document.execCommand("copy"); area.remove(); return ok; } catch { return false; } } }
 
@@ -53,8 +72,8 @@ export function ContactForm() {
   async function copyMessage(){const ok=await copyText(composed);if(!ok){toast("Could not copy automatically.");return;}setCopiedMessage(true);toast("Message copied.");window.setTimeout(()=>setCopiedMessage(false),1800);}
 
   return <div className="contact-layout">
-    <div className="contact-info-card"><span className="section-number">DIRECT</span><a href={"mailto:" + site.email} className="contact-email">{site.email}</a><p>Questions, feedback, and ideas for making the toolbox more useful are welcome.</p><Button type="button" variant="secondary" onClick={copyEmail}>{copiedEmail?<Check className="h-4 w-4"/>:<Copy className="h-4 w-4"/>}{copiedEmail?"Copied":"Copy email"}</Button></div>
-    <form ref={formRef} className="contact-form-card" onSubmit={submit} noValidate><div className="contact-form-heading"><div><span className="section-number">SEND FEEDBACK</span><h2>What’s on your mind?</h2></div></div>
+    <div className="contact-info-card rg-interactive-card" onPointerMove={moveCardPointer} onPointerLeave={resetCardPointer}><span className="section-number">DIRECT</span><a href={"mailto:" + site.email} className="contact-email">{site.email}</a><p>Questions, feedback, and ideas for making the toolbox more useful are welcome.</p><Button type="button" variant="secondary" onClick={copyEmail}>{copiedEmail?<Check className="h-4 w-4"/>:<Copy className="h-4 w-4"/>}{copiedEmail?"Copied":"Copy email"}</Button></div>
+    <form ref={formRef} className="contact-form-card rg-interactive-card" onPointerMove={moveCardPointer} onPointerLeave={resetCardPointer} onSubmit={submit} noValidate><div className="contact-form-heading"><div><span className="section-number">SEND FEEDBACK</span><h2>What’s on your mind?</h2></div></div>
       <div className="grid gap-4 sm:grid-cols-2 mt-6"><Field label="Name" htmlFor="name" error={errors.name}><Input id="name" autoComplete="name" aria-invalid={errors.name?true:undefined} aria-describedby={errors.name?"name-error":undefined} value={fields.name} onChange={e=>set("name",e.target.value)} /></Field><Field label="Email" htmlFor="email" error={errors.email}><Input id="email" type="email" inputMode="email" autoComplete="email" aria-invalid={errors.email?true:undefined} aria-describedby={errors.email?"email-error":undefined} value={fields.email} onChange={e=>set("email",e.target.value)} /></Field></div>
       <div className="grid gap-4 sm:grid-cols-2 mt-4"><Field label="Company" htmlFor="company" optional><Input id="company" autoComplete="organization" value={fields.company} onChange={e=>set("company",e.target.value)} /></Field><Field label="Problem type" htmlFor="interest"><select id="interest" className="field" value={fields.interest} onChange={e=>set("interest",e.target.value)}>{interests.map(item=><option key={item}>{item}</option>)}</select></Field></div>
       <div className="mt-4"><Field label="Your message" htmlFor="message" error={errors.message}><Textarea id="message" maxLength={2000} aria-invalid={errors.message?true:undefined} aria-describedby={errors.message?"message-error":undefined} value={fields.message} onChange={e=>set("message",e.target.value)} /></Field><p className="mt-1.5 text-right text-xs text-muted" aria-live="polite">{fields.message.length.toLocaleString()} / 2,000 characters</p></div>
