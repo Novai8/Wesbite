@@ -150,8 +150,10 @@ export function ToolsLab() {
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showAll, setShowAll] = useState(false);
+  const [shortcutLabel, setShortcutLabel] = useState("Ctrl K");
 
   useEffect(() => {
+    setShortcutLabel(/Mac|iPhone|iPad/.test(window.navigator.platform) ? "⌘ K" : "Ctrl K");
     const onShortcut = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
@@ -275,7 +277,7 @@ export function ToolsLab() {
         </div>
 
         <div className="tools-controls">
-          <label className="tools-search"><Search size={17} /><input ref={searchRef} value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search tools, tasks, or categories…" aria-label="Search tools" /><kbd>⌘ K</kbd></label>
+          <label className="tools-search"><Search size={17} /><input ref={searchRef} value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search tools, tasks, or categories…" aria-label="Search tools" /><kbd>{shortcutLabel}</kbd></label>
           <div className="tools-filter-toggle" role="group" aria-label="Filter by tool type">
             <button type="button" className={kind === "all" ? "is-active" : ""} onClick={() => setKind("all")}>All</button>
             <button type="button" className={kind === "ai" ? "is-active" : ""} onClick={() => setKind("ai")}><Sparkles size={13}/> AI tools</button>
@@ -291,7 +293,7 @@ export function ToolsLab() {
 
         <div className="tools-card-grid">
           {filtered.slice(0, showAll ? filtered.length : 24).map((tool, index) => (
-            <motion.button type="button" key={tool.id} className={"tool-card " + (selected?.id === tool.id ? "is-selected" : "")} onClick={() => openToolPage(tool)} initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.12 }} transition={{ duration: 0.45, delay: Math.min(index % 6, 5) * 0.035 }} whileHover={{ y: -5, transition: { duration: 0.2 } }}>
+            <motion.button type="button" key={tool.id} className={"tool-card " + (selected?.id === tool.id ? "is-selected" : "")} onClick={() => openToolPage(tool)} onPointerMove={(event) => { if (event.pointerType !== "mouse" || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return; const rect = event.currentTarget.getBoundingClientRect(); event.currentTarget.style.setProperty("--pointer-x", ((event.clientX - rect.left) / rect.width * 100).toFixed(1) + "%"); event.currentTarget.style.setProperty("--pointer-y", ((event.clientY - rect.top) / rect.height * 100).toFixed(1) + "%"); }} onPointerLeave={(event) => { event.currentTarget.style.setProperty("--pointer-x", "50%"); event.currentTarget.style.setProperty("--pointer-y", "50%"); }} initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.12 }} transition={{ duration: 0.45, delay: Math.min(index % 6, 5) * 0.035 }} whileHover={{ y: -5, transition: { duration: 0.2 } }}>
               <div className="tool-card-top"><span className="tool-card-icon">{tool.kind === "browser" ? <Code2 size={17}/> : <Sparkles size={17}/>}</span><span className={tool.kind === "browser" ? "tool-type-tag local" : "tool-type-tag"}>{tool.kind === "browser" ? "LOCAL" : "AI POWERED"}</span></div>
               <span className="tool-card-category">{tool.category}</span>
               <strong>{tool.name}</strong>
