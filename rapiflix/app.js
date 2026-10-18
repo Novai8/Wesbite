@@ -273,6 +273,35 @@
     const frame=$('#playerFrame'), controls=$('#playerControls');
     frame.innerHTML='<div class="player-placeholder"><div class="live-dot"></div><strong>Preparing your film…</strong><p>Checking source rights, video files, and playback tracks.</p></div>';
     controls.innerHTML='<label>Source <select id="playerSource" disabled><option>Finding authorized sources…</option></select></label><label>Quality <select id="playerQuality" disabled><option>Auto</option></select></label><label>Subtitles <select id="playerSubtitles" disabled><option value="off">Off</option></select></label><label>Audio <select id="playerAudio" disabled><option value="default">Source default</option></select></label>';
+    const iframeSources=validatedLicensedSources(m.authorizedSources).filter(source=>source.mode==='iframe');
+    if(m.kind==='tmdb'&&iframeSources.length){
+      controls.innerHTML=iframeSources.length>1?'<label>Authorized embed source <select id="iframeSource"></select></label>':'<p class="source-note">Playing through an authorized external player. Audio and subtitle options are controlled by that provider.</p>';
+      frame.replaceChildren();
+      const iframe=document.createElement('iframe');
+      iframe.title='Authorized player for '+m.title;
+      iframe.allow='autoplay; encrypted-media; picture-in-picture; fullscreen';
+      iframe.allowFullscreen=true;
+      iframe.referrerPolicy='strict-origin-when-cross-origin';
+      iframe.loading='eager';
+      iframe.style.width='100%';
+      iframe.style.height='100%';
+      iframe.style.minHeight='min(62vw,620px)';
+      iframe.style.border='0';
+      iframe.style.background='#000';
+      function selectEmbed(source){
+        if(!source||source.authorized!==true||typeof source.url!=='string'||!/^https:\/\//i.test(source.url))return;
+        iframe.src=source.url;
+        iframe.title=source.label||source.provider||('Player for '+m.title);
+        frame.replaceChildren(iframe);
+      }
+      if(iframeSources.length>1){
+        const select=controls.querySelector('#iframeSource');
+        select.innerHTML=iframeSources.map((source,i)=>'<option value="'+i+'">'+escapeHtml(source.label||source.provider||('Source '+(i+1)))+'</option>').join('');
+        select.addEventListener('change',()=>selectEmbed(iframeSources[Number(select.value)]));
+      }
+      selectEmbed(iframeSources[0]);
+      return;
+    }
     try{
       let metadata;
       if(m.kind!=='tmdb'){
@@ -283,7 +312,7 @@
       if(m.video&&!candidates.some(c=>c.url===m.video))candidates.push({name:'Authorized source stream',ext:'mp4',height:0,score:-10,provider:m.sourceName||'Authorized source',url:m.video});
       if(Array.isArray(m.authorizedSources)){
         for(const source of m.authorizedSources){
-          if(source&&source.authorized===true&&typeof source.url==='string'&&/^https:\/\//i.test(source.url)){
+          if(source&&source.authorized===true&&source.mode!=='iframe'&&typeof source.url==='string'&&/^https:\/\//i.test(source.url)){
             candidates.push({name:source.label||source.provider||'Authorized provider',provider:source.provider||'Authorized provider',height:Number(source.height)||0,ext:source.type||'mp4',type:source.type||'',score:Number(source.score)||0,url:source.url,subtitles:Array.isArray(source.subtitles)?source.subtitles:[],audioTracks:Array.isArray(source.audioTracks)?source.audioTracks:[]});
           }
         }
