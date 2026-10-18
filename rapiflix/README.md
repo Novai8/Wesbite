@@ -5,6 +5,8 @@ Rapiflix is a standalone movie-discovery and playback project in `/rapiflix` on 
 ## What works in this build
 
 - **In-page playback:** the player looks up the Internet Archive item's live metadata instead of trusting hard-coded file names. It tries compatible MP4/M4V/WebM/OGV files, retries alternate files if playback fails, and remembers local watch progress.
+- **Separate catalogues:** current/commercial TMDB titles are shown in a discovery section with regional external watch options; the free-film section contains only source items that pass the app's compatible-file and rights-statement screening. TMDB discovery cards are not represented as playable streams.
+- **Unified playback controls:** rights-cleared items use one in-page player with source/file selection, quality selection when resolution metadata is available, WebVTT subtitle selection when tracks are present, and audio-track selection when the browser or authorized source exposes tracks. Failed sources fall through to the next available candidate.
 - **Archive search:** when running locally without a TMDB key, search looks up Archive titles directly. Dynamically discovered Archive uploads are played in Rapiflix only if the item metadata declares public-domain or Creative Commons status.
 - **New-release discovery:** trending, now-playing, upcoming and popular movie metadata can load from TMDB. TMDB is a catalogue, not a source of video streams.
 - **Regional watch options:** TMDB reports streaming, rental and purchase availability by country using JustWatch data. Rapiflix opens these official options for commercial releases instead of pretending they can be streamed in the built-in player.
