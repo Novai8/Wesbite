@@ -102,7 +102,7 @@
       }
       for(let i=catalog.length-1;i>=0;i--)if(catalog[i].kind==='tmdb')catalog.splice(i,1);
       catalog.unshift(...fresh);currentTmdbTotalPages=Math.min(totalPages,500);
-      if(fresh.length){featuredIds.splice(0,featuredIds.length,...fresh.slice(0,4).map(m=>m.id));heroIndex=0;updateHero(0);}
+      if(fresh.length){featuredIds.splice(0,featuredIds.length,...fresh.slice(0,9).map(m=>m.id));heroIndex=0;updateHero(0);}
       activeGenre='all';activeEra=(endpoint==='discover/movie'||endpoint==='discover/tv'||isAnime)?'2000-2026':'all';showingSaved=false;query='';$('#searchInput').value='';$('#genreFilter').value='all';$('#eraFilter').value=activeEra;renderChips();render();
       setTmdbStatus('Loaded '+fresh.length+' '+(isAnime?'anime films and series':endpoint==='discover/tv'?'TV series':'films')+'. '+(currentTmdbPage<currentTmdbTotalPages?'Load more to continue browsing.':'No further pages available.'));
     }catch(error){setTmdbStatus('Catalogue unavailable: '+error.message+'. Check the TMDB server secret and redeploy if this is the live site.');render();console.error(error);}
@@ -332,68 +332,33 @@
   function readProgress(id){try{return Number((JSON.parse(localStorage.getItem(progressKey)||'{}'))[id]||0);}catch(_){return 0;}}
   function writeProgress(id,time,duration){try{const all=JSON.parse(localStorage.getItem(progressKey)||'{}');if(duration>0&&time/duration>.96)delete all[id];else if(time>5)all[id]=Math.floor(time);localStorage.setItem(progressKey,JSON.stringify(all));}catch(_){}}
   function archiveVideoFiles(data){return (data.files||[]).filter(f=>/\.(mp4|m4v|webm|ogv)$/i.test(f.name||'')&&!/(thumb|sample|trailer|preview|poster|torrent|storyboard|\.ia\.)/i.test(f.name||'')&&!/^(metadata|__ia_thumb)/i.test(f.name||'')).map(f=>{const name=String(f.name||'');const ext=(name.split('.').pop()||'').toLowerCase();const height=Number(f.height)||0;const size=Number(f.size)||0;let score=ext==='mp4'||ext==='m4v'?300:ext==='webm'?220:160;if(height>=360&&height<=1080)score+=25;if(height>1080)score-=20;if(size>1500*1024*1024)score-=25;if(size>0&&size<4*1024*1024)score-=60;if(/512kb|lowres|tiny/i.test(name))score-=40;return {name,ext,size,height,score,url:archive+'/download/'+encodeURIComponent(data.metadata?.identifier||'')+'/'+name.split('/').map(encodeURIComponent).join('/')}}).sort((a,b)=>b.score-a.score||(a.size||Number.MAX_SAFE_INTEGER)-(b.size||Number.MAX_SAFE_INTEGER));}
-  async function fetchCineProSources(tmdbId,mediaType='movie',season,episode){
-    if(!/^\d{1,20}$/.test(String(tmdbId)))throw new Error('Invalid TMDB title ID.');
-    let path='v1/movies/'+encodeURIComponent(String(tmdbId));
-    if(mediaType==='tv'){
-      if(!Number.isInteger(Number(season))||Number(season)<0||Number(season)>99||!Number.isInteger(Number(episode))||Number(episode)<1||Number(episode)>9999)throw new Error('Invalid season or episode number.');
-      path='v1/tv/'+encodeURIComponent(String(tmdbId))+'/seasons/'+Number(season)+'/episodes/'+Number(episode);
-    }
-    const response=await fetch('/api/cinepro/'+path,{headers:{Accept:'application/json'},cache:'no-store'});
-    let data={};try{data=await response.json();}catch(_){}
-    if(!response.ok)throw new Error(data.error?.message||data.error||'CinePro request failed ('+response.status+').');
-    const subtitles=(Array.isArray(data.subtitles)?data.subtitles:[]).map(track=>({label:track.label||track.language||'Subtitle',language:track.language||'und',src:track.url})).filter(track=>typeof track.src==='string'&&/^https:\/\//i.test(track.src));
-    return (Array.isArray(data.sources)?data.sources:[]).filter(source=>source&&typeof source.url==='string'&&/^https:\/\//i.test(source.url)).map((source,index)=>({
-      authorized:true,
-      provider:'CinePro · '+String(source.provider?.name||source.provider||'Source provider'),
-      label:String(source.quality||source.label||('Source '+(index+1))),
-      url:source.url,
-      type:String(source.type||'mp4').toLowerCase(),
-      height:Number(String(source.quality||'').match(/\d{3,4}/)?.[0])||0,
-      subtitles,
-      audioTracks:Array.isArray(source.audioTracks)?source.audioTracks:[]
-    }));
-  }
   async function playFilm(m){
     await licensedStreamsReady;
     if(!m)return;
-    // Keep VidCore as the default movie player and offer CinePro as an additional source.
-    if(m.kind==='tmdb'&&m.mediaType!=='tv'&&!m.forceCineProPlayback){
+    // VidCore remains the movie player. No alternate  provider is loaded.
+    if(m.kind==='tmdb'&&m.mediaType!=='tv'){
       $('#modalBackdrop').hidden=true;$('#playerBackdrop').hidden=false;document.body.classList.add('modal-open');
       $('#playerTitle').textContent=m.title;
       const frame=$('#playerFrame'), controls=$('#playerControls');
-      controls.innerHTML='<div class="provider-switch"><button type="button" id="playVidCore" class="secondary-button">VidCore</button><button type="button" id="playCinePro" class="secondary-button">CinePro sources</button></div><p class="source-note" id="cineProStatus">VidCore is active. CinePro can be tried without removing the existing provider.</p>';
-      function showVidCore(){
-        const iframe=document.createElement('iframe');
-        iframe.src='https://vidcore.org/embed/movie/'+encodeURIComponent(String(m.tmdbId));
-        iframe.title='VidCore player for '+m.title;
-        iframe.width='100%';iframe.height='100%';iframe.frameBorder='0';
-        iframe.allow='autoplay; encrypted-media; picture-in-picture; fullscreen';
-        iframe.allowFullscreen=true;iframe.referrerPolicy='strict-origin-when-cross-origin';iframe.loading='eager';
-        iframe.style.width='100%';iframe.style.height='100%';iframe.style.minHeight='min(62vw,620px)';iframe.style.border='0';iframe.style.background='#000';
-        frame.replaceChildren(iframe);
-        $('#cineProStatus').textContent='VidCore is active. Choose CinePro sources to check the second provider.';
-      }
-      controls.querySelector('#playVidCore').addEventListener('click',showVidCore);
-      controls.querySelector('#playCinePro').addEventListener('click',async()=>{
-        const status=$('#cineProStatus');status.textContent='Checking CinePro sources…';
-        try{
-          const sources=await fetchCineProSources(m.tmdbId,'movie');
-          if(!sources.length)throw new Error('CinePro returned no playable sources for this title.');
-          await playFilm({...m,forceCineProPlayback:true,authorizedSources:sources});
-        }catch(error){status.textContent='CinePro unavailable: '+error.message+' VidCore remains available.';}
-      });
-      showVidCore();
+      controls.innerHTML='<p class="source-note">Playing through VidCore. Provider controls and availability are managed by VidCore.</p>';
+      const iframe=document.createElement('iframe');
+      iframe.src='https://vidcore.org/embed/movie/'+encodeURIComponent(String(m.tmdbId));
+      iframe.title='VidCore player for '+m.title;
+      iframe.width='100%';iframe.height='100%';iframe.frameBorder='0';
+      iframe.allow='autoplay; encrypted-media; picture-in-picture; fullscreen';
+      iframe.allowFullscreen=true;iframe.referrerPolicy='strict-origin-when-cross-origin';iframe.loading='eager';
+      iframe.style.width='100%';iframe.style.height='100%';iframe.style.minHeight='min(62vw,620px)';iframe.style.border='0';iframe.style.background='#000';
+      frame.replaceChildren(iframe);
       return;
     }
     // TV playback uses the requested VidCore episode route. The series TMDB ID alone
     // is not enough: the player URL also needs a season and episode number.
-    if(m.kind==='tmdb'&&m.mediaType==='tv'&&!m.forceCineProPlayback){
+    if(m.kind==='tmdb'&&m.mediaType==='tv'&&!m.forcePlayback){
       $('#modalBackdrop').hidden=true;$('#playerBackdrop').hidden=false;document.body.classList.add('modal-open');
       $('#playerTitle').textContent=m.title;
       const frame=$('#playerFrame'), controls=$('#playerControls');
       frame.innerHTML='<div class="player-placeholder"><div class="live-dot"></div><strong>Loading episodes…</strong><p>Getting season and episode information.</p></div>';
-      controls.innerHTML='<label>Season <select id="tvSeason"><option value="1">Season 1</option></select></label><label>Episode <select id="tvEpisode"><option value="1">Episode 1</option></select></label><button type="button" id="playCineProEpisode" class="secondary-button">Try CinePro sources</button><p class="source-note" id="cineProEpisodeStatus">VidCore remains the default TV player.</p>';
+      controls.innerHTML='<label>Season <select id="tvSeason"><option value="1">Season 1</option></select></label><label>Episode <select id="tvEpisode"><option value="1">Episode 1</option></select></label><p class="source-note">TV playback is provided by VidCore.</p>';
       const seasonSelect=controls.querySelector('#tvSeason'), episodeSelect=controls.querySelector('#tvEpisode');
       let seasonData=[];
       function loadVidCoreEpisode(){
@@ -412,15 +377,6 @@
         // Do not sandbox this third-party player: sandbox restrictions can prevent playback.
         frame.replaceChildren(iframe);
       }
-      controls.querySelector('#playCineProEpisode').addEventListener('click',async()=>{
-        const season=Math.max(0,Number(seasonSelect.value)||0),episode=Math.max(1,Number(episodeSelect.value)||1);
-        const status=controls.querySelector('#cineProEpisodeStatus');status.textContent='Checking CinePro sources…';
-        try{
-          const sources=await fetchCineProSources(m.tmdbId,'tv',season,episode);
-          if(!sources.length)throw new Error('CinePro returned no playable sources for this episode.');
-          await playFilm({...m,forceCineProPlayback:true,authorizedSources:sources,episodeSeason:season,episodeNumber:episode});
-        }catch(error){status.textContent='CinePro unavailable: '+error.message+' VidCore remains available.';}
-      });
       seasonSelect.addEventListener('change',async()=>{
         const seasonNumber=Number(seasonSelect.value)||1;
         const season=seasonData.find(item=>Number(item.season_number)===seasonNumber);
@@ -449,54 +405,32 @@
       loadVidCoreEpisode();
       return;
     }
-    if(m.kind==='tmdb'&&!m.forceCineProPlayback&&!getAuthorizedSources(m).length){
+    if(m.kind==='tmdb'&&!m.forcePlayback&&!getAuthorizedSources(m).length){
       const watchUrl=m.watchLink||('https://www.themoviedb.org/'+(m.mediaType==='tv'?'tv/':'movie/')+encodeURIComponent(m.tmdbId)+'/watch');
       window.open(watchUrl,'_blank','noopener,noreferrer');
       closeModal('#modalBackdrop');
       toast('Opened official watch options for this title');
       return;
     }
-    if(m.kind==='tmdb'&&!m.forceCineProPlayback)m.authorizedSources=getAuthorizedSources(m);
+    if(m.kind==='tmdb'&&!m.forcePlayback)m.authorizedSources=getAuthorizedSources(m);
     $('#modalBackdrop').hidden=true;$('#playerBackdrop').hidden=false;document.body.classList.add('modal-open');
     $('#playerTitle').textContent=m.title;
     const frame=$('#playerFrame'), controls=$('#playerControls');
     frame.innerHTML='<div class="player-placeholder"><div class="live-dot"></div><strong>Preparing your film…</strong><p>Checking source rights, video files, and playback tracks.</p></div>';
     controls.innerHTML='<label>Source <select id="playerSource" disabled><option>Finding authorized sources…</option></select></label><label>Quality <select id="playerQuality" disabled><option>Auto</option></select></label><label>Subtitles <select id="playerSubtitles" disabled><option value="off">Off</option></select></label><label>Audio <select id="playerAudio" disabled><option value="default">Source default</option></select></label>';
-    if(m.kind==='tmdb'&&m.forceCineProPlayback){
-      const back=document.createElement('button');back.type='button';back.className='secondary-button';back.textContent='Back to VidCore';
-      back.addEventListener('click',()=>playFilm({...m,forceCineProPlayback:false,authorizedSources:undefined}));
-      controls.prepend(back);
-    }
     const iframeSources=validatedLicensedSources(m.authorizedSources).filter(source=>source.mode==='iframe');
     if(m.kind==='tmdb'&&iframeSources.length){
-      controls.innerHTML=iframeSources.length>1?'<label>Authorized embed source <select id="iframeSource"></select></label>':'<p class="source-note">Playing through an authorized external player. Audio and subtitle options are controlled by that provider.</p>';
+      controls.innerHTML='<p class="source-note">Authorized source configured for this title.</p>';
       frame.replaceChildren();
       const iframe=document.createElement('iframe');
       iframe.title='Authorized player for '+m.title;
       iframe.allow='autoplay; encrypted-media; picture-in-picture; fullscreen';
       iframe.allowFullscreen=true;
       iframe.referrerPolicy='strict-origin-when-cross-origin';
-      // Limit the third-party player iframe so it cannot open pop-up windows or navigate the top-level page.
-      // This cannot remove ads rendered inside the provider's own player.
-      iframe.setAttribute('sandbox','allow-scripts allow-same-origin allow-forms allow-presentation');
       iframe.loading='eager';
-      iframe.style.width='100%';
-      iframe.style.height='100%';
-      iframe.style.minHeight='min(62vw,620px)';
-      iframe.style.border='0';
-      iframe.style.background='#000';
-      function selectEmbed(source){
-        if(!source||source.authorized!==true||typeof source.url!=='string'||!/^https:\/\//i.test(source.url))return;
-        iframe.src=source.url;
-        iframe.title=source.label||source.provider||('Player for '+m.title);
-        frame.replaceChildren(iframe);
-      }
-      if(iframeSources.length>1){
-        const select=controls.querySelector('#iframeSource');
-        select.innerHTML=iframeSources.map((source,i)=>'<option value="'+i+'">'+escapeHtml(source.label||source.provider||('Source '+(i+1)))+'</option>').join('');
-        select.addEventListener('change',()=>selectEmbed(iframeSources[Number(select.value)]));
-      }
-      selectEmbed(iframeSources[0]);
+      iframe.style.width='100%';iframe.style.height='100%';iframe.style.minHeight='min(62vw,620px)';iframe.style.border='0';iframe.style.background='#000';
+      const source=iframeSources[0];
+      if(source&&source.authorized===true&&typeof source.url==='string'&&/^https:\/\//i.test(source.url)){iframe.src=source.url;frame.replaceChildren(iframe);}
       return;
     }
     try{
@@ -764,4 +698,53 @@
   verifyCuratedCatalog().catch(error=>console.error('Rapiflix preflight failed',error));
   // Gentle hero rotation, paused when the visitor is interacting with the hero or has reduced motion enabled.
   if(!window.matchMedia('(prefers-reduced-motion: reduce)').matches){setInterval(()=>{if(featuredIds.length&&!document.hidden&&!document.body.classList.contains('modal-open')&&!$('#searchInput').value)updateHero((heroIndex+1)%featuredIds.length);},12000);}
+
+  // Cinematic genre backdrop and scrub reel; all catalog titles remain sourced from the live catalog.
+  const sceneAliases={'Sci-Fi':'Sci-fi','Science Fiction':'Sci-fi','Animation':'Fantasy','Adventure':'Fantasy','Horror':'Mystery','Noir':'Crime','Comedy':'Drama','Family':'Drama','Documentary':'Drama','Western':'Action','War':'Action'};
+  const scenePalette=['#ff5a1f','#f3e7cf','#8a5cff','#ff8fab','#00b3b3','#ffd23f','#5aa9ff','#3ddc97','#e63946'];
+  let scrubPos=0,scrubTarget=0,scrubVelocity=0,scrubIntro=true,scrubFrame=0,scrubDown=false,scrubStartX=0,scrubStartPos=0;
+  const reduceMotion=window.matchMedia('(prefers-reduced-motion: reduce)');
+  function sceneGenre(m){const g=(m&&m.genres&&m.genres[0])||'Sci-fi';return sceneAliases[g]||(['Sci-fi','Thriller','Drama','Action','Romance','Crime','Fantasy','Mystery'].includes(g)?g:'Sci-fi');}
+  function setGenreScene(genre){const normalized=sceneAliases[genre]||genre||'Sci-fi';document.querySelectorAll('.genre-scene').forEach(el=>el.classList.toggle('is-active',el.dataset.scene.toLowerCase()===String(normalized).toLowerCase()));}
+  function posterSource(m){return m.poster||'';}
+  function renderScrubReel(){
+    const track=$('#scrubTrack'),ticks=$('#timelineTicks');if(!track||!ticks)return;
+    const items=featuredIds.map(byId).filter(Boolean).slice(0,9);
+    if(!items.length){track.innerHTML='';ticks.innerHTML='';return;}
+    track.innerHTML=items.map((m,i)=>{const poster=posterSource(m),color=scenePalette[i%scenePalette.length],initial=escapeHtml((m.title||'?').trim().charAt(0).toUpperCase());return '<button class="scrub-poster" type="button" data-scrub-index="'+i+'" aria-label="Feature '+escapeHtml(m.title)+'"><span class="scrub-poster-art" style="--poster-fallback:'+color+'">'+(poster?'<img src="'+escapeHtml(poster)+'" alt="" loading="lazy" width="150" height="220" onerror="this.remove()">':'')+'<span class="scrub-initial">'+initial+'</span></span><span class="scrub-poster-title">'+escapeHtml(m.title)+'</span></button>';}).join('');
+    ticks.innerHTML=items.map((m,i)=>'<button type="button" class="timeline-tick" data-scrub-index="'+i+'" aria-label="Select '+escapeHtml(m.title)+'"></button>').join('');
+    applyScrubPosition();
+  }
+  function applyScrubPosition(){
+    const track=$('#scrubTrack');if(!track)return;
+    const items=track.querySelectorAll('.scrub-poster');const last=Math.max(0,items.length-1);
+    items.forEach((el,i)=>{const d=Math.abs(i-scrubPos);el.style.transform='translateX(-50%) scale('+(1+.3*Math.max(0,1-d))+')';el.style.opacity=String(1-Math.min(.6,d*.18));el.classList.toggle('is-current',Math.round(scrubPos)===i);});
+    track.style.filter=reduceMotion.matches?'none':'blur('+Math.min(12,Math.abs(scrubVelocity)*.45).toFixed(2)+'px)';
+    track.style.setProperty('--scrub-x',((.5-(scrubPos/Math.max(1,last)))*100)+'%');
+    const playhead=$('#timelinePlayhead');if(playhead)playhead.style.left=(last?scrubPos/last*100:0)+'%';
+    const index=Math.max(0,Math.min(last,Math.round(scrubPos)));if(items[index]){setGenreScene(sceneGenre(byId(featuredIds[index])));const cur=$('.index-current');if(cur)cur.textContent=String(index+1).padStart(2,'0');const total=$('.hero-index>span:last-child');if(total)total.textContent=String(items.length).padStart(2,'0');}
+  }
+  function chooseScrub(index,open=false){const ids=featuredIds.filter(id=>byId(id));if(!ids.length)return;const next=Math.max(0,Math.min(ids.length-1,index));scrubTarget=next;scrubIntro=false;scrubPos=reduceMotion.matches?next:scrubPos;heroIndex=next;updateHero(next);if(open)openDetails(ids[next]);}
+  function startScrubLoop(){if(scrubFrame)return;const tick=()=>{scrubFrame=0;if(document.hidden)return;const old=scrubPos;const ease=reduceMotion.matches?.99:(scrubIntro?.04:.14);scrubPos+=(scrubTarget-scrubPos)*ease;scrubVelocity=(scrubPos-old)*164;if(Math.abs(scrubTarget-scrubPos)<.006){scrubPos=scrubTarget;scrubIntro=false;scrubVelocity*=.65;}applyScrubPosition();if(Math.abs(scrubTarget-scrubPos)>.01||Math.abs(scrubVelocity)>.1)scrubFrame=requestAnimationFrame(tick);};scrubFrame=requestAnimationFrame(tick);}
+  const scrubStage=$('#scrubStage');
+  if(scrubStage){
+    scrubStage.addEventListener('pointermove',e=>{if(scrubDown){scrubTarget=Math.max(0,Math.min(featuredIds.length-1,scrubStartPos-((e.clientX-scrubStartX)/164)*1.6));}else if(e.pointerType==='mouse'&&featuredIds.length>1){const r=scrubStage.getBoundingClientRect();scrubTarget=Math.max(0,Math.min(featuredIds.length-1,(e.clientX-r.left)/r.width*(featuredIds.length-1)));}scrubIntro=false;startScrubLoop();});
+    scrubStage.addEventListener('pointerdown',e=>{if(e.pointerType==='touch'||e.pointerType==='pen'){scrubDown=true;scrubStartX=e.clientX;scrubStartPos=scrubTarget;scrubStage.setPointerCapture?.(e.pointerId);scrubIntro=false;}});
+    const release=()=>{if(!scrubDown)return;scrubDown=false;scrubTarget=Math.round(scrubTarget);startScrubLoop();};scrubStage.addEventListener('pointerup',release);scrubStage.addEventListener('pointercancel',release);scrubStage.addEventListener('pointerleave',()=>{if(!scrubDown){scrubTarget=Math.round(scrubTarget);startScrubLoop();}});
+    scrubStage.addEventListener('click',e=>{const b=e.target.closest('[data-scrub-index]');if(b)chooseScrub(Number(b.dataset.scrubIndex));});
+  }
+  $('#timelineTicks')?.addEventListener('click',e=>{const b=e.target.closest('[data-scrub-index]');if(b)chooseScrub(Number(b.dataset.scrubIndex));});
+  document.addEventListener('keydown',e=>{if(!document.body.classList.contains('modal-open')&&['ArrowLeft','ArrowRight'].includes(e.key)&&featuredIds.length){e.preventDefault();chooseScrub(heroIndex+(e.key==='ArrowRight'?1:-1));}});
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)startScrubLoop();});
+  let pointerX=innerWidth/2,pointerY=innerHeight/2;
+  document.addEventListener('pointermove',e=>{if(e.pointerType==='touch')return;pointerX=e.clientX;pointerY=e.clientY;document.documentElement.style.setProperty('--mx',pointerX+'px');document.documentElement.style.setProperty('--my',pointerY+'px');document.documentElement.style.setProperty('--px',((pointerX/innerWidth)*2-1).toFixed(3));document.documentElement.style.setProperty('--py',((pointerY/innerHeight)*2-1).toFixed(3));});
+  function setupParticles(){const canvas=$('#particleCanvas');if(!canvas||reduceMotion.matches)return;const ctx=canvas.getContext('2d');if(!ctx)return;let w=0,h=0,dpr=1,particles=[],raf=0;
+    const resize=()=>{dpr=Math.min(2,window.devicePixelRatio||1);w=innerWidth;h=innerHeight;canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);canvas.style.width=w+'px';canvas.style.height=h+'px';ctx.setTransform(dpr,0,0,dpr,0,0);const count=w<700?55:110;particles=Array.from({length:count},()=>({x:Math.random()*w,y:Math.random()*h,r:.6+Math.random()*2,a:.18+Math.random()*.5,s:.15+Math.random()*.5,p:Math.random()*Math.PI*2,vx:0,vy:0}));};
+    const draw=()=>{raf=0;if(document.hidden)return;ctx.clearRect(0,0,w,h);for(const p of particles){const dx=p.x-pointerX,dy=p.y-pointerY,dist=Math.hypot(dx,dy)||1;if(dist<150){const force=(150-dist)/150*1.4;p.vx+=(dx/dist)*force;p.vy+=(dy/dist)*force;}p.vx*=.96;p.vy*=.96;p.x+=p.vx+Math.sin(p.p+=.004)*.18;p.y+=p.vy-p.s;if(p.y<-5)p.y=h+5;if(p.x<-5)p.x=w+5;if(p.x>w+5)p.x=-5;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,'+p.a+')';ctx.fill();}raf=requestAnimationFrame(draw);};
+    resize();const start=()=>{if(!raf&&!document.hidden)raf=requestAnimationFrame(draw);};document.addEventListener('visibilitychange',()=>{if(document.hidden){if(raf)cancelAnimationFrame(raf);raf=0;}else start();});window.addEventListener('resize',resize,{passive:true});start();
+  }
+  setupParticles();
+  const routeSweep=$('.route-sweep');document.querySelectorAll('[data-route]').forEach(link=>link.addEventListener('click',e=>{const route=link.dataset.route;if(route==='home'){e.preventDefault();history.pushState({route},'', '/');$('.nav-links .active')?.classList.remove('active');link.classList.add('active');window.scrollTo({top:0,behavior:reduceMotion.matches?'auto':'smooth'});routeSweep?.classList.remove('run');void routeSweep?.offsetWidth;routeSweep?.classList.add('run');return;}e.preventDefault();history.pushState({route},'', '/'+route);$('.nav-links .active')?.classList.remove('active');link.classList.add('active');routeSweep?.classList.remove('run');void routeSweep?.offsetWidth;routeSweep?.classList.add('run');const endpoint=route==='series'?'discover/tv':route==='anime'?'anime':'discover/movie';loadTmdb(endpoint,route==='series'?'TV Series':route==='anime'?'Anime':'Movies').then(()=>{document.querySelector('#library')?.scrollIntoView({behavior:reduceMotion.matches?'auto':'smooth'});});}));
+  window.addEventListener('popstate',()=>{const path=location.pathname.replace(/\/$/,'');const route=path.split('/').pop();if(route==='movies'||route==='series'||route==='anime'){const link=document.querySelector('[data-route="'+route+'"]');if(link)link.click();}else{const link=document.querySelector('[data-route="home"]');if(link)link.click();}});
+
 })();
