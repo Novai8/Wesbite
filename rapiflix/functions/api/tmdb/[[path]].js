@@ -1,10 +1,14 @@
 const ALLOWED = [
-  /^genre\/movie\/list$/,
-  /^trending\/movie\/week$/,
+  /^genre\/(movie|tv)\/list$/,
+  /^trending\/(movie|tv|all)\/week$/,
+  /^discover\/(movie|tv)$/,
   /^movie\/(now_playing|upcoming|popular)$/,
-  /^search\/movie$/,
+  /^search\/(movie|tv|multi)$/,
   /^movie\/[1-9][0-9]*\/watch\/providers$/,
-  /^movie\/[1-9][0-9]*\/videos$/
+  /^tv\/[1-9][0-9]*\/watch\/providers$/,
+  /^movie\/[1-9][0-9]*\/videos$/,
+  /^tv\/[1-9][0-9]*\/videos$/,
+  /^tv\/[1-9][0-9]*\/season\/[0-9]+$/
 ];
 
 const errorResponse = (message, status) => new Response(JSON.stringify({ error: message }), {
