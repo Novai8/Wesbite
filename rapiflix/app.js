@@ -90,18 +90,80 @@
   function toggleSave(id){if(saved.has(id)){saved.delete(id);toast('Removed from your list');}else{saved.add(id);toast('Saved to your list');}try{localStorage.setItem('rapiflix-saved',JSON.stringify([...saved]));}catch(_){}render();if(selected?.id===id)$('#modalSave').textContent=saved.has(id)?'♥ Saved to my list':'♡ Save to my list';}
   function languageName(code){try{return new Intl.DisplayNames(['en'],{type:'language'}).of(code)||String(code||'').toUpperCase();}catch(_){return String(code||'').toUpperCase();}}
   function addSubtitleSearch(host,m){const link=document.createElement('a');link.href='https://www.opensubtitles.com/en/search-all/q-'+encodeURIComponent(m.title);link.target='_blank';link.rel='noreferrer';link.className='provider-source-link';link.textContent='Search subtitle listings for this title ↗';host.append(link);const note=document.createElement('p');note.className='source-note';note.textContent='Subtitle availability and permitted use depend on each listing. Rapiflix does not claim a subtitle or dubbed audio exists until the source confirms it.';host.append(note);}
-  function openDetails(id){const m=byId(id)||catalog.find(x=>x.id===id);if(!m)return;selected=m;$('#providerOptions').innerHTML='';if(m.kind==='tmdb')loadWatchProviders(m);else checkArchiveRights(m);$('#modalPoster').style.backgroundImage=`url("${imageUrl(m)}")`;$('#modalTitle').textContent=m.title;$('#modalKicker').textContent=m.tag||'RAPIFLIX SELECTION';const lang=m.originalLanguage?languageName(m.originalLanguage):'';$('#modalMeta').innerHTML=`<span>${m.year||'Year unknown'}</span><span>•</span><span>${escapeHtml(m.runtime||'Runtime varies')}</span><span>•</span><span>${escapeHtml(m.genres.join(' · '))}</span>${lang?`<span>•</span><span>Original language: ${escapeHtml(lang)}</span>`:''}`;$('#modalDescription').textContent=m.desc||'Explore this film from its original collection.';$('#modalSave').textContent=saved.has(m.id)?'♥ Saved to my list':'♡ Save to my list';$('#sourceNote').textContent=m.kind==='tmdb'?'Movie data from TMDB. Original language is not a guarantee of dubbed tracks. View official watch options for services in your region.':`Source: ${m.sourceName||'Internet Archive'}. Verify rights and availability for your intended use.`;$('#modalPlay').innerHTML=m.kind==='tmdb'?'↗ View watch options':'▶ Watch film';$('#modalBackdrop').hidden=false;document.body.classList.add('modal-open');$('#modalClose').focus();}
+  function openDetails(id){const m=byId(id)||catalog.find(x=>x.id===id);if(!m)return;selected=m;$('#providerOptions').innerHTML='';if(m.kind==='tmdb'){loadWatchProviders(m);loadOfficialTrailer(m);}else{$('#trailerPreview').hidden=true;$('#trailerPreview').replaceChildren();checkArchiveRights(m);}$('#modalPoster').style.backgroundImage=`url("${imageUrl(m)}")`;$('#modalTitle').textContent=m.title;$('#modalKicker').textContent=m.tag||'RAPIFLIX SELECTION';const lang=m.originalLanguage?languageName(m.originalLanguage):'';$('#modalMeta').innerHTML=`<span>${m.year||'Year unknown'}</span><span>•</span><span>${escapeHtml(m.runtime||'Runtime varies')}</span><span>•</span><span>${escapeHtml(m.genres.join(' · '))}</span>${lang?`<span>•</span><span>Original language: ${escapeHtml(lang)}</span>`:''}`;$('#modalDescription').textContent=m.desc||'Explore this film from its original collection.';$('#modalSave').textContent=saved.has(m.id)?'♥ Saved to my list':'♡ Save to my list';$('#sourceNote').textContent=m.kind==='tmdb'?'Movie data from TMDB. Original language is not a guarantee of dubbed tracks. View official watch options for services in your region.':`Source: ${m.sourceName||'Internet Archive'}. Verify rights and availability for your intended use.`;$('#modalPlay').innerHTML=m.kind==='tmdb'?'↗ View watch options':'▶ Watch film';$('#modalBackdrop').hidden=false;document.body.classList.add('modal-open');$('#modalClose').focus();}
+  async function loadOfficialTrailer(m){
+    const box=$('#trailerPreview');
+    box.hidden=true;
+    box.replaceChildren();
+    if(!m||m.kind!=='tmdb'||!m.tmdbId)return;
+    try{
+      const response=await tmdbRequest('movie/'+encodeURIComponent(m.tmdbId)+'/videos',{language:'en-US'});
+      const data=await response.json();
+      if(!response.ok)throw new Error('Trailer lookup failed');
+      const videos=(data.results||[]).filter(v=>v&&v.site==='YouTube'&&v.key&&/^[A-Za-z0-9_-]{6,20}$/.test(v.key));
+      const trailer=videos.find(v=>v.type==='Trailer'&&v.official===true)||videos.find(v=>v.type==='Trailer')||videos.find(v=>v.type==='Teaser'&&v.official===true);
+      if(!trailer)return;
+      const label=document.createElement('p');
+      label.className='trailer-label';
+      label.textContent='OFFICIAL TRAILER PREVIEW';
+      const frame=document.createElement('iframe');
+      frame.src='https://www.youtube-nocookie.com/embed/'+encodeURIComponent(trailer.key);
+      frame.title='Official trailer for '+m.title;
+      frame.loading='lazy';
+      frame.referrerPolicy='strict-origin-when-cross-origin';
+      frame.allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+      frame.allowFullscreen=true;
+      box.append(label,frame);
+      box.hidden=false;
+    }catch(_){box.hidden=true;}
+  }
+  function addOfficialStoreSearches(host,m){
+    const wrap=document.createElement('div');
+    wrap.className='store-searches';
+    const heading=document.createElement('strong');
+    heading.textContent='Check licensed digital stores';
+    wrap.append(heading);
+    const links=document.createElement('div');
+    links.className='store-search-links';
+    const term=encodeURIComponent(m.title+(m.year?' '+m.year:''));
+    const items=[
+      {label:'Apple TV',url:'https://tv.apple.com/search?term='+term},
+      {label:'Prime Video',url:'https://www.primevideo.com/search/ref=atv_nb_sr?phrase='+term},
+      {label:'Netflix',url:'https://www.netflix.com/search?q='+term}
+    ];
+    const normalized=String(m.title||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+    if(normalized.includes('spider man brand new day')){
+      items.unshift({label:'Sony Pictures official page',url:'https://www.sonypictures.com/movies/spidermanbrandnewday'});
+    }
+    items.forEach(item=>{
+      const link=document.createElement('a');
+      link.href=item.url;
+      link.target='_blank';
+      link.rel='noopener noreferrer';
+      link.className='store-search-link';
+      link.textContent=item.label+' ↗';
+      links.append(link);
+    });
+    wrap.append(links);
+    const note=document.createElement('p');
+    note.className='source-note';
+    note.textContent='These links open official services or the studio page. Availability varies by country; a service may require a subscription, rental, or purchase. Search links do not guarantee the title is offered in your region.';
+    wrap.append(note);
+    host.append(wrap);
+  }
   const watchRegionKey='rapiflix-watch-region';
   function watchRegion(){return localStorage.getItem(watchRegionKey)||'PK';}
   async function loadWatchProviders(m){
     const host=$('#providerOptions');
-    host.innerHTML='<p class="source-note">Checking streaming services for your region…</p>';
+    m.watchLink='';
+    host.innerHTML='<p class="source-note">Checking licensed streaming, rental and purchase options for your region…</p>';
     const region=watchRegion();
     try{
       const r=await tmdbRequest('movie/'+encodeURIComponent(m.tmdbId)+'/watch/providers',{});
       const d=await r.json();
       if(!r.ok)throw new Error(d.status_message||'Provider lookup failed');
       const data=d.results?.[region];
+      m.watchLink=data?.link||'';
       const providers=[...(data?.flatrate||[]).map(p=>({...p,kind:'Subscription'})),...(data?.free||[]).map(p=>({...p,kind:'Free'})),...(data?.ads||[]).map(p=>({...p,kind:'Ad-supported'})),...(data?.rent||[]).map(p=>({...p,kind:'Rent'})),...(data?.buy||[]).map(p=>({...p,kind:'Buy'}))];
       host.innerHTML='<div class="provider-head"><strong>Where to watch</strong><label>Region <select id="watchRegion"><option value="PK">Pakistan</option><option value="US">United States</option><option value="GB">United Kingdom</option><option value="IN">India</option><option value="CA">Canada</option><option value="AU">Australia</option></select></label></div>';
       $('#watchRegion').value=region;
@@ -129,6 +191,7 @@
     }catch(e){
       host.innerHTML='<p class="source-note">'+escapeHtml(e.message||'Provider data unavailable.')+'</p>';
     }
+    addOfficialStoreSearches(host,m);
     addSubtitleSearch(host,m);
   }
   function hasExplicitStreamRights(metadata={}){
@@ -176,7 +239,7 @@
   async function playFilm(m){
     if(!m)return;
     if(m.kind==='tmdb'){
-      const watchUrl='https://www.themoviedb.org/movie/'+encodeURIComponent(m.tmdbId)+'/watch';
+      const watchUrl=m.watchLink||('https://www.themoviedb.org/movie/'+encodeURIComponent(m.tmdbId)+'/watch');
       window.open(watchUrl,'_blank','noopener,noreferrer');
       closeModal('#modalBackdrop');
       toast('Opened official watch options for this title');
