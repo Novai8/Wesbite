@@ -58,7 +58,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Rapigents — Business Operations, Built Around the Problem",
+    title: site.title,
     description: site.description,
     images: ["/brand/og.png"],
   },
