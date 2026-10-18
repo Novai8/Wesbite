@@ -43,3 +43,111 @@
 .store-search-link{display:inline-flex;align-items:center;border:1px solid #ffffff25;border-radius:4px;padding:8px 10px;background:#ffffff07;color:#e5dce7;font-size:10px}
 .store-search-link:hover{border-color:var(--accent);color:white;background:#f05b4510}
 @media(max-width:650px){.film-modal{grid-template-columns:1fr;max-height:92vh}.modal-poster{min-height:220px;max-height:300px}.modal-body{padding:28px 20px 24px}.store-search-links{gap:6px}}
+
+
+/* Rapiflix editorial refresh: warm paper, deep evergreen, and restrained terracotta. */
+:root{color-scheme:light;--bg:#f2efe7;--panel:#fffdf8;--panel2:#e8e3d8;--text:#1c2924;--muted:#68716a;--line:#d8d2c6;--accent:#b94c37;--gold:#58715c;--max:1480px}
+body{background:var(--bg);color:var(--text)}
+.noise{opacity:.018}
+.topbar{position:absolute;background:linear-gradient(180deg,#13221df0,#13221db8);border-bottom-color:#ffffff1b}
+.brand-mark{box-shadow:none;border-radius:8px 8px 8px 2px}
+.brand-accent{color:#e4a18d}.brand i{color:#d5c69e}
+.nav-links a{color:#e6e8e1}.nav-links a:hover,.nav-links a.active{color:#f0b09a}
+.nav-links a.active:after{background:#e4a18d}
+.icon-button,.menu-button{color:#f6f2e9;border-color:#ffffff38;background:#ffffff0a}
+.hero{background:#17251f}
+.hero-vignette{background:linear-gradient(90deg,#14231fee 0%,#14231fbf 36%,#14231f18 76%),linear-gradient(0deg,#14231f 0%,transparent 30%)}
+.hero-kicker,.section-kicker{color:var(--accent)}
+.hero h1 em,.section-heading h2 em,.free-catalog-heading h3 em,.archive-copy h2 em,.about-section h2 em{color:#dba18e}
+.hero-copy{color:#e0e2da}
+.primary-button{background:var(--accent);border-color:var(--accent);color:#fffaf2;box-shadow:none}
+.primary-button:hover{background:#9f3f2d;border-color:#9f3f2d;transform:translateY(-2px)}
+.secondary-button{border-color:#d6d9d0a8;color:#f6f3eb;background:#17251f55}
+.secondary-button:hover{background:#ffffff14;border-color:#f1e9dc}
+.quick-strip{background:#e6e1d6;border-bottom:1px solid #d2ccbf;color:#24352c}
+.strip-icon{color:var(--accent);border-color:#b8b5a8}
+.quick-strip small{color:#697168}
+.strip-status{color:#59655b}
+.status-dot{background:#59795f;box-shadow:none}
+.catalog-section{padding-top:88px}
+.section-heading h2,.free-catalog-heading h3,.about-section h2{color:#1c2924}
+.section-note,.about-text p{color:#68716a}
+.tmdb-toolbar{border:1px solid #d8d2c6;border-radius:12px;background:#e8e3d8;box-shadow:0 12px 32px #29392a0a}
+.tmdb-toolbar strong{color:#1c2924}
+.tmdb-actions button{border-color:#c8c2b6;color:#36473d;background:#fffdf8}
+.tmdb-actions .active,.tmdb-actions button:hover{border-color:#b94c37;background:#b94c3710;color:#8d3829}
+.tmdb-actions .tmdb-connect{border-color:#b94c3780;color:#9b3d2c}
+.tmdb-status{color:#677067}
+.search-box,.filter-wrap select,.sort-button{background:#fffdf8;border-color:#d3cdbf;color:#25372d}
+.search-box{box-shadow:0 2px 8px #26352908}
+.search-box input{color:#1c2924}
+.search-box input::placeholder{color:#858a80}
+.search-box kbd{border-color:#d4cec2;color:#777e73}
+.filter-wrap select,.sort-button{border-radius:8px}
+.chip{border-color:#d2ccbf;color:#586258;background:#fffdf8;border-radius:999px}
+.chip:hover,.chip.selected{background:#b94c3710;border-color:#b94c37;color:#a23e2d}
+.results-line{border-bottom-color:#d7d1c4;color:#7b8077}
+.results-line span:last-child{color:#a84431}
+.movie-grid{gap:32px 19px}
+.movie-card{transition:transform .25s ease}
+.poster-wrap{border-radius:8px;border-color:#d7d1c4;box-shadow:0 4px 12px #1d2b2410;transition:transform .2s ease,border-color .2s,box-shadow .2s}
+.movie-card:hover .poster-wrap{border-color:#b94c3780;box-shadow:0 16px 28px #1d2b241e}
+.poster-fallback{background:linear-gradient(145deg,#d9d4c5,#344b3e 90%);color:#fffaf1}
+.poster-fallback span{color:#f0c4b5}
+.poster-overlay{background:linear-gradient(0deg,#13221df2 0%,#13221d00 66%)}
+.poster-badge{background:#192820d9;border-color:#ffffff2a;color:#fff9ef;border-radius:999px}
+.card-play{background:#b94c37;border:1px solid #fff7ee;color:#fff7ee}
+.save-card{background:#17251fd9;border-color:#ffffff75;color:#fff8ef}
+.save-card.saved{color:#ffd2c3;background:#71392f}
+.card-title{color:#24332b}
+.card-year,.card-sub{color:#737b71}
+.card-free{color:#52735a}
+.empty-state{border-color:#d1cabc;color:#68716a}
+.empty-state strong{color:#24332b}
+.load-button{border-color:#c7c0b3;background:#fffdf8;color:#26372d;border-radius:999px;padding:14px 22px;transition:background .2s,border-color .2s,transform .2s}
+.load-button span{color:var(--accent)}
+.load-button:hover{border-color:var(--accent);background:#b94c370b;transform:translateY(-2px)}
+.load-button:disabled{opacity:.55;cursor:wait;transform:none}
+.load-row p{color:#85877d}
+.archive-banner{border:1px solid #31483a;border-radius:14px;background:radial-gradient(ellipse at 78% 30%,#58715c25,transparent 45%),linear-gradient(115deg,#172920,#243a2d 72%);box-shadow:0 20px 55px #17292010}
+.archive-copy h2{color:#fff9ed}
+.archive-copy>p:not(.section-kicker){color:#d0d8cc}
+.archive-copy>a{color:#e7b19d;border-bottom-color:#e7b19d66}
+.archive-stat{border-color:#ffffff30;background:#ffffff08;box-shadow:none}
+.stat-symbol{color:#e7b19d}
+.stat-line{background:#e7b19d}
+.stat-caption,.archive-stat small{color:#d1d8ce}
+.archive-orbit{border-color:#ffffff0b}
+.about-section{color:#1c2924}
+.about-text p{color:#5d685f}
+.tmdb-credit{border-top-color:#d8d2c6}
+.tmdb-credit p{color:#68716a}
+.tmdb-credit p strong{color:#1c2924}
+footer{background:#e7e2d8;border-top-color:#d3cdbf;color:#737a70}
+.footer-brand{color:#203128}
+.footer-brand .brand-accent{color:#b94c37}
+footer>a:last-child{color:#526357}
+.film-modal{background:#fffdf8;border-color:#d8d2c6;box-shadow:0 25px 80px #16251d35}
+.modal-close{background:#17251fd9;color:#fff8ef;border-color:#ffffff58}
+.modal-body h2{color:#1c2924}
+.modal-meta{color:#657166}
+.modal-body>p:not(.section-kicker){color:#58645a}
+.source-note{border-top-color:#e2ddd2;color:#70786e}
+.provider-options{border-top-color:#e2ddd2}
+.provider-options>strong,.provider-head strong,.store-searches>strong{color:#1c2924}
+.provider-head label{color:#667167}
+.provider-head select{background:#fffdf8;border-color:#d5cec1;color:#24352b}
+.provider-pill{border-color:#d5cec1;background:#f4f0e7;color:#394a3e}
+.provider-source-link,.archive-copy>a{color:#a94431}
+.store-searches{border-top-color:#e2ddd2}
+.store-search-link{border-color:#d6cfc2;background:#f5f1e8;color:#33453a}
+.store-search-link:hover{border-color:#b94c37;color:#963a2a;background:#b94c370b}
+.trailer-preview{border-top-color:#e2ddd2}
+.trailer-label{color:#a94431}
+.player-dialog{background:#17211c;border-color:#39473e}
+.player-top{border-bottom-color:#ffffff1b}
+.player-foot{color:#bdc6bb}
+.player-foot a{color:#e7b19d}
+.toast{background:#20362a;color:#fff8ed;border:1px solid #ffffff22;box-shadow:0 8px 24px #17251f24}
+@media(max-width:700px){.nav-links{background:#17251f;border-bottom-color:#ffffff24}.catalog-section{padding-top:62px}.movie-grid{gap:25px 12px}.hero-vignette{background:linear-gradient(90deg,#14231ff2,#14231fb8 70%,#14231f75),linear-gradient(0deg,#14231f 0%,transparent 35%)}.archive-banner{box-shadow:none}}
+@media(prefers-reduced-motion:reduce){.movie-card,.poster-wrap,.load-button{transition:none!important}}
