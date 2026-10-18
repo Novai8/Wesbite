@@ -21,3 +21,65 @@ html[data-page=search] #movieGrid .movie-card{animation:bounce .95s cubic-bezier
 @media(max-width:760px){html[data-page=trending] #movieGrid .movie-card{flex-basis:145px}html[data-page=trending] #movieGrid .movie-card::before{font-size:70px}}
 
 html[data-page=trending] #movieGrid .movie-card:nth-child(n+11){display:none}
+
+
+/* Cursor alignment + color states. These rules intentionally override the earlier decorative cursor styles. */
+.cursor-dot,
+.cursor-ring {
+  position: fixed !important;
+  left: 0;
+  top: 0;
+  margin: 0 !important;
+  pointer-events: none !important;
+  opacity: 0;
+  z-index: 99999;
+  will-change: left, top;
+  transition-property: opacity, width, height, background-color, border-color, color, box-shadow;
+  transition-duration: .22s;
+  transition-timing-function: cubic-bezier(.22, 1, .36, 1);
+}
+.cursor-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--cursor-color, #ff642e);
+  box-shadow: 0 0 12px var(--cursor-color, #ff642e), 0 0 26px color-mix(in srgb, var(--cursor-color, #ff642e) 45%, transparent);
+  transform: translate(-50%, -50%) !important;
+}
+.cursor-ring {
+  --cursor-color: #ff642e;
+  width: 38px;
+  height: 38px;
+  margin: 0 !important;
+  border: 1.5px solid var(--cursor-color);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--fg);
+  background: transparent;
+  box-shadow: 0 0 18px color-mix(in srgb, var(--cursor-color) 22%, transparent);
+  transform: translate(-50%, -50%) !important;
+  transition-property: opacity, width, height, background-color, border-color, color, box-shadow !important;
+  transition-duration: .22s !important;
+}
+.cursor-ring span { opacity: 0; font-size: 9px; font-weight: 800; letter-spacing: .04em; }
+.cursor-ring.view { --cursor-color: #ff642e; width: 84px; height: 84px; margin: 0 !important; background: var(--cursor-color); border-color: var(--cursor-color); color: #101014; }
+.cursor-ring.view span { opacity: 1; }
+.cursor-ring.cursor-violet { --cursor-color: #b69cff; width: 62px; height: 62px; background: color-mix(in srgb, var(--cursor-color) 16%, transparent); }
+.cursor-ring.cursor-cyan { --cursor-color: #55e6ff; width: 68px; height: 68px; background: color-mix(in srgb, var(--cursor-color) 13%, transparent); }
+.cursor-ring.cursor-pink { --cursor-color: #ff72b6; width: 60px; height: 60px; background: color-mix(in srgb, var(--cursor-color) 17%, transparent); }
+.cursor-ring.cursor-lime { --cursor-color: #c4ff69; width: 68px; height: 68px; background: color-mix(in srgb, var(--cursor-color) 17%, transparent); }
+.cursor-ring.cursor-violet span,
+.cursor-ring.cursor-cyan span,
+.cursor-ring.cursor-pink span,
+.cursor-ring.cursor-lime span { opacity: 1; font-size: 8px; }
+.cursor-ring.link { --cursor-color: #55e6ff; width: 56px; height: 56px; }
+.cursor-ring.text { --cursor-color: #55e6ff; width: 3px; height: 28px; border-radius: 3px; background: var(--cursor-color); }
+html.cc, html.cc * { cursor: none !important; }
+@media (hover: none), (pointer: coarse) {
+  .cursor-dot, .cursor-ring { display: none !important; }
+  html.cc, html.cc * { cursor: auto !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cursor-dot, .cursor-ring { transition-duration: .01ms !important; }
+}
