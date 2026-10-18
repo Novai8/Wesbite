@@ -288,6 +288,9 @@
       iframe.allow='autoplay; encrypted-media; picture-in-picture; fullscreen';
       iframe.allowFullscreen=true;
       iframe.referrerPolicy='strict-origin-when-cross-origin';
+      // Limit the third-party player iframe so it cannot open pop-up windows or navigate the top-level page.
+      // This cannot remove ads rendered inside the provider's own player.
+      iframe.setAttribute('sandbox','allow-scripts allow-same-origin allow-forms allow-presentation');
       iframe.loading='eager';
       iframe.style.width='100%';
       iframe.style.height='100%';
