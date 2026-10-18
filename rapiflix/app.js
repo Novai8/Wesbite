@@ -23,7 +23,7 @@
   }
   function getAuthorizedSources(m){
     if(!m)return [];
-    const perTitle=validatedLicensedSources(m.kind==='tmdb'?licensedStreams[String(m.tmdbId)]:m.authorizedSources);
+    const perTitle=validatedLicensedSources(m.kind==='tmdb'?(m.mediaType==='tv'?licensedStreams['tv:'+String(m.tmdbId)]:licensedStreams[String(m.tmdbId)]):m.authorizedSources);
     if(m.kind!=='tmdb'||!m.tmdbId)return perTitle;
     const templateSources=(m.mediaType==='tv'?[]:authorizedEmbedProviders).filter(provider=>provider&&provider.authorized===true&&typeof provider.urlTemplate==='string'&&provider.urlTemplate.includes('{tmdb_id}')&&/^https:\/\//i.test(provider.urlTemplate))
       .map(provider=>({authorized:true,mode:'iframe',provider:provider.provider||provider.label||'Authorized embed',label:provider.label||provider.provider||'Authorized embed',url:provider.urlTemplate.replaceAll('{tmdb_id}',encodeURIComponent(String(m.tmdbId)))}));
@@ -60,7 +60,7 @@
     const title=isTv?(m.name||m.original_name):(m.title||m.original_title);
     const releaseDate=isTv?(m.first_air_date||''):(m.release_date||'');
     const genresMap=isTv?tmdbTvGenreMap:tmdbGenreMap;
-    return {id:'tmdb-'+(isTv?'tv-':'movie-')+m.id,tmdbId:m.id,mediaType:isTv?'tv':'movie',title:title||'Untitled',year:Number(releaseDate.slice(0,4))||0,runtime:isTv?'TV series':'Runtime varies',genres:(m.genre_ids||[]).map(g=>genresMap[g]||tmdbGenreMap[g]||tmdbTvGenreMap[g]).filter(Boolean).slice(0,3),originalLanguage:m.original_language||'',desc:m.overview||'No synopsis is available yet.',poster:m.poster_path?'https://image.tmdb.org/t/p/w500'+m.poster_path:'',source:'https://www.themoviedb.org/'+(isTv?'tv/':'movie/')+m.id,sourceName:'TMDB',kind:'tmdb',tag:(label||'TMDB').toUpperCase()};
+    return {id:'tmdb-'+(isTv?'tv-':'')+m.id,tmdbId:m.id,mediaType:isTv?'tv':'movie',title:title||'Untitled',year:Number(releaseDate.slice(0,4))||0,runtime:isTv?'TV series':'Runtime varies',genres:(m.genre_ids||[]).map(g=>genresMap[g]||tmdbGenreMap[g]||tmdbTvGenreMap[g]).filter(Boolean).slice(0,3),originalLanguage:m.original_language||'',desc:m.overview||'No synopsis is available yet.',poster:m.poster_path?'https://image.tmdb.org/t/p/w500'+m.poster_path:'',source:'https://www.themoviedb.org/'+(isTv?'tv/':'movie/')+m.id,sourceName:'TMDB',kind:'tmdb',tag:(label||'TMDB').toUpperCase()};
   }
   async function loadTmdb(endpoint,label){
     if(isLocalPreview()&&!tmdbKey()){if(!connectTmdb())return;}
@@ -164,7 +164,7 @@
     $('#savedCount').textContent=saved.size;
     $('#loadMore').style.display=(!needle&&activeGenre==='all'&&!showingSaved)?'inline-flex':'none';
   }
-  function renderChips(){const host=$('#genreChips');host.innerHTML=genres.map(g=>`<button class="chip ${(activeGenre===g.toLowerCase())?'selected':''}" data-genre="${g.toLowerCase()}">${g==='All'?'✳ All films':g}</button>`).join('');$('#genreFilter').innerHTML='<option value="all">All genres</option>'+genres.slice(1).map(g=>`<option value="${g.toLowerCase()}">${g}</option>`).join('');}
+  function renderChips(){const host=$('#genreChips');host.innerHTML=genres.map(g=>`<button class="chip ${(activeGenre===g.toLowerCase())?'selected':''}" data-genre="${g.toLowerCase()}">${g==='All'?'✳ All titles':g}</button>`).join('');$('#genreFilter').innerHTML='<option value="all">All genres</option>'+genres.slice(1).map(g=>`<option value="${g.toLowerCase()}">${g}</option>`).join('');}
   function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>t.classList.remove('show'),2100);}
   function toggleSave(id){if(saved.has(id)){saved.delete(id);toast('Removed from your list');}else{saved.add(id);toast('Saved to your list');}try{localStorage.setItem('rapiflix-saved',JSON.stringify([...saved]));}catch(_){}render();if(selected?.id===id)$('#modalSave').textContent=saved.has(id)?'♥ Saved to my list':'♡ Save to my list';}
   function languageName(code){try{return new Intl.DisplayNames(['en'],{type:'language'}).of(code)||String(code||'').toUpperCase();}catch(_){return String(code||'').toUpperCase();}}
