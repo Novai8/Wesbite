@@ -11,8 +11,8 @@ import "./globals.css";
 
 const instrument = localFont({
   src: [
-    { path: "../fonts/InstrumentSerif-Regular.ttf", weight: "400", style: "normal" },
-    { path: "../fonts/InstrumentSerif-Italic.ttf", weight: "400", style: "italic" },
+    { path: "../src/fonts/InstrumentSerif-Regular.ttf", weight: "400", style: "normal" },
+    { path: "../src/fonts/InstrumentSerif-Italic.ttf", weight: "400", style: "italic" },
   ],
   variable: "--font-instrument",
   display: "swap",
