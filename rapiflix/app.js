@@ -62,6 +62,11 @@
     const genresMap=isTv?tmdbTvGenreMap:tmdbGenreMap;
     return {id:'tmdb-'+(isTv?'tv-':'')+m.id,tmdbId:m.id,mediaType:isTv?'tv':'movie',title:title||'Untitled',year:Number(releaseDate.slice(0,4))||0,runtime:isTv?'TV series':'Runtime varies',genres:(m.genre_ids||[]).map(g=>genresMap[g]||tmdbGenreMap[g]||tmdbTvGenreMap[g]).filter(Boolean).slice(0,3),originalLanguage:m.original_language||'',desc:m.overview||'No synopsis is available yet.',poster:m.poster_path?'https://image.tmdb.org/t/p/w500'+m.poster_path:'',source:'https://www.themoviedb.org/'+(isTv?'tv/':'movie/')+m.id,sourceName:'TMDB',kind:'tmdb',tag:(label||'TMDB').toUpperCase()};
   }
+  function showCatalogLoading(){
+    const host=$('#movieGrid');if(!host)return;
+    host.innerHTML=Array.from({length:12},()=>'<div class="loading-card" aria-hidden="true"><div class="loading-poster"></div><div class="loading-line"></div><div class="loading-line short"></div></div>').join('');
+    $('#resultsCount').textContent='LOADING…';
+  }
   async function loadTmdb(endpoint,label){
     if(isLocalPreview()&&!tmdbKey()){if(!connectTmdb())return;}
     currentTmdbEndpoint=endpoint;currentTmdbLabel=label||'TMDB';currentTmdbPage=1;
@@ -72,6 +77,7 @@
         ? {'first_air_date.gte':'2000-01-01','first_air_date.lte':'2026-12-31',sort_by:sortNewest?'first_air_date.desc':'popularity.desc','vote_count.gte':5}
         : {};
     setTmdbStatus('Loading '+(isAnime?'anime films and series':currentTmdbLabel)+'…');
+    showCatalogLoading();
     const moreButton=$('#loadMoreTmdb');if(moreButton){moreButton.disabled=true;moreButton.textContent='Loading catalogue…';}
     try{
       const [movieGenreResponse,tvGenreResponse]=await Promise.all([tmdbRequest('genre/movie/list',{language:'en-US'}),tmdbRequest('genre/tv/list',{language:'en-US'})]);
@@ -99,7 +105,7 @@
       if(fresh.length){featuredIds.splice(0,featuredIds.length,...fresh.slice(0,4).map(m=>m.id));heroIndex=0;updateHero(0);}
       activeGenre='all';activeEra=(endpoint==='discover/movie'||endpoint==='discover/tv'||isAnime)?'2000-2026':'all';showingSaved=false;query='';$('#searchInput').value='';$('#genreFilter').value='all';$('#eraFilter').value=activeEra;renderChips();render();
       setTmdbStatus('Loaded '+fresh.length+' '+(isAnime?'anime films and series':endpoint==='discover/tv'?'TV series':'films')+'. '+(currentTmdbPage<currentTmdbTotalPages?'Load more to continue browsing.':'No further pages available.'));
-    }catch(error){setTmdbStatus('Catalogue unavailable: '+error.message+'. Check the TMDB server secret and redeploy if this is the live site.');console.error(error);}
+    }catch(error){setTmdbStatus('Catalogue unavailable: '+error.message+'. Check the TMDB server secret and redeploy if this is the live site.');render();console.error(error);}
     finally{if(moreButton){moreButton.disabled=false;moreButton.textContent=currentTmdbPage<currentTmdbTotalPages?'Load more · '+currentTmdbLabel:'Catalogue page limit reached';moreButton.disabled=currentTmdbPage>=currentTmdbTotalPages;}}
   }
   async function loadMoreTmdb(){
@@ -153,7 +159,7 @@
     let discovery=matches.filter(m=>m.kind==='tmdb');
     let freeFilms=matches.filter(m=>m.kind!=='tmdb');
     if(sortNewest){discovery=discovery.slice().sort((a,b)=>b.year-a.year);freeFilms=freeFilms.slice().sort((a,b)=>b.year-a.year);}
-    const cardMarkup=(m,i)=>`<article class="movie-card" data-card="${escapeHtml(m.id)}" style="animation-delay:${Math.min(i%10,8)*35}ms">${posterMarkup(m)}<div class="card-info"><div class="card-title-row"><h3 class="card-title" title="${escapeHtml(m.title)}">${escapeHtml(m.title)}</h3><span class="card-year">${m.year||'—'}</span></div><div class="card-sub"><span>${escapeHtml(m.genres.slice(0,2).join(' · '))} · ${escapeHtml(m.runtime)}</span><span class="card-free">${m.kind==='tmdb'?'DISCOVER':'FREE FILM'}</span></div></div></article>`;
+    const cardMarkup=(m,i)=>`<article class="movie-card" data-card="${escapeHtml(m.id)}" style="animation-delay:${Math.min(i%10,8)*35}ms">${posterMarkup(m)}<div class="card-info"><div class="card-title-row"><h3 class="card-title" title="${escapeHtml(m.title)}">${escapeHtml(m.title)}</h3><span class="card-year">${m.year||'—'}</span></div><div class="card-sub"><span>${escapeHtml(m.genres.slice(0,2).join(' · '))} · ${escapeHtml(m.runtime)}</span><span class="card-free">${m.kind==='tmdb'?(m.mediaType==='tv'?'SERIES':m.genres.includes('Animation')&&m.originalLanguage==='ja'?'ANIME':'FILM'):'FREE FILM'}</span></div></div></article>`;
     const empty=(message)=>`<div class="empty-state"><strong>${message}</strong><p>${needle?'Try another title or clear your search.':'Load the catalogue or search for a title.'}</p></div>`;
     $('#movieGrid').innerHTML=discovery.length?discovery.map(cardMarkup).join(''):empty(needle?'No commercial titles found.':'Current movie discovery is loading.');
     $('#freeMovieGrid').innerHTML=freeFilms.length?freeFilms.map(cardMarkup).join(''):empty(showingSaved?'No saved free films yet.':'No rights-checked free films in this view yet.');
@@ -685,7 +691,7 @@
   tmdbRequest('genre/movie/list',{language:'en-US'}).catch(()=>null).then(r=>r&&r.ok?r.json():null).then(d=>{(d&&d.genres||[]).forEach(g=>tmdbGenreMap[g.id]=g.name);}).catch(()=>{});
   if(!isLocalPreview())$('#tmdbConnect').textContent='Refresh catalogue';
   $('#tmdbConnect').addEventListener('click',()=>{if(isLocalPreview()){if(connectTmdb())loadTmdb(currentTmdbEndpoint,currentTmdbLabel);}else loadTmdb(currentTmdbEndpoint,currentTmdbLabel);});
-  if(!isLocalPreview()||tmdbKey())loadTmdb('discover/movie','Films 2000–2026');
+  if(!isLocalPreview()||tmdbKey())loadTmdb('trending/movie/week','Trending this week');
   $('#loadMoreTmdb').addEventListener('click',loadMoreTmdb);
   document.querySelector('.tmdb-actions').addEventListener('click',e=>{const b=e.target.closest('[data-tmdb]');if(b)loadTmdb(b.dataset.tmdb,b.textContent.trim());});
   let tmdbSearchTimer,archiveSearchTimer;
