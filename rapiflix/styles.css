@@ -151,3 +151,7 @@ footer>a:last-child{color:#526357}
 .toast{background:#20362a;color:#fff8ed;border:1px solid #ffffff22;box-shadow:0 8px 24px #17251f24}
 @media(max-width:700px){.nav-links{background:#17251f;border-bottom-color:#ffffff24}.catalog-section{padding-top:62px}.movie-grid{gap:25px 12px}.hero-vignette{background:linear-gradient(90deg,#14231ff2,#14231fb8 70%,#14231f75),linear-gradient(0deg,#14231f 0%,transparent 35%)}.archive-banner{box-shadow:none}}
 @media(prefers-reduced-motion:reduce){.movie-card,.poster-wrap,.load-button{transition:none!important}}
+
+/* Pointer tilt follows the cursor gently; the interface stays editorial, not neon. */
+.movie-card:hover .poster-wrap{transform:translateY(-5px) rotateX(var(--tilt-x,1.5deg)) rotateY(var(--tilt-y,0deg))}
+@media(hover:none){.movie-card:hover .poster-wrap{transform:translateY(-2px)}}
