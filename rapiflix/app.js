@@ -29,10 +29,55 @@
   const tmdbKeyName = 'rapiflix-tmdb-key';
   let tmdbGenreMap = {};
   function tmdbKey(){try{return localStorage.getItem(tmdbKeyName)||'';}catch(_){return '';}}
+  function isLocalPreview(){return ['localhost','127.0.0.1'].includes(location.hostname);}
+  async function tmdbRequest(path,params={}){
+    let url;
+    if(isLocalPreview()){
+      const key=tmdbKey();
+      if(!key)throw new Error('For local testing, click Connect TMDB and add a temporary key. The deployed site uses a server-side secret.');
+      url=new URL('https://api.themoviedb.org/3/'+path);
+      url.searchParams.set('api_key',key);
+    }else{
+      url=new URL('/api/tmdb/'+path.split('/').map(encodeURIComponent).join('/'),location.origin);
+    }
+    Object.entries(params).forEach(([key,value])=>{if(value!==undefined&&value!==null&&value!=='')url.searchParams.set(key,String(value));});
+    return fetch(url);
+  }
   function setTmdbStatus(message){const el=$('#tmdbStatus');if(el)el.textContent=message;}
   function connectTmdb(){const value=window.prompt('Paste your temporary TMDB v3 API key. It is saved in this browser only, not in GitHub.',tmdbKey());if(value===null)return false;const key=value.trim();try{if(key)localStorage.setItem(tmdbKeyName,key);else localStorage.removeItem(tmdbKeyName);}catch(_){setTmdbStatus('Browser storage is unavailable.');return false;}if(!key){setTmdbStatus('TMDB key cleared from this browser.');return false;}return true;}
-  async function loadTmdb(endpoint,label){let key=tmdbKey();if(!key){if(!connectTmdb())return;key=tmdbKey();}setTmdbStatus('Loading current movie data from TMDB…');try{const genreUrl=new URL('https://api.themoviedb.org/3/genre/movie/list');genreUrl.searchParams.set('api_key',key);genreUrl.searchParams.set('language','en-US');const genreResponse=await fetch(genreUrl);if(genreResponse.ok){const genreData=await genreResponse.json();(genreData.genres||[]).forEach(g=>tmdbGenreMap[g.id]=g.name);}}catch(_){}document.querySelectorAll('[data-tmdb]').forEach(b=>b.classList.toggle('active',b.dataset.tmdb===endpoint));try{const url=new URL('https://api.themoviedb.org/3/'+endpoint);url.searchParams.set('api_key',key);url.searchParams.set('language','en-US');url.searchParams.set('page','1');url.searchParams.set('region','PK');const response=await fetch(url);const data=await response.json();if(!response.ok)throw new Error(data.status_message||'TMDB rejected the key');const fresh=(data.results||[]).filter(m=>m&&m.id&&m.title).map(m=>({id:'tmdb-'+m.id,tmdbId:m.id,title:m.title,year:Number((m.release_date||'').slice(0,4))||0,runtime:'Runtime varies',genres:(m.genre_ids||[]).map(g=>tmdbGenreMap[g]).filter(Boolean).slice(0,3),desc:m.overview||'No synopsis is available yet.',poster:m.poster_path?'https://image.tmdb.org/t/p/w500'+m.poster_path:'',source:'https://www.themoviedb.org/movie/'+m.id,sourceName:'TMDB',kind:'tmdb',tag:(label||'TMDB').toUpperCase()}));for(let i=catalog.length-1;i>=0;i--)if(catalog[i].kind==='tmdb')catalog.splice(i,1);catalog.unshift(...fresh);activeGenre='all';showingSaved=false;query='';$('#searchInput').value='';$('#genreFilter').value='all';renderChips();render();setTmdbStatus('Loaded '+fresh.length+' '+label.toLowerCase()+' titles. Open a title for details and official watch options. TMDB is metadata, not a streaming source.');}catch(error){setTmdbStatus('TMDB error: '+error.message+'. Click Connect TMDB to replace the key.');console.error(error);}}
-  async function searchTmdb(text){const key=tmdbKey();if(!key||!text.trim())return;try{const url=new URL('https://api.themoviedb.org/3/search/movie');url.searchParams.set('api_key',key);url.searchParams.set('query',text.trim());url.searchParams.set('language','en-US');url.searchParams.set('region','PK');const response=await fetch(url);const data=await response.json();if(!response.ok)throw new Error(data.status_message||'Search failed');const fresh=(data.results||[]).filter(m=>m&&m.id&&m.title).map(m=>({id:'tmdb-'+m.id,tmdbId:m.id,title:m.title,year:Number((m.release_date||'').slice(0,4))||0,runtime:'Runtime varies',genres:(m.genre_ids||[]).map(g=>tmdbGenreMap[g]).filter(Boolean).slice(0,3),desc:m.overview||'No synopsis is available yet.',poster:m.poster_path?'https://image.tmdb.org/t/p/w500'+m.poster_path:'',source:'https://www.themoviedb.org/movie/'+m.id,sourceName:'TMDB',kind:'tmdb',tag:'SEARCH RESULT'}));for(let i=catalog.length-1;i>=0;i--)if(catalog[i].kind==='tmdb')catalog.splice(i,1);catalog.unshift(...fresh);render();setTmdbStatus('Search results from TMDB. Official watch options are shown for each title.');}catch(error){setTmdbStatus('TMDB search error: '+error.message);}}
+  async function loadTmdb(endpoint,label){
+    if(isLocalPreview()&&!tmdbKey()){if(!connectTmdb())return;}
+    setTmdbStatus('Loading current movie data…');
+    try{
+      try{const genreResponse=await tmdbRequest('genre/movie/list',{language:'en-US'});if(genreResponse.ok){const genreData=await genreResponse.json();(genreData.genres||[]).forEach(g=>tmdbGenreMap[g.id]=g.name);}}catch(_){}
+      document.querySelectorAll('[data-tmdb]').forEach(b=>b.classList.toggle('active',b.dataset.tmdb===endpoint));
+      const response=await tmdbRequest(endpoint,{language:'en-US',page:'1',region:'PK'});
+      const data=await response.json();
+      if(!response.ok)throw new Error(data.status_message||data.error||'Movie catalogue request failed');
+      const fresh=(data.results||[]).filter(m=>m&&m.id&&m.title).map(m=>({id:'tmdb-'+m.id,tmdbId:m.id,title:m.title,year:Number((m.release_date||'').slice(0,4))||0,runtime:'Runtime varies',genres:(m.genre_ids||[]).map(g=>tmdbGenreMap[g]).filter(Boolean).slice(0,3),desc:m.overview||'No synopsis is available yet.',poster:m.poster_path?'https://image.tmdb.org/t/p/w500'+m.poster_path:'',source:'https://www.themoviedb.org/movie/'+m.id,sourceName:'TMDB',kind:'tmdb',tag:(label||'TMDB').toUpperCase()}));
+      for(let i=catalog.length-1;i>=0;i--)if(catalog[i].kind==='tmdb')catalog.splice(i,1);
+      catalog.unshift(...fresh);activeGenre='all';showingSaved=false;query='';$('#searchInput').value='';$('#genreFilter').value='all';renderChips();render();
+      setTmdbStatus('Loaded '+fresh.length+' '+String(label||'catalogue').toLowerCase()+' titles. Watchable films open in Rapiflix; commercial titles use licensed watch options.');
+    }catch(error){
+      setTmdbStatus('Movie catalogue unavailable: '+error.message+'. Check the TMDB server secret and redeploy if this is the live site.');
+      console.error(error);
+    }
+  }
+  async function searchTmdb(text){
+    if(!text.trim())return;
+    try{
+      const response=await tmdbRequest('search/movie',{query:text.trim(),language:'en-US',region:'PK'});
+      const data=await response.json();
+      if(!response.ok)throw new Error(data.status_message||data.error||'Search failed');
+      if(query.trim()!==text.trim())return;
+      const fresh=(data.results||[]).filter(m=>m&&m.id&&m.title).map(m=>({id:'tmdb-'+m.id,tmdbId:m.id,title:m.title,year:Number((m.release_date||'').slice(0,4))||0,runtime:'Runtime varies',genres:(m.genre_ids||[]).map(g=>tmdbGenreMap[g]).filter(Boolean).slice(0,3),desc:m.overview||'No synopsis is available yet.',poster:m.poster_path?'https://image.tmdb.org/t/p/w500'+m.poster_path:'',source:'https://www.themoviedb.org/movie/'+m.id,sourceName:'TMDB',kind:'tmdb',tag:'SEARCH RESULT'}));
+      for(let i=catalog.length-1;i>=0;i--)if(catalog[i].kind==='tmdb')catalog.splice(i,1);
+      catalog.unshift(...fresh);render();setTmdbStatus('Movie search results loaded. Commercial titles are not falsely labelled as playable.');
+    }catch(error){
+      setTmdbStatus('Movie search unavailable: '+error.message);
+      console.error(error);
+    }
+  }
   let saved = new Set();
   try { saved = new Set(JSON.parse(localStorage.getItem('rapiflix-saved') || '[]')); } catch (_) {}
   const heroArt = $('#heroArt');
@@ -48,7 +93,7 @@
   function openDetails(id){const m=byId(id)||catalog.find(x=>x.id===id);if(!m)return;selected=m;$('#providerOptions').innerHTML='';if(m.kind==='tmdb')loadWatchProviders(m);else checkArchiveRights(m);$('#modalPoster').style.backgroundImage=`url("${imageUrl(m)}")`;$('#modalTitle').textContent=m.title;$('#modalKicker').textContent=m.tag||'RAPIFLIX SELECTION';$('#modalMeta').innerHTML=`<span>${m.year}</span><span>•</span><span>${escapeHtml(m.runtime||'Runtime varies')}</span><span>•</span><span>${escapeHtml(m.genres.join(' · '))}</span>`;$('#modalDescription').textContent=m.desc||'Explore this film from its original collection.';$('#modalSave').textContent=saved.has(m.id)?'♥ Saved to my list':'♡ Save to my list';$('#sourceNote').textContent=m.kind==='tmdb'?'Movie data from TMDB. View official watch options to check legitimate services in your region.':`Source: ${m.sourceName||'Internet Archive'}. Verify rights and availability for your intended use.`;$('#modalPlay').innerHTML=m.kind==='tmdb'?'↗ View watch options':'▶ Watch film';$('#modalBackdrop').hidden=false;document.body.classList.add('modal-open');$('#modalClose').focus();}
   const watchRegionKey='rapiflix-watch-region';
   function watchRegion(){return localStorage.getItem(watchRegionKey)||'PK';}
-  async function loadWatchProviders(m){const host=$('#providerOptions');host.innerHTML='<p class="source-note">Checking streaming services for your region…</p>';const region=watchRegion();try{const key=tmdbKey();if(!key)throw new Error('Connect TMDB to load regional providers.');const r=await fetch('https://api.themoviedb.org/3/movie/'+encodeURIComponent(m.tmdbId)+'/watch/providers?api_key='+encodeURIComponent(key));const d=await r.json();if(!r.ok)throw new Error(d.status_message||'Provider lookup failed');const data=d.results?.[region];const providers=[...(data?.flatrate||[]).map(p=>({...p,kind:'Subscription'})),...(data?.free||[]).map(p=>({...p,kind:'Free'})),...(data?.ads||[]).map(p=>({...p,kind:'Ad-supported'})),...(data?.rent||[]).map(p=>({...p,kind:'Rent'})),...(data?.buy||[]).map(p=>({...p,kind:'Buy'}))];host.innerHTML='<div class="provider-head"><strong>Where to watch</strong><label>Region <select id="watchRegion"><option value="PK">Pakistan</option><option value="US">United States</option><option value="GB">United Kingdom</option><option value="IN">India</option><option value="CA">Canada</option><option value="AU">Australia</option></select></label></div>';$('#watchRegion').value=region;$('#watchRegion').addEventListener('change',e=>{localStorage.setItem(watchRegionKey,e.target.value);loadWatchProviders(m);});if(!providers.length){host.insertAdjacentHTML('beforeend','<p class="source-note">No provider listings were returned for '+region+'. Availability varies by country and can change.</p>');}else{const groups={};providers.forEach(p=>(groups[p.kind]??=[]).push(p));Object.entries(groups).forEach(([kind,items])=>{const row=document.createElement('div');row.className='provider-group';const title=document.createElement('span');title.className='provider-kind';title.textContent=kind;row.append(title);items.forEach(p=>{const item=document.createElement('span');item.className='provider-pill';if(p.logo_path){const img=document.createElement('img');img.src='https://image.tmdb.org/t/p/w92'+p.logo_path;img.alt='';item.append(img);}const name=document.createElement('span');name.textContent=p.provider_name;item.append(name);row.append(item);});host.append(row);});}if(data?.link){const link=document.createElement('a');link.href=data.link;link.target='_blank';link.rel='noreferrer';link.className='provider-source-link';link.textContent='Open official availability links ↗';host.append(link);}const credit=document.createElement('p');credit.className='source-note';credit.textContent='Availability data powered by JustWatch via TMDB. Check the service itself for current access and pricing.';host.append(credit);}catch(e){host.innerHTML='<p class="source-note">'+escapeHtml(e.message||'Provider data unavailable.')+'</p>';}}
+  async function loadWatchProviders(m){const host=$('#providerOptions');host.innerHTML='<p class="source-note">Checking streaming services for your region…</p>';const region=watchRegion();try{const r=await tmdbRequest('movie/'+encodeURIComponent(m.tmdbId)+'/watch/providers',{});const d=await r.json();if(!r.ok)throw new Error(d.status_message||'Provider lookup failed');const data=d.results?.[region];const providers=[...(data?.flatrate||[]).map(p=>({...p,kind:'Subscription'})),...(data?.free||[]).map(p=>({...p,kind:'Free'})),...(data?.ads||[]).map(p=>({...p,kind:'Ad-supported'})),...(data?.rent||[]).map(p=>({...p,kind:'Rent'})),...(data?.buy||[]).map(p=>({...p,kind:'Buy'}))];host.innerHTML='<div class="provider-head"><strong>Where to watch</strong><label>Region <select id="watchRegion"><option value="PK">Pakistan</option><option value="US">United States</option><option value="GB">United Kingdom</option><option value="IN">India</option><option value="CA">Canada</option><option value="AU">Australia</option></select></label></div>';$('#watchRegion').value=region;$('#watchRegion').addEventListener('change',e=>{localStorage.setItem(watchRegionKey,e.target.value);loadWatchProviders(m);});if(!providers.length){host.insertAdjacentHTML('beforeend','<p class="source-note">No provider listings were returned for '+region+'. Availability varies by country and can change.</p>');}else{const groups={};providers.forEach(p=>(groups[p.kind]??=[]).push(p));Object.entries(groups).forEach(([kind,items])=>{const row=document.createElement('div');row.className='provider-group';const title=document.createElement('span');title.className='provider-kind';title.textContent=kind;row.append(title);items.forEach(p=>{const item=document.createElement('span');item.className='provider-pill';if(p.logo_path){const img=document.createElement('img');img.src='https://image.tmdb.org/t/p/w92'+p.logo_path;img.alt='';item.append(img);}const name=document.createElement('span');name.textContent=p.provider_name;item.append(name);row.append(item);});host.append(row);});}if(data?.link){const link=document.createElement('a');link.href=data.link;link.target='_blank';link.rel='noreferrer';link.className='provider-source-link';link.textContent='Open official availability links ↗';host.append(link);}const credit=document.createElement('p');credit.className='source-note';credit.textContent='Availability data powered by JustWatch via TMDB. Check the service itself for current access and pricing.';host.append(credit);}catch(e){host.innerHTML='<p class="source-note">'+escapeHtml(e.message||'Provider data unavailable.')+'</p>';}}
   async function checkArchiveRights(m){const host=$('#providerOptions');if(!host)return;host.innerHTML='<p class="source-note">Checking source metadata and playable files…</p>';try{const r=await fetch('https://archive.org/metadata/'+encodeURIComponent(m.id));if(!r.ok)throw new Error('Source metadata unavailable');const d=await r.json();const md=d.metadata||{};const files=(d.files||[]).filter(f=>/\.(mp4|webm|ogv)$/i.test(f.name||'')&&!/thumb|sample|trailer|preview/i.test(f.name||''));const rights=md.licenseurl||md.rights||md.license||'';host.innerHTML='<strong>Free-film source check</strong><p class="source-note">'+(files.length?'Playable video file(s) found: '+files.length+'.':'No compatible video file was found in metadata.')+'</p><p class="source-note">'+(rights?'Rights/licence metadata is present. Read the source terms before reuse.':'No clear rights/licence field was found. Treat rights as unverified.')+'</p><a class="provider-source-link" href="'+escapeHtml(m.source||'https://archive.org/details/'+encodeURIComponent(m.id))+'" target="_blank" rel="noreferrer">Review original item and rights ↗</a>';}catch(e){host.innerHTML='<strong>Source check unavailable</strong><p class="source-note">Could not verify playable files or rights metadata. Open the original item page before relying on this source.</p>';}}
   const progressKey='rapiflix-watch-progress';
   function readProgress(id){try{return Number((JSON.parse(localStorage.getItem(progressKey)||'{}'))[id]||0);}catch(_){return 0;}}
@@ -104,17 +149,15 @@
   }
   function closeModal(el){$(el).hidden=true;if($('#modalBackdrop').hidden&&$('#playerBackdrop').hidden)document.body.classList.remove('modal-open');}
   const archiveSearchCache=new Map();
-  let archiveSearchBusy=false;
   async function searchArchive(text){
     const term=String(text||'').trim();
-    if(term.length<2||archiveSearchBusy)return;
+    if(term.length<2)return;
     const cacheKey=term.toLowerCase();
     if(archiveSearchCache.has(cacheKey)){
       const cached=archiveSearchCache.get(cacheKey);
       for(const m of cached)if(!byId(m.id))catalog.unshift(m);
       render();return;
     }
-    archiveSearchBusy=true;
     setTmdbStatus('Searching the Internet Archive for full films…');
     try{
       const safeTerm=term.replace(/["\\]/g,' ').replace(/\s+/g,' ').trim();
@@ -144,12 +187,13 @@
       setTmdbStatus(found.length?'Found '+found.length+' Archive title(s). Open a title to check playable files and rights metadata.':'No Archive titles matched that exact search. Try a shorter title.');
     }catch(error){
       setTmdbStatus('Archive search error: '+(error.message||'Could not search the source collection.'));
-    }finally{archiveSearchBusy=false;}
+    }
   }
   async function loadMore(){const btn=$('#loadMore');btn.disabled=true;btn.textContent='Finding more archive films…';try{const q='collection:feature_films AND mediatype:movies';const url=`${archive}/advancedsearch.php?q=${encodeURIComponent(q)}&fl[]=identifier&fl[]=title&fl[]=year&fl[]=description&rows=24&page=${extraPage}&sort[]=downloads desc&output=json`;const res=await fetch(url);if(!res.ok)throw new Error('Archive search did not respond');const data=await res.json();const docs=data.response?.docs||[];let added=0;for(const d of docs){if(!d.identifier||byId(d.identifier))continue;const title=Array.isArray(d.title)?d.title[0]:d.title;if(!title)continue;const year=Number(Array.isArray(d.year)?d.year[0]:d.year)||0;const desc=Array.isArray(d.description)?d.description[0]:d.description;catalog.push({id:d.identifier,title:String(title).slice(0,140),year,runtime:'Runtime varies',genres:['Archive'],desc:String(desc||'A film discovered in the Internet Archive feature-films collection.').replace(/<[^>]*>/g,' ').slice(0,420),poster:`${archive}/services/img/${d.identifier}`,video:'',source:`${archive}/details/${d.identifier}`,sourceName:'Internet Archive',kind:'archive-search',tag:'ARCHIVE DISCOVERY'});added++;}extraPage++;activeGenre='all';$('#genreFilter').value='all';renderChips();render();toast(added?`Added ${added} archive discoveries`:'No new titles found on this page');}catch(e){toast('Archive discovery is temporarily unavailable');console.error(e);}finally{btn.disabled=false;btn.innerHTML='Explore more classics <span>↗</span>';}}
   renderChips();updateHero(0);render();
-  fetch('https://api.themoviedb.org/3/genre/movie/list?language=en-US').catch(()=>null).then(r=>r&&r.ok?r.json():null).then(d=>{(d&&d.genres||[]).forEach(g=>tmdbGenreMap[g.id]=g.name);}).catch(()=>{});
-  $('#tmdbConnect').addEventListener('click',()=>{if(connectTmdb())loadTmdb('trending/movie/week','Trending');});
+  tmdbRequest('genre/movie/list',{language:'en-US'}).catch(()=>null).then(r=>r&&r.ok?r.json():null).then(d=>{(d&&d.genres||[]).forEach(g=>tmdbGenreMap[g.id]=g.name);}).catch(()=>{});
+  if(!isLocalPreview())$('#tmdbConnect').textContent='Refresh catalogue';
+  $('#tmdbConnect').addEventListener('click',()=>{if(isLocalPreview()){if(connectTmdb())loadTmdb('trending/movie/week','Trending');}else loadTmdb('trending/movie/week','Trending');});
   document.querySelector('.tmdb-actions').addEventListener('click',e=>{const b=e.target.closest('[data-tmdb]');if(b)loadTmdb(b.dataset.tmdb,b.textContent.trim());});
   let tmdbSearchTimer,archiveSearchTimer;
   $('#searchInput').addEventListener('input',e=>{query=e.target.value;render();clearTimeout(tmdbSearchTimer);clearTimeout(archiveSearchTimer);if(query.trim().length>=2){if(tmdbKey())tmdbSearchTimer=setTimeout(()=>searchTmdb(query),450);else archiveSearchTimer=setTimeout(()=>searchArchive(query),500);}});
