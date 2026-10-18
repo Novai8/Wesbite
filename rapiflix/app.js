@@ -764,3 +764,74 @@
   // Gentle hero rotation, paused when the visitor is interacting with the hero or has reduced motion enabled.
   if(!window.matchMedia('(prefers-reduced-motion: reduce)').matches){setInterval(()=>{if(featuredIds.length&&!document.hidden&&!document.body.classList.contains('modal-open')&&!$('#searchInput').value)updateHero((heroIndex+1)%featuredIds.length);},12000);}
 })();
+
+
+/* Rapiflix custom cursor: viewport coordinates, one positioning system. */
+(() => {
+  const dot = document.querySelector('.cursor-dot');
+  const ring = document.querySelector('.cursor-ring');
+  if (!dot || !ring) return;
+  const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)');
+  if (!finePointer.matches) return;
+
+  const label = ring.querySelector('span');
+  const root = document.documentElement;
+  root.classList.add('cc');
+
+  function move(event) {
+    if (event.pointerType === 'touch') return;
+    const x = event.clientX;
+    const y = event.clientY;
+    dot.style.left = x + 'px';
+    dot.style.top = y + 'px';
+    ring.style.left = x + 'px';
+    ring.style.top = y + 'px';
+    dot.style.opacity = '1';
+    ring.style.opacity = '1';
+  }
+
+  function hide() {
+    dot.style.opacity = '0';
+    ring.style.opacity = '0';
+  }
+
+  function setMode(target) {
+    ring.classList.remove('view', 'cursor-violet', 'cursor-cyan', 'cursor-pink', 'cursor-lime', 'link', 'text');
+    if (!(target instanceof Element)) return;
+    if (target.closest('.save-card')) {
+      ring.classList.add('cursor-pink');
+      if (label) label.textContent = 'SAVE';
+    } else if (target.closest('.card-play')) {
+      ring.classList.add('cursor-lime');
+      if (label) label.textContent = 'PLAY';
+    } else if (target.closest('.movie-card, .poster-wrap')) {
+      ring.classList.add('view');
+      if (label) label.textContent = 'VIEW';
+    } else if (target.closest('.tmdb-tab, .nav-links a')) {
+      ring.classList.add('cursor-cyan');
+      if (label) label.textContent = 'EXPLORE';
+    } else if (target.closest('button, .tmdb-connect, [role="button"]')) {
+      ring.classList.add('cursor-violet');
+      if (label) label.textContent = 'SELECT';
+    } else if (target.closest('input, textarea, select, [contenteditable="true"]')) {
+      ring.classList.add('text');
+    } else if (target.closest('a')) {
+      ring.classList.add('link');
+      if (label) label.textContent = 'OPEN';
+    }
+  }
+
+  document.addEventListener('pointermove', move, { passive: true });
+  document.addEventListener('pointerover', event => setMode(event.target));
+  document.addEventListener('pointerout', event => {
+    if (!event.relatedTarget) hide();
+  });
+  window.addEventListener('blur', hide);
+  window.addEventListener('focus', () => { /* cursor becomes visible on the next pointer move */ });
+  finePointer.addEventListener?.('change', event => {
+    if (!event.matches) {
+      root.classList.remove('cc');
+      hide();
+    }
+  });
+})();
