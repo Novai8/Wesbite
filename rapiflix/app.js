@@ -93,7 +93,44 @@
   function openDetails(id){const m=byId(id)||catalog.find(x=>x.id===id);if(!m)return;selected=m;$('#providerOptions').innerHTML='';if(m.kind==='tmdb')loadWatchProviders(m);else checkArchiveRights(m);$('#modalPoster').style.backgroundImage=`url("${imageUrl(m)}")`;$('#modalTitle').textContent=m.title;$('#modalKicker').textContent=m.tag||'RAPIFLIX SELECTION';const lang=m.originalLanguage?languageName(m.originalLanguage):'';$('#modalMeta').innerHTML=`<span>${m.year||'Year unknown'}</span><span>•</span><span>${escapeHtml(m.runtime||'Runtime varies')}</span><span>•</span><span>${escapeHtml(m.genres.join(' · '))}</span>${lang?`<span>•</span><span>Original language: ${escapeHtml(lang)}</span>`:''}`;$('#modalDescription').textContent=m.desc||'Explore this film from its original collection.';$('#modalSave').textContent=saved.has(m.id)?'♥ Saved to my list':'♡ Save to my list';$('#sourceNote').textContent=m.kind==='tmdb'?'Movie data from TMDB. Original language is not a guarantee of dubbed tracks. View official watch options for services in your region.':`Source: ${m.sourceName||'Internet Archive'}. Verify rights and availability for your intended use.`;$('#modalPlay').innerHTML=m.kind==='tmdb'?'↗ View watch options':'▶ Watch film';$('#modalBackdrop').hidden=false;document.body.classList.add('modal-open');$('#modalClose').focus();}
   const watchRegionKey='rapiflix-watch-region';
   function watchRegion(){return localStorage.getItem(watchRegionKey)||'PK';}
-  async function loadWatchProviders(m){const host=$('#providerOptions');host.innerHTML='<p class="source-note">Checking streaming services for your region…</p>';const region=watchRegion();try{const r=await tmdbRequest('movie/'+encodeURIComponent(m.tmdbId)+'/watch/providers',{});const d=await r.json();if(!r.ok)throw new Error(d.status_message||'Provider lookup failed');const data=d.results?.[region];const providers=[...(data?.flatrate||[]).map(p=>({...p,kind:'Subscription'})),...(data?.free||[]).map(p=>({...p,kind:'Free'})),...(data?.ads||[]).map(p=>({...p,kind:'Ad-supported'})),...(data?.rent||[]).map(p=>({...p,kind:'Rent'})),...(data?.buy||[]).map(p=>({...p,kind:'Buy'}))];host.innerHTML='<div class="provider-head"><strong>Where to watch</strong><label>Region <select id="watchRegion"><option value="PK">Pakistan</option><option value="US">United States</option><option value="GB">United Kingdom</option><option value="IN">India</option><option value="CA">Canada</option><option value="AU">Australia</option></select></label></div>';$('#watchRegion').value=region;$('#watchRegion').addEventListener('change',e=>{localStorage.setItem(watchRegionKey,e.target.value);loadWatchProviders(m);});if(!providers.length){host.insertAdjacentHTML('beforeend','<p class="source-note">No provider listings were returned for '+region+'. Availability varies by country and can change.</p>');}else{const groups={};providers.forEach(p=>(groups[p.kind]??=[]).push(p));Object.entries(groups).forEach(([kind,items])=>{const row=document.createElement('div');row.className='provider-group';const title=document.createElement('span');title.className='provider-kind';title.textContent=kind;row.append(title);items.forEach(p=>{const item=document.createElement('span');item.className='provider-pill';if(p.logo_path){const img=document.createElement('img');img.src='https://image.tmdb.org/t/p/w92'+p.logo_path;img.alt='';item.append(img);}const name=document.createElement('span');name.textContent=p.provider_name;item.append(name);row.append(item);});host.append(row);});}if(data?.link){const link=document.createElement('a');link.href=data.link;link.target='_blank';link.rel='noreferrer';link.className='provider-source-link';link.textContent='Open official availability links ↗';host.append(link);}const credit=document.createElement('p');credit.className='source-note';credit.textContent='Availability data powered by JustWatch via TMDB. Check the service itself for current access and pricing.';host.append(credit);}else{host.innerHTML='<p class="source-note">Provider data is unavailable right now.</p>';}addSubtitleSearch(host,m);}catch(e){host.innerHTML='<p class="source-note">'+escapeHtml(e.message||'Provider data unavailable.')+'</p>';addSubtitleSearch(host,m);}}
+  async function loadWatchProviders(m){
+    const host=$('#providerOptions');
+    host.innerHTML='<p class="source-note">Checking streaming services for your region…</p>';
+    const region=watchRegion();
+    try{
+      const r=await tmdbRequest('movie/'+encodeURIComponent(m.tmdbId)+'/watch/providers',{});
+      const d=await r.json();
+      if(!r.ok)throw new Error(d.status_message||'Provider lookup failed');
+      const data=d.results?.[region];
+      const providers=[...(data?.flatrate||[]).map(p=>({...p,kind:'Subscription'})),...(data?.free||[]).map(p=>({...p,kind:'Free'})),...(data?.ads||[]).map(p=>({...p,kind:'Ad-supported'})),...(data?.rent||[]).map(p=>({...p,kind:'Rent'})),...(data?.buy||[]).map(p=>({...p,kind:'Buy'}))];
+      host.innerHTML='<div class="provider-head"><strong>Where to watch</strong><label>Region <select id="watchRegion"><option value="PK">Pakistan</option><option value="US">United States</option><option value="GB">United Kingdom</option><option value="IN">India</option><option value="CA">Canada</option><option value="AU">Australia</option></select></label></div>';
+      $('#watchRegion').value=region;
+      $('#watchRegion').addEventListener('change',e=>{localStorage.setItem(watchRegionKey,e.target.value);loadWatchProviders(m);});
+      if(!providers.length){
+        host.insertAdjacentHTML('beforeend','<p class="source-note">No provider listings were returned for '+region+'. Availability varies by country and can change.</p>');
+      }else{
+        const groups={};
+        providers.forEach(p=>(groups[p.kind]??=[]).push(p));
+        Object.entries(groups).forEach(([kind,items])=>{
+          const row=document.createElement('div');row.className='provider-group';
+          const title=document.createElement('span');title.className='provider-kind';title.textContent=kind;row.append(title);
+          items.forEach(p=>{
+            const item=document.createElement('span');item.className='provider-pill';
+            if(p.logo_path){const img=document.createElement('img');img.src='https://image.tmdb.org/t/p/w92'+p.logo_path;img.alt='';item.append(img);}
+            const name=document.createElement('span');name.textContent=p.provider_name;item.append(name);row.append(item);
+          });
+          host.append(row);
+        });
+      }
+      if(data?.link){
+        const link=document.createElement('a');link.href=data.link;link.target='_blank';link.rel='noreferrer';link.className='provider-source-link';link.textContent='Open official availability links ↗';host.append(link);
+      }
+      const credit=document.createElement('p');credit.className='source-note';credit.textContent='Availability data powered by JustWatch via TMDB. Original language does not guarantee a dubbed version. Check the service itself for audio and subtitle options.';host.append(credit);
+    }catch(e){
+      host.innerHTML='<p class="source-note">'+escapeHtml(e.message||'Provider data unavailable.')+'</p>';
+    }
+    addSubtitleSearch(host,m);
+  }
   function hasExplicitStreamRights(metadata={}){
     const text=[metadata.licenseurl,metadata.license,metadata.rights].filter(Boolean).map(String).join(' ').toLowerCase();
     const statement=String(metadata.rights||'').toLowerCase();
