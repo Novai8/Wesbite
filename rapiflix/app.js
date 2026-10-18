@@ -146,7 +146,7 @@
       return;
     }
     $('#modalBackdrop').hidden=true;$('#playerBackdrop').hidden=false;document.body.classList.add('modal-open');
-    $('#playerTitle').textContent=m.title;$('#sourceLink').href=m.source||archive+'/details/'+encodeURIComponent(m.id);
+    $('#playerTitle').textContent=m.title;
     const frame=$('#playerFrame');
     frame.innerHTML='<div class="player-placeholder"><div class="live-dot"></div><strong>Preparing your film…</strong><p>Finding a browser-compatible video file and starting playback.</p></div>';
     try{
