@@ -82,6 +82,20 @@ Use a Git-integrated Cloudflare Pages project configured as follows:
 
 The Pages Function at `functions/api/tmdb/[[path]].js` proxies only approved, read-only catalogue, watch-provider, and official trailer-metadata endpoints. It keeps the API key on the server and limits which API paths can be requested. `_routes.json` restricts Function handling to `/api/tmdb/*`. If the secret is missing, the site's Archive search/player still work, but TMDB catalogue and watch-provider calls show an error.
 
+## Optional CinePro source provider
+
+Rapiflix now keeps VidCore as its default movie/TV embed and offers CinePro as an additional source option. CinePro Core is a separate backend service; there is no separate generic "CinePro API key" in the documented setup.
+
+1. Deploy your own CinePro Core instance using the [official quickstart](https://docs.cinepro.cc/quickstart).
+2. Configure a fresh TMDB v3 API key as the CinePro backend's `TMDB_API_KEY` environment variable. Do not put this key in `app.js`, `streams.json`, or browser storage.
+3. Make the CinePro backend reachable over HTTPS. CinePro's documentation warns that it is not secure for public hosting by default and is intended for personal, home, and educational use.
+4. In Cloudflare Pages for Rapiflix, add `CINEPRO_BASE_URL` as an environment variable or secret, set to the base HTTPS URL of your CinePro instance (for example, `https://cinepro.example.com`, without a path). Redeploy the `rapiflix/site` branch with root directory `rapiflix`.
+5. Open a movie and select **CinePro sources**, or open a TV series and select **Try CinePro sources** for the chosen episode. VidCore remains available through the provider controls.
+
+The Pages Function at `functions/api/cinepro/[[path]].js` only permits the documented movie and TV-episode source endpoints, keeps the backend address out of frontend code, and makes returned relative source/subtitle URLs absolute. The source URLs are still provided by third parties, can expire or fail, and may not have CORS enabled. Finding a source does not prove that the content is licensed for your use; verify rights before public distribution. CinePro itself does not host video files.
+
+For local testing with `python -m http.server`, the CinePro Pages Function is not available. Use Cloudflare Pages local development with the required `CINEPRO_BASE_URL` binding or test on the deployed Pages preview.
+
 ## Content rights and reliability
 
 Internet Archive explicitly warns that it does **not** guarantee that an uploaded item's claimed copyright status or license is accurate. The app checks all curated and dynamically discovered Archive titles for a compatible video file plus an explicit, non-conflicting public-domain or Creative Commons signal in the item metadata. Curated titles that fail are hidden from the playable catalogue; discovered titles that fail are not added, and playback checks rights again before starting. This is a conservative technical screen, not a legal determination; metadata can be incomplete or incorrect and license conditions can vary by country.
