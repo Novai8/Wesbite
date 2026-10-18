@@ -318,6 +318,24 @@
   async function playFilm(m){
     await licensedStreamsReady;
     if(!m)return;
+    // TMDB movies, including anime films, use VidCore's movie embed route.
+    if(m.kind==='tmdb'&&m.mediaType!=='tv'){
+      $('#modalBackdrop').hidden=true;$('#playerBackdrop').hidden=false;document.body.classList.add('modal-open');
+      $('#playerTitle').textContent=m.title;
+      const frame=$('#playerFrame'), controls=$('#playerControls');
+      controls.innerHTML='<p class="source-note">Movie playback is provided by the external embed. Available quality, audio, and subtitles depend on the player.</p>';
+      const iframe=document.createElement('iframe');
+      iframe.src='https://vidcore.org/embed/movie/'+encodeURIComponent(String(m.tmdbId));
+      iframe.title='VidCore player for '+m.title;
+      iframe.width='100%';iframe.height='100%';iframe.frameBorder='0';
+      iframe.allow='autoplay; encrypted-media; picture-in-picture; fullscreen';
+      iframe.allowFullscreen=true;
+      iframe.referrerPolicy='strict-origin-when-cross-origin';
+      iframe.loading='eager';
+      iframe.style.width='100%';iframe.style.height='100%';iframe.style.minHeight='min(62vw,620px)';iframe.style.border='0';iframe.style.background='#000';
+      frame.replaceChildren(iframe);
+      return;
+    }
     // TV playback uses the requested VidCore episode route. The series TMDB ID alone
     // is not enough: the player URL also needs a season and episode number.
     if(m.kind==='tmdb'&&m.mediaType==='tv'){
