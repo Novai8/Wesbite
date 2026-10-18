@@ -347,7 +347,8 @@
       const seasonSelect=controls.querySelector('#tvSeason'), episodeSelect=controls.querySelector('#tvEpisode');
       let seasonData=[];
       function loadVidCoreEpisode(){
-        const parsedSeason=Number(seasonSelect.value);\n        const season=Number.isFinite(parsedSeason)?Math.max(0,parsedSeason):1;
+        const parsedSeason=Number(seasonSelect.value);
+        const season=Number.isFinite(parsedSeason)?Math.max(0,parsedSeason):1;
         const episode=Math.max(1,Number(episodeSelect.value)||1);
         const iframe=document.createElement('iframe');
         iframe.src='https://vidcore.org/embed/tv/'+encodeURIComponent(String(m.tmdbId))+'/'+season+'/'+episode;
