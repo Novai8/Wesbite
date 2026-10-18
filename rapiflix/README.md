@@ -34,3 +34,10 @@ Deploy the **`rapiflix/` directory** as the root of a static site. This is inten
 ## Current limitations
 
 This is a front-end prototype, not a commercial streaming rights package. It does not provide every new release, guarantee uptime, or validate each item's legal status automatically. A commercial launch needs a documented rights review, a contact/takedown process, privacy and terms pages, and a backend or service strategy appropriate to the chosen catalogue.
+
+
+## TMDB live discovery
+
+The Discover page can load trending, now-playing, upcoming and popular movie metadata from TMDB. Click **Connect TMDB** and paste a TMDB v3 API key. The temporary test flow stores it in the current browser's local storage and does not put it in this repository. Clear it by clicking **Connect TMDB** and submitting an empty value. Revoke any key that has been exposed publicly.
+
+TMDB data includes titles, release dates, synopses, posters and genres. It does not provide movie files or grant streaming rights. TMDB cards link to the official watch-options page; the built-in player remains reserved for titles that have an actual source URL, such as Internet Archive discoveries. TMDB requires attribution and its free developer API is not intended for a revenue-generating commercial product without the appropriate permission. See the [official authentication guide](https://developer.themoviedb.org/docs/authentication-application) and [TMDB FAQ](https://developer.themoviedb.org/docs/faq).
