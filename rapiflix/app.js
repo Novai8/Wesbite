@@ -103,14 +103,57 @@
     }
   }
   function closeModal(el){$(el).hidden=true;if($('#modalBackdrop').hidden&&$('#playerBackdrop').hidden)document.body.classList.remove('modal-open');}
+  const archiveSearchCache=new Map();
+  let archiveSearchBusy=false;
+  async function searchArchive(text){
+    const term=String(text||'').trim();
+    if(term.length<2||archiveSearchBusy)return;
+    const cacheKey=term.toLowerCase();
+    if(archiveSearchCache.has(cacheKey)){
+      const cached=archiveSearchCache.get(cacheKey);
+      for(const m of cached)if(!byId(m.id))catalog.unshift(m);
+      render();return;
+    }
+    archiveSearchBusy=true;
+    setTmdbStatus('Searching the Internet Archive for full films…');
+    try{
+      const safeTerm=term.replace(/["\\]/g,' ').replace(/\s+/g,' ').trim();
+      const url=new URL(archive+'/advancedsearch.php');
+      url.searchParams.set('q','title:("'+safeTerm+'") AND mediatype:movies');
+      ['identifier','title','year','description'].forEach(field=>url.searchParams.append('fl[]',field));
+      url.searchParams.set('rows','24');url.searchParams.set('page','1');
+      url.searchParams.append('sort[]','downloads desc');url.searchParams.set('output','json');
+      const response=await fetch(url);
+      if(!response.ok)throw new Error('Internet Archive search did not respond');
+      const data=await response.json();
+      if(query.trim().toLowerCase()!==cacheKey)return;
+      const docs=data.response?.docs||[];
+      const found=[];
+      for(const d of docs){
+        if(!d.identifier)continue;
+        const id=String(d.identifier);
+        const title=Array.isArray(d.title)?d.title[0]:d.title;
+        if(!title||byId(id))continue;
+        const yearValue=Array.isArray(d.year)?d.year[0]:d.year;
+        const descValue=Array.isArray(d.description)?d.description[0]:d.description;
+        found.push({id,title:String(title).slice(0,140),year:Number(yearValue)||0,runtime:'Runtime varies',genres:['Archive'],desc:String(descValue||'A film hosted in the Internet Archive collection.').replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').slice(0,500),poster:archive+'/services/img/'+encodeURIComponent(id),video:'',source:archive+'/details/'+encodeURIComponent(id),sourceName:'Internet Archive',kind:'archive-search',tag:'ARCHIVE SEARCH'});
+      }
+      archiveSearchCache.set(cacheKey,found);
+      for(const m of found)if(!byId(m.id))catalog.unshift(m);
+      render();
+      setTmdbStatus(found.length?'Found '+found.length+' Archive title(s). Open a title to check playable files and rights metadata.':'No Archive titles matched that exact search. Try a shorter title.');
+    }catch(error){
+      setTmdbStatus('Archive search error: '+(error.message||'Could not search the source collection.'));
+    }finally{archiveSearchBusy=false;}
+  }
   async function loadMore(){const btn=$('#loadMore');btn.disabled=true;btn.textContent='Finding more archive films…';try{const q='collection:feature_films AND mediatype:movies';const url=`${archive}/advancedsearch.php?q=${encodeURIComponent(q)}&fl[]=identifier&fl[]=title&fl[]=year&fl[]=description&rows=24&page=${extraPage}&sort[]=downloads desc&output=json`;const res=await fetch(url);if(!res.ok)throw new Error('Archive search did not respond');const data=await res.json();const docs=data.response?.docs||[];let added=0;for(const d of docs){if(!d.identifier||byId(d.identifier))continue;const title=Array.isArray(d.title)?d.title[0]:d.title;if(!title)continue;const year=Number(Array.isArray(d.year)?d.year[0]:d.year)||0;const desc=Array.isArray(d.description)?d.description[0]:d.description;catalog.push({id:d.identifier,title:String(title).slice(0,140),year,runtime:'Runtime varies',genres:['Archive'],desc:String(desc||'A film discovered in the Internet Archive feature-films collection.').replace(/<[^>]*>/g,' ').slice(0,420),poster:`${archive}/services/img/${d.identifier}`,video:'',source:`${archive}/details/${d.identifier}`,sourceName:'Internet Archive',kind:'archive-search',tag:'ARCHIVE DISCOVERY'});added++;}extraPage++;activeGenre='all';$('#genreFilter').value='all';renderChips();render();toast(added?`Added ${added} archive discoveries`:'No new titles found on this page');}catch(e){toast('Archive discovery is temporarily unavailable');console.error(e);}finally{btn.disabled=false;btn.innerHTML='Explore more classics <span>↗</span>';}}
   renderChips();updateHero(0);render();
   fetch('https://api.themoviedb.org/3/genre/movie/list?language=en-US').catch(()=>null).then(r=>r&&r.ok?r.json():null).then(d=>{(d&&d.genres||[]).forEach(g=>tmdbGenreMap[g.id]=g.name);}).catch(()=>{});
   $('#tmdbConnect').addEventListener('click',()=>{if(connectTmdb())loadTmdb('trending/movie/week','Trending');});
   document.querySelector('.tmdb-actions').addEventListener('click',e=>{const b=e.target.closest('[data-tmdb]');if(b)loadTmdb(b.dataset.tmdb,b.textContent.trim());});
-  let tmdbSearchTimer;
-  $('#searchInput').addEventListener('input',e=>{query=e.target.value;render();clearTimeout(tmdbSearchTimer);if(query.trim()&&tmdbKey())tmdbSearchTimer=setTimeout(()=>searchTmdb(query),450);});
-  $('#heroPlay').addEventListener('click',()=>playFilm(selected));$('#heroDetails').addEventListener('click',()=>openDetails(selected.id));$('#searchInput').addEventListener('input',e=>{query=e.target.value;render();});$('#genreFilter').addEventListener('change',e=>{activeGenre=e.target.value;renderChips();render();});$('#genreChips').addEventListener('click',e=>{const b=e.target.closest('[data-genre]');if(!b)return;activeGenre=b.dataset.genre;$('#genreFilter').value=activeGenre;renderChips();render();});$('#sortButton').addEventListener('click',()=>{sortNewest=!sortNewest;$('#sortButton').innerHTML=`↕ <span>${sortNewest?'Newest first':'Featured'}</span>`;render();});$('#movieGrid').addEventListener('click',e=>{const saveBtn=e.target.closest('[data-save]');if(saveBtn){e.stopPropagation();toggleSave(saveBtn.dataset.save);return;}const details=e.target.closest('[data-details]');if(details){openDetails(details.dataset.details);return;}const card=e.target.closest('[data-card]');if(card)openDetails(card.dataset.card);});$('#savedToggle').addEventListener('click',()=>{showingSaved=!showingSaved;$('#savedToggle').style.borderColor=showingSaved?'var(--accent)':'';$('#savedToggle').innerHTML=`${showingSaved?'♥':'♡'} <span class="saved-count" id="savedCount">${saved.size}</span>`;document.querySelector('#library').scrollIntoView({behavior:'smooth'});render();});$('#loadMore').addEventListener('click',loadMore);$('#modalClose').addEventListener('click',()=>closeModal('#modalBackdrop'));$('#modalBackdrop').addEventListener('click',e=>{if(e.target===$('#modalBackdrop'))closeModal('#modalBackdrop');});$('#modalPlay').addEventListener('click',()=>playFilm(selected));$('#modalSave').addEventListener('click',()=>toggleSave(selected.id));$('#playerClose').addEventListener('click',()=>{const v=$('#playerFrame video');if(v)v.pause();$('#playerFrame').replaceChildren();closeModal('#playerBackdrop');});$('#playerBackdrop').addEventListener('click',e=>{if(e.target===$('#playerBackdrop')){$('#playerClose').click();}});$('#menuButton').addEventListener('click',()=>$('.nav-links').classList.toggle('open'));$('.nav-links').addEventListener('click',e=>{if(e.target.closest('a'))$('.nav-links').classList.remove('open');});document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!$('#playerBackdrop').hidden)$('#playerClose').click();else closeModal('#modalBackdrop');}if(e.key==='/'&&!/input|textarea/i.test(document.activeElement.tagName)){e.preventDefault();$('#searchInput').focus();}});
+  let tmdbSearchTimer,archiveSearchTimer;
+  $('#searchInput').addEventListener('input',e=>{query=e.target.value;render();clearTimeout(tmdbSearchTimer);clearTimeout(archiveSearchTimer);if(query.trim().length>=2){if(tmdbKey())tmdbSearchTimer=setTimeout(()=>searchTmdb(query),450);else archiveSearchTimer=setTimeout(()=>searchArchive(query),500);}});
+  $('#heroPlay').addEventListener('click',()=>playFilm(selected));$('#heroDetails').addEventListener('click',()=>openDetails(selected.id));$('#genreFilter').addEventListener('change',e=>{activeGenre=e.target.value;renderChips();render();});$('#genreChips').addEventListener('click',e=>{const b=e.target.closest('[data-genre]');if(!b)return;activeGenre=b.dataset.genre;$('#genreFilter').value=activeGenre;renderChips();render();});$('#sortButton').addEventListener('click',()=>{sortNewest=!sortNewest;$('#sortButton').innerHTML=`↕ <span>${sortNewest?'Newest first':'Featured'}</span>`;render();});$('#movieGrid').addEventListener('click',e=>{const saveBtn=e.target.closest('[data-save]');if(saveBtn){e.stopPropagation();toggleSave(saveBtn.dataset.save);return;}const details=e.target.closest('[data-details]');if(details){openDetails(details.dataset.details);return;}const card=e.target.closest('[data-card]');if(card)openDetails(card.dataset.card);});$('#savedToggle').addEventListener('click',()=>{showingSaved=!showingSaved;$('#savedToggle').style.borderColor=showingSaved?'var(--accent)':'';$('#savedToggle').innerHTML=`${showingSaved?'♥':'♡'} <span class="saved-count" id="savedCount">${saved.size}</span>`;document.querySelector('#library').scrollIntoView({behavior:'smooth'});render();});$('#loadMore').addEventListener('click',loadMore);$('#modalClose').addEventListener('click',()=>closeModal('#modalBackdrop'));$('#modalBackdrop').addEventListener('click',e=>{if(e.target===$('#modalBackdrop'))closeModal('#modalBackdrop');});$('#modalPlay').addEventListener('click',()=>playFilm(selected));$('#modalSave').addEventListener('click',()=>toggleSave(selected.id));$('#playerClose').addEventListener('click',()=>{const v=$('#playerFrame video');if(v)v.pause();$('#playerFrame').replaceChildren();closeModal('#playerBackdrop');});$('#playerBackdrop').addEventListener('click',e=>{if(e.target===$('#playerBackdrop')){$('#playerClose').click();}});$('#menuButton').addEventListener('click',()=>$('.nav-links').classList.toggle('open'));$('.nav-links').addEventListener('click',e=>{if(e.target.closest('a'))$('.nav-links').classList.remove('open');});document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!$('#playerBackdrop').hidden)$('#playerClose').click();else closeModal('#modalBackdrop');}if(e.key==='/'&&!/input|textarea/i.test(document.activeElement.tagName)){e.preventDefault();$('#searchInput').focus();}});
   // Gentle hero rotation, paused when the visitor is interacting with the hero or has reduced motion enabled.
   if(!window.matchMedia('(prefers-reduced-motion: reduce)').matches){setInterval(()=>{if(!document.hidden&&!document.body.classList.contains('modal-open')&&!$('#searchInput').value)updateHero((heroIndex+1)%featuredIds.length);},12000);}
 })();
