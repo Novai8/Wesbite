@@ -5,6 +5,7 @@
   const byId = (id) => catalog.find(m => m.id === id);
   const archive = 'https://archive.org';
   const catalog = [];
+  let cinematicScrubReady = false;
   const featuredIds = [];
   const genres = ['All','Comedy','Thriller','Adventure','Noir','Sci-Fi','Horror','Animation','Drama','Family','Mystery','Action'];
   let activeGenre = 'all', activeEra = '2000-2026', query = '', sortNewest = false, showingSaved = false, extraPage = 1, selected = catalog[0], heroIndex = 0;
@@ -702,7 +703,7 @@
   // Cinematic genre backdrop and scrub reel; all catalog titles remain sourced from the live catalog.
   const sceneAliases={'Sci-Fi':'Sci-fi','Science Fiction':'Sci-fi','Animation':'Fantasy','Adventure':'Fantasy','Horror':'Mystery','Noir':'Crime','Comedy':'Drama','Family':'Drama','Documentary':'Drama','Western':'Action','War':'Action'};
   const scenePalette=['#ff5a1f','#f3e7cf','#8a5cff','#ff8fab','#00b3b3','#ffd23f','#5aa9ff','#3ddc97','#e63946'];
-  let scrubPos=0,scrubTarget=0,scrubVelocity=0,scrubIntro=true,scrubFrame=0,scrubDown=false,scrubStartX=0,scrubStartPos=0;
+  let scrubPos=0,scrubTarget=0,scrubVelocity=0,scrubIntro=true,scrubFrame=0,scrubDown=false,scrubStartX=0,scrubStartPos=0,lastScrubTitle=-1;
   const reduceMotion=window.matchMedia('(prefers-reduced-motion: reduce)');
   function sceneGenre(m){const g=(m&&m.genres&&m.genres[0])||'Sci-fi';return sceneAliases[g]||(['Sci-fi','Thriller','Drama','Action','Romance','Crime','Fantasy','Mystery'].includes(g)?g:'Sci-fi');}
   function setGenreScene(genre){const normalized=sceneAliases[genre]||genre||'Sci-fi';document.querySelectorAll('.genre-scene').forEach(el=>el.classList.toggle('is-active',el.dataset.scene.toLowerCase()===String(normalized).toLowerCase()));}
@@ -718,12 +719,13 @@
   function applyScrubPosition(){
     const track=$('#scrubTrack');if(!track)return;
     const items=track.querySelectorAll('.scrub-poster');const last=Math.max(0,items.length-1);
-    items.forEach((el,i)=>{const d=Math.abs(i-scrubPos);el.style.transform='translateX(-50%) scale('+(1+.3*Math.max(0,1-d))+')';el.style.opacity=String(1-Math.min(.6,d*.18));el.classList.toggle('is-current',Math.round(scrubPos)===i);});
+    items.forEach((el,i)=>{const d=Math.abs(i-scrubPos);el.style.left='calc(50% + '+((i-scrubPos)*164)+'px)';el.style.transform='translateX(-50%) scale('+(1+.3*Math.max(0,1-d))+')';el.style.opacity=String(1-Math.min(.6,d*.18));el.classList.toggle('is-current',Math.round(scrubPos)===i);});
     track.style.filter=reduceMotion.matches?'none':'blur('+Math.min(12,Math.abs(scrubVelocity)*.45).toFixed(2)+'px)';
     track.style.setProperty('--scrub-x',((.5-(scrubPos/Math.max(1,last)))*100)+'%');
     const playhead=$('#timelinePlayhead');if(playhead)playhead.style.left=(last?scrubPos/last*100:0)+'%';
-    const index=Math.max(0,Math.min(last,Math.round(scrubPos)));if(items[index]){setGenreScene(sceneGenre(byId(featuredIds[index])));const cur=$('.index-current');if(cur)cur.textContent=String(index+1).padStart(2,'0');const total=$('.hero-index>span:last-child');if(total)total.textContent=String(items.length).padStart(2,'0');}
+    const index=Math.max(0,Math.min(last,Math.round(scrubPos)));if(items[index]){setGenreScene(sceneGenre(byId(featuredIds[index])));const cur=$('.index-current');if(cur)cur.textContent=String(index+1).padStart(2,'0');const total=$('.hero-index>span:last-child');if(total)total.textContent=String(items.length).padStart(2,'0');if(lastScrubTitle!==index){lastScrubTitle=index;syncScrubTitle(index);}}
   }
+  function syncScrubTitle(index){const m=byId(featuredIds[index]);if(!m)return;selected=m;heroIndex=index;$('#heroTitle').textContent=m.title||'Untitled';$('#heroCopy').textContent=m.desc||'Explore this title and its available watch options.';$('#heroKicker').textContent=(m.tag||'FEATURED TITLE')+' · RAPIFLIX';$('#heroYear').textContent=m.year||'—';$('#heroGenre').textContent=(m.genres||[]).join(' · ')||'Catalogue selection';const art=$('#heroArt');if(art)art.style.backgroundImage=m.poster?'linear-gradient(90deg,#05060c55,transparent),url("'+String(m.poster).replace(/"/g,'%22')+'")':'none';const play=$('#heroPlay');if(play){play.disabled=false;play.innerHTML='<span class="fast-mark mini-fast" aria-hidden="true"><i></i><i></i></span> '+(m.kind==='tmdb'?'Play title':'Play free film');}}
   function chooseScrub(index,open=false){const ids=featuredIds.filter(id=>byId(id));if(!ids.length)return;const next=Math.max(0,Math.min(ids.length-1,index));scrubTarget=next;scrubIntro=false;scrubPos=reduceMotion.matches?next:scrubPos;heroIndex=next;updateHero(next);if(open)openDetails(ids[next]);}
   function startScrubLoop(){if(scrubFrame)return;const tick=()=>{scrubFrame=0;if(document.hidden)return;const old=scrubPos;const ease=reduceMotion.matches?.99:(scrubIntro?.04:.14);scrubPos+=(scrubTarget-scrubPos)*ease;scrubVelocity=(scrubPos-old)*164;if(Math.abs(scrubTarget-scrubPos)<.006){scrubPos=scrubTarget;scrubIntro=false;scrubVelocity*=.65;}applyScrubPosition();if(Math.abs(scrubTarget-scrubPos)>.01||Math.abs(scrubVelocity)>.1)scrubFrame=requestAnimationFrame(tick);};scrubFrame=requestAnimationFrame(tick);}
   const scrubStage=$('#scrubStage');
@@ -743,6 +745,7 @@
     const draw=()=>{raf=0;if(document.hidden)return;ctx.clearRect(0,0,w,h);for(const p of particles){const dx=p.x-pointerX,dy=p.y-pointerY,dist=Math.hypot(dx,dy)||1;if(dist<150){const force=(150-dist)/150*1.4;p.vx+=(dx/dist)*force;p.vy+=(dy/dist)*force;}p.vx*=.96;p.vy*=.96;p.x+=p.vx+Math.sin(p.p+=.004)*.18;p.y+=p.vy-p.s;if(p.y<-5)p.y=h+5;if(p.x<-5)p.x=w+5;if(p.x>w+5)p.x=-5;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,'+p.a+')';ctx.fill();}raf=requestAnimationFrame(draw);};
     resize();const start=()=>{if(!raf&&!document.hidden)raf=requestAnimationFrame(draw);};document.addEventListener('visibilitychange',()=>{if(document.hidden){if(raf)cancelAnimationFrame(raf);raf=0;}else start();});window.addEventListener('resize',resize,{passive:true});start();
   }
+  cinematicScrubReady=true;renderScrubReel();
   setupParticles();
   const routeSweep=$('.route-sweep');document.querySelectorAll('[data-route]').forEach(link=>link.addEventListener('click',e=>{const route=link.dataset.route;if(route==='home'){e.preventDefault();history.pushState({route},'', '/');$('.nav-links .active')?.classList.remove('active');link.classList.add('active');window.scrollTo({top:0,behavior:reduceMotion.matches?'auto':'smooth'});routeSweep?.classList.remove('run');void routeSweep?.offsetWidth;routeSweep?.classList.add('run');return;}e.preventDefault();history.pushState({route},'', '/'+route);$('.nav-links .active')?.classList.remove('active');link.classList.add('active');routeSweep?.classList.remove('run');void routeSweep?.offsetWidth;routeSweep?.classList.add('run');const endpoint=route==='series'?'discover/tv':route==='anime'?'anime':'discover/movie';loadTmdb(endpoint,route==='series'?'TV Series':route==='anime'?'Anime':'Movies').then(()=>{document.querySelector('#library')?.scrollIntoView({behavior:reduceMotion.matches?'auto':'smooth'});});}));
   window.addEventListener('popstate',()=>{const path=location.pathname.replace(/\/$/,'');const route=path.split('/').pop();if(route==='movies'||route==='series'||route==='anime'){const link=document.querySelector('[data-route="'+route+'"]');if(link)link.click();}else{const link=document.querySelector('[data-route="home"]');if(link)link.click();}});
