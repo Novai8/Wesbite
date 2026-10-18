@@ -7,3 +7,12 @@
 
 /* Hybrid streaming source panels */
 .provider-options{margin-top:18px;padding-top:15px;border-top:1px solid #ffffff16;display:grid;gap:12px}.provider-options>strong,.provider-head strong{font:600 13px 'Space Grotesk';color:#f3edf6}.provider-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.provider-head label{display:flex;align-items:center;gap:8px;font-size:10px;color:#a9a2af}.provider-head select{background:#17151d;border:1px solid #ffffff2c;border-radius:4px;color:#f6f0f7;padding:7px 8px}.provider-group{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.provider-kind{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:#9e96a6;min-width:82px}.provider-pill{display:inline-flex;align-items:center;gap:6px;border:1px solid #ffffff20;border-radius:5px;padding:5px 8px;background:#ffffff06;color:#ded7e2;font-size:10px}.provider-pill img{width:18px;height:18px;object-fit:contain;border-radius:3px}.provider-source-link{color:var(--gold);font-size:10px;text-decoration:underline;width:fit-content}.provider-options .source-note{margin:0;font-size:10px;line-height:1.6}
+
+
+/* TMDB-required source attribution, kept secondary to Rapiflix branding. */
+.tmdb-credit{display:flex;align-items:center;gap:15px;margin-top:24px;padding-top:18px;border-top:1px solid var(--line)}
+.tmdb-credit-logo{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;background:#f4f2ed;border-radius:5px;padding:8px}
+.tmdb-credit-logo img{display:block;width:86px;height:auto;max-width:100%}
+.tmdb-credit p{margin:0;font-size:10px;line-height:1.8;color:var(--muted)}
+.tmdb-credit p strong{color:var(--text);font-weight:600}
+@media(max-width:560px){.tmdb-credit{align-items:flex-start;flex-direction:column}.tmdb-credit-logo img{width:82px}}
