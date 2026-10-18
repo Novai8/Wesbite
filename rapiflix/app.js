@@ -332,35 +332,68 @@
   function readProgress(id){try{return Number((JSON.parse(localStorage.getItem(progressKey)||'{}'))[id]||0);}catch(_){return 0;}}
   function writeProgress(id,time,duration){try{const all=JSON.parse(localStorage.getItem(progressKey)||'{}');if(duration>0&&time/duration>.96)delete all[id];else if(time>5)all[id]=Math.floor(time);localStorage.setItem(progressKey,JSON.stringify(all));}catch(_){}}
   function archiveVideoFiles(data){return (data.files||[]).filter(f=>/\.(mp4|m4v|webm|ogv)$/i.test(f.name||'')&&!/(thumb|sample|trailer|preview|poster|torrent|storyboard|\.ia\.)/i.test(f.name||'')&&!/^(metadata|__ia_thumb)/i.test(f.name||'')).map(f=>{const name=String(f.name||'');const ext=(name.split('.').pop()||'').toLowerCase();const height=Number(f.height)||0;const size=Number(f.size)||0;let score=ext==='mp4'||ext==='m4v'?300:ext==='webm'?220:160;if(height>=360&&height<=1080)score+=25;if(height>1080)score-=20;if(size>1500*1024*1024)score-=25;if(size>0&&size<4*1024*1024)score-=60;if(/512kb|lowres|tiny/i.test(name))score-=40;return {name,ext,size,height,score,url:archive+'/download/'+encodeURIComponent(data.metadata?.identifier||'')+'/'+name.split('/').map(encodeURIComponent).join('/')}}).sort((a,b)=>b.score-a.score||(a.size||Number.MAX_SAFE_INTEGER)-(b.size||Number.MAX_SAFE_INTEGER));}
+  async function fetchCineProSources(tmdbId,mediaType='movie',season,episode){
+    if(!/^\\d{1,20}$/.test(String(tmdbId)))throw new Error('Invalid TMDB title ID.');
+    let path='v1/movies/'+encodeURIComponent(String(tmdbId));
+    if(mediaType==='tv'){
+      if(!Number.isInteger(Number(season))||Number(season)<0||Number(season)>99||!Number.isInteger(Number(episode))||Number(episode)<1||Number(episode)>9999)throw new Error('Invalid season or episode number.');
+      path='v1/tv/'+encodeURIComponent(String(tmdbId))+'/seasons/'+Number(season)+'/episodes/'+Number(episode);
+    }
+    const response=await fetch('/api/cinepro/'+path,{headers:{Accept:'application/json'},cache:'no-store'});
+    let data={};try{data=await response.json();}catch(_){}
+    if(!response.ok)throw new Error(data.error?.message||data.error||'CinePro request failed ('+response.status+').');
+    const subtitles=(Array.isArray(data.subtitles)?data.subtitles:[]).map(track=>({label:track.label||track.language||'Subtitle',language:track.language||'und',src:track.url})).filter(track=>typeof track.src==='string'&&/^https:\\/\\//i.test(track.src));
+    return (Array.isArray(data.sources)?data.sources:[]).filter(source=>source&&typeof source.url==='string'&&/^https:\\/\\//i.test(source.url)).map((source,index)=>({
+      authorized:true,
+      provider:'CinePro · '+String(source.provider?.name||source.provider||'Source provider'),
+      label:String(source.quality||source.label||('Source '+(index+1))),
+      url:source.url,
+      type:String(source.type||'mp4').toLowerCase(),
+      height:Number(String(source.quality||'').match(/\\d{3,4}/)?.[0])||0,
+      subtitles,
+      audioTracks:Array.isArray(source.audioTracks)?source.audioTracks:[]
+    }));
+  }
   async function playFilm(m){
     await licensedStreamsReady;
     if(!m)return;
-    // TMDB movies, including anime films, use VidCore's movie embed route.
-    if(m.kind==='tmdb'&&m.mediaType!=='tv'){
+    // Keep VidCore as the default movie player and offer CinePro as an additional source.
+    if(m.kind==='tmdb'&&m.mediaType!=='tv'&&!m.forceCineProPlayback){
       $('#modalBackdrop').hidden=true;$('#playerBackdrop').hidden=false;document.body.classList.add('modal-open');
       $('#playerTitle').textContent=m.title;
       const frame=$('#playerFrame'), controls=$('#playerControls');
-      controls.innerHTML='<p class="source-note">Movie playback is provided by the external embed. Available quality, audio, and subtitles depend on the player.</p>';
-      const iframe=document.createElement('iframe');
-      iframe.src='https://vidcore.org/embed/movie/'+encodeURIComponent(String(m.tmdbId));
-      iframe.title='VidCore player for '+m.title;
-      iframe.width='100%';iframe.height='100%';iframe.frameBorder='0';
-      iframe.allow='autoplay; encrypted-media; picture-in-picture; fullscreen';
-      iframe.allowFullscreen=true;
-      iframe.referrerPolicy='strict-origin-when-cross-origin';
-      iframe.loading='eager';
-      iframe.style.width='100%';iframe.style.height='100%';iframe.style.minHeight='min(62vw,620px)';iframe.style.border='0';iframe.style.background='#000';
-      frame.replaceChildren(iframe);
+      controls.innerHTML='<div class="provider-switch"><button type="button" id="playVidCore" class="secondary-button">VidCore</button><button type="button" id="playCinePro" class="secondary-button">CinePro sources</button></div><p class="source-note" id="cineProStatus">VidCore is active. CinePro can be tried without removing the existing provider.</p>';
+      function showVidCore(){
+        const iframe=document.createElement('iframe');
+        iframe.src='https://vidcore.org/embed/movie/'+encodeURIComponent(String(m.tmdbId));
+        iframe.title='VidCore player for '+m.title;
+        iframe.width='100%';iframe.height='100%';iframe.frameBorder='0';
+        iframe.allow='autoplay; encrypted-media; picture-in-picture; fullscreen';
+        iframe.allowFullscreen=true;iframe.referrerPolicy='strict-origin-when-cross-origin';iframe.loading='eager';
+        iframe.style.width='100%';iframe.style.height='100%';iframe.style.minHeight='min(62vw,620px)';iframe.style.border='0';iframe.style.background='#000';
+        frame.replaceChildren(iframe);
+        $('#cineProStatus').textContent='VidCore is active. Choose CinePro sources to check the second provider.';
+      }
+      controls.querySelector('#playVidCore').addEventListener('click',showVidCore);
+      controls.querySelector('#playCinePro').addEventListener('click',async()=>{
+        const status=$('#cineProStatus');status.textContent='Checking CinePro sources…';
+        try{
+          const sources=await fetchCineProSources(m.tmdbId,'movie');
+          if(!sources.length)throw new Error('CinePro returned no playable sources for this title.');
+          await playFilm({...m,forceCineProPlayback:true,authorizedSources:sources});
+        }catch(error){status.textContent='CinePro unavailable: '+error.message+' VidCore remains available.';}
+      });
+      showVidCore();
       return;
     }
     // TV playback uses the requested VidCore episode route. The series TMDB ID alone
     // is not enough: the player URL also needs a season and episode number.
-    if(m.kind==='tmdb'&&m.mediaType==='tv'){
+    if(m.kind==='tmdb'&&m.mediaType==='tv'&&!m.forceCineProPlayback){
       $('#modalBackdrop').hidden=true;$('#playerBackdrop').hidden=false;document.body.classList.add('modal-open');
       $('#playerTitle').textContent=m.title;
       const frame=$('#playerFrame'), controls=$('#playerControls');
       frame.innerHTML='<div class="player-placeholder"><div class="live-dot"></div><strong>Loading episodes…</strong><p>Getting season and episode information.</p></div>';
-      controls.innerHTML='<label>Season <select id="tvSeason"><option value="1">Season 1</option></select></label><label>Episode <select id="tvEpisode"><option value="1">Episode 1</option></select></label>';
+      controls.innerHTML='<label>Season <select id="tvSeason"><option value="1">Season 1</option></select></label><label>Episode <select id="tvEpisode"><option value="1">Episode 1</option></select></label><button type="button" id="playCineProEpisode" class="secondary-button">Try CinePro sources</button><p class="source-note" id="cineProEpisodeStatus">VidCore remains the default TV player.</p>';
       const seasonSelect=controls.querySelector('#tvSeason'), episodeSelect=controls.querySelector('#tvEpisode');
       let seasonData=[];
       function loadVidCoreEpisode(){
@@ -379,6 +412,15 @@
         // Do not sandbox this third-party player: sandbox restrictions can prevent playback.
         frame.replaceChildren(iframe);
       }
+      controls.querySelector('#playCineProEpisode').addEventListener('click',async()=>{
+        const season=Math.max(0,Number(seasonSelect.value)||0),episode=Math.max(1,Number(episodeSelect.value)||1);
+        const status=controls.querySelector('#cineProEpisodeStatus');status.textContent='Checking CinePro sources…';
+        try{
+          const sources=await fetchCineProSources(m.tmdbId,'tv',season,episode);
+          if(!sources.length)throw new Error('CinePro returned no playable sources for this episode.');
+          await playFilm({...m,forceCineProPlayback:true,authorizedSources:sources,episodeSeason:season,episodeNumber:episode});
+        }catch(error){status.textContent='CinePro unavailable: '+error.message+' VidCore remains available.';}
+      });
       seasonSelect.addEventListener('change',async()=>{
         const seasonNumber=Number(seasonSelect.value)||1;
         const season=seasonData.find(item=>Number(item.season_number)===seasonNumber);
@@ -407,19 +449,24 @@
       loadVidCoreEpisode();
       return;
     }
-    if(m.kind==='tmdb'&&!getAuthorizedSources(m).length){
+    if(m.kind==='tmdb'&&!m.forceCineProPlayback&&!getAuthorizedSources(m).length){
       const watchUrl=m.watchLink||('https://www.themoviedb.org/'+(m.mediaType==='tv'?'tv/':'movie/')+encodeURIComponent(m.tmdbId)+'/watch');
       window.open(watchUrl,'_blank','noopener,noreferrer');
       closeModal('#modalBackdrop');
       toast('Opened official watch options for this title');
       return;
     }
-    if(m.kind==='tmdb')m.authorizedSources=getAuthorizedSources(m);
+    if(m.kind==='tmdb'&&!m.forceCineProPlayback)m.authorizedSources=getAuthorizedSources(m);
     $('#modalBackdrop').hidden=true;$('#playerBackdrop').hidden=false;document.body.classList.add('modal-open');
     $('#playerTitle').textContent=m.title;
     const frame=$('#playerFrame'), controls=$('#playerControls');
     frame.innerHTML='<div class="player-placeholder"><div class="live-dot"></div><strong>Preparing your film…</strong><p>Checking source rights, video files, and playback tracks.</p></div>';
     controls.innerHTML='<label>Source <select id="playerSource" disabled><option>Finding authorized sources…</option></select></label><label>Quality <select id="playerQuality" disabled><option>Auto</option></select></label><label>Subtitles <select id="playerSubtitles" disabled><option value="off">Off</option></select></label><label>Audio <select id="playerAudio" disabled><option value="default">Source default</option></select></label>';
+    if(m.kind==='tmdb'&&m.forceCineProPlayback){
+      const back=document.createElement('button');back.type='button';back.className='secondary-button';back.textContent='Back to VidCore';
+      back.addEventListener('click',()=>playFilm({...m,forceCineProPlayback:false,authorizedSources:undefined}));
+      controls.prepend(back);
+    }
     const iframeSources=validatedLicensedSources(m.authorizedSources).filter(source=>source.mode==='iframe');
     if(m.kind==='tmdb'&&iframeSources.length){
       controls.innerHTML=iframeSources.length>1?'<label>Authorized embed source <select id="iframeSource"></select></label>':'<p class="source-note">Playing through an authorized external player. Audio and subtitle options are controlled by that provider.</p>';
