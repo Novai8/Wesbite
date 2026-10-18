@@ -41,3 +41,14 @@ This is a front-end prototype, not a commercial streaming rights package. It doe
 The Discover page can load trending, now-playing, upcoming and popular movie metadata from TMDB. Click **Connect TMDB** and paste a TMDB v3 API key. The temporary test flow stores it in the current browser's local storage and does not put it in this repository. Clear it by clicking **Connect TMDB** and submitting an empty value. Revoke any key that has been exposed publicly.
 
 TMDB data includes titles, release dates, synopses, posters and genres. It does not provide movie files or grant streaming rights. TMDB cards link to the official watch-options page; the built-in player remains reserved for titles that have an actual source URL, such as Internet Archive discoveries. TMDB requires attribution and its free developer API is not intended for a revenue-generating commercial product without the appropriate permission. See the [official authentication guide](https://developer.themoviedb.org/docs/authentication-application) and [TMDB FAQ](https://developer.themoviedb.org/docs/faq).
+
+
+## Hybrid streaming features
+
+- TMDB discovery is metadata-only. TMDB title cards are labelled **DISCOVER**, not free streams.
+- The details panel requests regional movie availability from TMDB's watch-provider endpoint using the selected country (Pakistan by default). Listings are supplied through TMDB/JustWatch and require JustWatch attribution; provider listings are not a playback feed. The official availability link is shown when returned.
+- For Internet Archive entries, the details panel checks the item metadata for compatible video files and any declared rights/licence fields. This is a screening aid, **not a legal determination**; review the original item and license before public distribution or monetization.
+- The existing Rapiflix player remains in place and attempts a direct HTML video source where one is available, with a fallback link to the original host.
+- For local testing, connect the temporary TMDB key in the browser. This remains a prototype: the key is visible to the browser and can be inspected by a visitor. Before public deployment, replace browser-key storage with a server-side proxy and a secret environment variable.
+
+The regional provider feature uses TMDB's [movie watch-provider API](https://developer.themoviedb.org/reference/movie-watch-providers); provider availability is regional and can change. Attribution to JustWatch is required for this dataset.
