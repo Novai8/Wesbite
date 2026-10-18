@@ -7,7 +7,8 @@
   const catalog = [];
   const featuredIds = [];
   const genres = ['All','Comedy','Thriller','Adventure','Noir','Sci-Fi','Horror','Animation','Drama','Family','Mystery','Action'];
-  let activeGenre = 'all', activeEra = 'all', query = '', sortNewest = false, showingSaved = false, extraPage = 1, selected = catalog[0], heroIndex = 0;
+  let activeGenre = 'all', activeEra = '2000-2026', query = '', sortNewest = false, showingSaved = false, extraPage = 1, selected = catalog[0], heroIndex = 0;
+  let currentTmdbEndpoint = 'discover/movie', currentTmdbLabel = '2000–2026', currentTmdbPage = 1, currentTmdbTotalPages = 1, currentTmdbParams = { 'primary_release_date.gte': '2000-01-01', 'primary_release_date.lte': '2026-12-31', sort_by: 'popularity.desc' };
   const tmdbKeyName = 'rapiflix-tmdb-key';
   let tmdbGenreMap = {};
   let licensedStreams = {};
@@ -54,23 +55,51 @@
   }
   function setTmdbStatus(message){const el=$('#tmdbStatus');if(el)el.textContent=message;}
   function connectTmdb(){const value=window.prompt('Paste your temporary TMDB v3 API key. It is saved in this browser only, not in GitHub.',tmdbKey());if(value===null)return false;const key=value.trim();try{if(key)localStorage.setItem(tmdbKeyName,key);else localStorage.removeItem(tmdbKeyName);}catch(_){setTmdbStatus('Browser storage is unavailable.');return false;}if(!key){setTmdbStatus('TMDB key cleared from this browser.');return false;}return true;}
+  function mapTmdbMovie(m,label){
+    return {id:'tmdb-'+m.id,tmdbId:m.id,title:m.title,year:Number((m.release_date||'').slice(0,4))||0,runtime:'Runtime varies',genres:(m.genre_ids||[]).map(g=>tmdbGenreMap[g]).filter(Boolean).slice(0,3),originalLanguage:m.original_language||'',desc:m.overview||'No synopsis is available yet.',poster:m.poster_path?'https://image.tmdb.org/t/p/w500'+m.poster_path:'',source:'https://www.themoviedb.org/movie/'+m.id,sourceName:'TMDB',kind:'tmdb',tag:(label||'TMDB').toUpperCase()};
+  }
   async function loadTmdb(endpoint,label){
     if(isLocalPreview()&&!tmdbKey()){if(!connectTmdb())return;}
-    setTmdbStatus('Loading current movie data…');
+    currentTmdbEndpoint=endpoint;currentTmdbLabel=label||'TMDB';currentTmdbPage=1;
+    currentTmdbParams=endpoint==='discover/movie'
+      ? {'primary_release_date.gte':'2000-01-01','primary_release_date.lte':'2026-12-31',sort_by:sortNewest?'primary_release_date.desc':'popularity.desc','vote_count.gte':10}
+      : {};
+    setTmdbStatus('Loading films from 2000 through 2026…');
+    const moreButton=$('#loadMoreTmdb');if(moreButton){moreButton.disabled=true;moreButton.textContent='Loading catalogue…';}
     try{
       try{const genreResponse=await tmdbRequest('genre/movie/list',{language:'en-US'});if(genreResponse.ok){const genreData=await genreResponse.json();(genreData.genres||[]).forEach(g=>tmdbGenreMap[g.id]=g.name);}}catch(_){}
       document.querySelectorAll('[data-tmdb]').forEach(b=>b.classList.toggle('active',b.dataset.tmdb===endpoint));
-      const response=await tmdbRequest(endpoint,{language:'en-US',page:'1',region:'PK'});
+      const response=await tmdbRequest(endpoint,{language:'en-US',page:'1',region:'PK',...currentTmdbParams});
       const data=await response.json();
       if(!response.ok)throw new Error(data.status_message||data.error||'Movie catalogue request failed');
-      const fresh=(data.results||[]).filter(m=>m&&m.id&&m.title).map(m=>({id:'tmdb-'+m.id,tmdbId:m.id,title:m.title,year:Number((m.release_date||'').slice(0,4))||0,runtime:'Runtime varies',genres:(m.genre_ids||[]).map(g=>tmdbGenreMap[g]).filter(Boolean).slice(0,3),originalLanguage:m.original_language||'',desc:m.overview||'No synopsis is available yet.',poster:m.poster_path?'https://image.tmdb.org/t/p/w500'+m.poster_path:'',source:'https://www.themoviedb.org/movie/'+m.id,sourceName:'TMDB',kind:'tmdb',tag:(label||'TMDB').toUpperCase()}));
+      const fresh=(data.results||[]).filter(m=>m&&m.id&&m.title).map(m=>mapTmdbMovie(m,currentTmdbLabel));
       for(let i=catalog.length-1;i>=0;i--)if(catalog[i].kind==='tmdb')catalog.splice(i,1);
-      catalog.unshift(...fresh);if(fresh.length){featuredIds.splice(0,featuredIds.length,...fresh.slice(0,4).map(m=>m.id));heroIndex=0;updateHero(0);}activeGenre='all';showingSaved=false;query='';$('#searchInput').value='';$('#genreFilter').value='all';renderChips();render();
-      setTmdbStatus('Loaded '+fresh.length+' '+String(label||'catalogue').toLowerCase()+' titles. Watchable films open in Rapiflix; commercial titles use licensed watch options.');
+      catalog.unshift(...fresh);currentTmdbTotalPages=Math.min(Number(data.total_pages)||1,500);
+      if(fresh.length){featuredIds.splice(0,featuredIds.length,...fresh.slice(0,4).map(m=>m.id));heroIndex=0;updateHero(0);}
+      activeGenre='all';activeEra=endpoint==='discover/movie'?'2000-2026':'all';showingSaved=false;query='';$('#searchInput').value='';$('#genreFilter').value='all';$('#eraFilter').value=activeEra;renderChips();render();
+      setTmdbStatus('Loaded '+fresh.length+' films from '+currentTmdbLabel+'. '+(currentTmdbPage<currentTmdbTotalPages?'More results are ready to load.':'No further pages available in this catalogue query.'));
     }catch(error){
       setTmdbStatus('Movie catalogue unavailable: '+error.message+'. Check the TMDB server secret and redeploy if this is the live site.');
       console.error(error);
+    }finally{
+      if(moreButton){moreButton.disabled=false;moreButton.textContent=currentTmdbPage<currentTmdbTotalPages?'Load more movies · '+currentTmdbLabel:'Catalogue page limit reached';moreButton.disabled=currentTmdbPage>=currentTmdbTotalPages;}
     }
+  }
+  async function loadMoreTmdb(){
+    if(currentTmdbPage>=currentTmdbTotalPages)return;
+    const btn=$('#loadMoreTmdb');btn.disabled=true;btn.textContent='Loading more movies…';
+    try{
+      const next=currentTmdbPage+1;
+      const response=await tmdbRequest(currentTmdbEndpoint,{language:'en-US',page:String(next),region:'PK',...currentTmdbParams});
+      const data=await response.json();
+      if(!response.ok)throw new Error(data.status_message||data.error||'Could not load the next page');
+      const existing=new Set(catalog.filter(m=>m.kind==='tmdb').map(m=>m.id));
+      const fresh=(data.results||[]).filter(m=>m&&m.id&&m.title&&!existing.has('tmdb-'+m.id)).map(m=>mapTmdbMovie(m,currentTmdbLabel));
+      catalog.push(...fresh);currentTmdbPage=next;currentTmdbTotalPages=Math.min(Number(data.total_pages)||currentTmdbTotalPages,500);
+      render();setTmdbStatus('Showing '+catalog.filter(m=>m.kind==='tmdb').length+' discovered films. Page '+currentTmdbPage+' of '+currentTmdbTotalPages+' for '+currentTmdbLabel+'.');
+      if(fresh.length)toast('Added '+fresh.length+' more movies');
+    }catch(error){setTmdbStatus('Could not load more movies: '+error.message);toast('Movie catalogue page failed to load');}
+    finally{btn.disabled=currentTmdbPage>=currentTmdbTotalPages;btn.textContent=btn.disabled?'Catalogue page limit reached':'Load more movies · '+currentTmdbLabel;}
   }
   async function searchTmdb(text){
     if(!text.trim())return;
@@ -79,7 +108,7 @@
       const data=await response.json();
       if(!response.ok)throw new Error(data.status_message||data.error||'Search failed');
       if(query.trim()!==text.trim())return;
-      const fresh=(data.results||[]).filter(m=>m&&m.id&&m.title).map(m=>({id:'tmdb-'+m.id,tmdbId:m.id,title:m.title,year:Number((m.release_date||'').slice(0,4))||0,runtime:'Runtime varies',genres:(m.genre_ids||[]).map(g=>tmdbGenreMap[g]).filter(Boolean).slice(0,3),desc:m.overview||'No synopsis is available yet.',poster:m.poster_path?'https://image.tmdb.org/t/p/w500'+m.poster_path:'',source:'https://www.themoviedb.org/movie/'+m.id,sourceName:'TMDB',kind:'tmdb',tag:'SEARCH RESULT'}));
+      const fresh=(data.results||[]).filter(m=>m&&m.id&&m.title).map(m=>mapTmdbMovie(m,'SEARCH RESULT'));
       for(let i=catalog.length-1;i>=0;i--)if(catalog[i].kind==='tmdb')catalog.splice(i,1);
       catalog.unshift(...fresh);render();setTmdbStatus('Movie search results loaded. Commercial titles are not falsely labelled as playable.');
     }catch(error){
@@ -97,7 +126,7 @@
   function posterMarkup(m){return `<div class="poster-wrap" style="background:${fallbackGradients[Math.abs(m.title.length)%fallbackGradients.length]}"><div class="poster-fallback"><div><span>${m.kind==='tmdb'?'MOVIE DISCOVERY':'FREE FILM LIBRARY'}</span>${escapeHtml(m.title)}</div></div><img loading="lazy" src="${escapeHtml(imageUrl(m))}" alt="Poster for ${escapeHtml(m.title)}" onerror="this.style.display='none'" onload="this.previousElementSibling.style.display='none'"><div class="poster-overlay"></div><span class="poster-badge">${escapeHtml(m.tag||'ARCHIVE PICK')}</span><button class="save-card ${saved.has(m.id)?'saved':''}" data-save="${escapeHtml(m.id)}" aria-label="${saved.has(m.id)?'Remove from':'Save to'} my list">${saved.has(m.id)?'♥':'♡'}</button><button class="card-play" data-details="${escapeHtml(m.id)}" aria-label="View ${escapeHtml(m.title)}">▶</button></div>`;}
   function render(){
     const needle=query.trim().toLowerCase();
-    const matches=catalog.filter(m=>(activeGenre==='all'||m.genres.some(g=>g.toLowerCase()===activeGenre.toLowerCase()))&&(activeEra==='all'||(activeEra==='2000s'?m.year>=2000&&m.year<=2009:activeEra==='2010s'?m.year>=2010&&m.year<=2019:activeEra==='2020s'?m.year>=2020&&m.year<=2029:activeEra==='latest'?m.year>=new Date().getFullYear()-1:m.year>0&&m.year<2000))&&(!needle||`${m.title} ${m.year} ${m.genres.join(' ')} ${m.desc}`.toLowerCase().includes(needle))&&(!showingSaved||saved.has(m.id)));
+    const matches=catalog.filter(m=>(activeGenre==='all'||m.genres.some(g=>g.toLowerCase()===activeGenre.toLowerCase()))&&(activeEra==='all'||(activeEra==='2000-2026'?m.year>=2000&&m.year<=2026:activeEra==='2000s'?m.year>=2000&&m.year<=2009:activeEra==='2010s'?m.year>=2010&&m.year<=2019:activeEra==='2020s'?m.year>=2020&&m.year<=2026:activeEra==='latest'?m.year>=new Date().getFullYear()-1:m.year>0&&m.year<2000))&&(!needle||`${m.title} ${m.year} ${m.genres.join(' ')} ${m.desc}`.toLowerCase().includes(needle))&&(!showingSaved||saved.has(m.id)));
     let discovery=matches.filter(m=>m.kind==='tmdb');
     let freeFilms=matches.filter(m=>m.kind!=='tmdb');
     if(sortNewest){discovery=discovery.slice().sort((a,b)=>b.year-a.year);freeFilms=freeFilms.slice().sort((a,b)=>b.year-a.year);}
@@ -549,8 +578,9 @@
   licensedStreamsReady=loadLicensedStreamManifest();
   tmdbRequest('genre/movie/list',{language:'en-US'}).catch(()=>null).then(r=>r&&r.ok?r.json():null).then(d=>{(d&&d.genres||[]).forEach(g=>tmdbGenreMap[g.id]=g.name);}).catch(()=>{});
   if(!isLocalPreview())$('#tmdbConnect').textContent='Refresh catalogue';
-  $('#tmdbConnect').addEventListener('click',()=>{if(isLocalPreview()){if(connectTmdb())loadTmdb('trending/movie/week','Trending');}else loadTmdb('trending/movie/week','Trending');});
-  if(!isLocalPreview()||tmdbKey())loadTmdb('trending/movie/week','Trending');
+  $('#tmdbConnect').addEventListener('click',()=>{if(isLocalPreview()){if(connectTmdb())loadTmdb('discover/movie','2000–2026');}else loadTmdb('discover/movie','2000–2026');});
+  if(!isLocalPreview()||tmdbKey())loadTmdb('discover/movie','2000–2026');
+  $('#loadMoreTmdb').addEventListener('click',loadMoreTmdb);
   document.querySelector('.tmdb-actions').addEventListener('click',e=>{const b=e.target.closest('[data-tmdb]');if(b)loadTmdb(b.dataset.tmdb,b.textContent.trim());});
   let tmdbSearchTimer,archiveSearchTimer;
   $('#searchInput').addEventListener('input',e=>{query=e.target.value;render();clearTimeout(tmdbSearchTimer);clearTimeout(archiveSearchTimer);if(query.trim().length>=2){if(!isLocalPreview()||tmdbKey())tmdbSearchTimer=setTimeout(()=>searchTmdb(query),450);archiveSearchTimer=setTimeout(()=>searchArchive(query),650);}});
