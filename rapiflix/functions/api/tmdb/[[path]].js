@@ -3,7 +3,8 @@ const ALLOWED = [
   /^trending\/movie\/week$/,
   /^movie\/(now_playing|upcoming|popular)$/,
   /^search\/movie$/,
-  /^movie\/[1-9][0-9]*\/watch\/providers$/
+  /^movie\/[1-9][0-9]*\/watch\/providers$/,
+  /^movie\/[1-9][0-9]*\/videos$/
 ];
 
 const errorResponse = (message, status) => new Response(JSON.stringify({ error: message }), {
