@@ -1,54 +1,67 @@
 # Rapiflix
 
-A standalone, responsive movie-discovery and public-collection streaming prototype. This site lives in `/rapiflix` on the `rapiflix/site` branch and does not modify the existing `arena/...` branch or the main site files.
+Rapiflix is a standalone movie-discovery and playback project in `/rapiflix` on branch `rapiflix/site`. It is separate from the existing Rapigents site branch.
+
+## What works in this build
+
+- **In-page playback:** the player looks up the Internet Archive item's live metadata instead of trusting hard-coded file names. It tries compatible MP4/M4V/WebM/OGV files, retries alternate files if playback fails, and remembers local watch progress.
+- **Archive search:** when running locally without a TMDB key, search looks up Archive titles directly. Dynamically discovered Archive uploads are played in Rapiflix only if the item metadata declares public-domain or Creative Commons status.
+- **New-release discovery:** trending, now-playing, upcoming and popular movie metadata can load from TMDB. TMDB is a catalogue, not a source of video streams.
+- **Regional watch options:** TMDB reports streaming, rental and purchase availability by country using JustWatch data. Rapiflix opens these official options for commercial releases instead of pretending they can be streamed in the built-in player.
+- **No Rapiflix-inserted ad breaks:** the built-in player plays the source file directly. Rapiflix does not insert ads or require an account for the local library. That does not make every third-party upload lawful, nor can it control ads or restrictions on external commercial services.
+- **Saved titles and playback resume:** the saved list and progress are stored in the visitor's browser.
 
 ## Run locally
 
-No build step or API key is required for the curated starter catalogue.
+The archive-based library and player do not need a TMDB key.
 
 ```bash
 cd rapiflix
 python -m http.server 8000
 ```
 
-Open `http://localhost:8000`. Search, genre filters, sort, saved films, details modal, and the video player work in a modern browser. The “Explore more classics” action queries the Internet Archive advanced-search API and discovers additional entries in its `feature_films` collection. For discovered titles, the player looks up the original item metadata and selects an MP4 file where one is available.
+Open `http://localhost:8000`. To load TMDB data while using the simple local HTTP server, click **Connect TMDB** and enter a temporary v3 API key in your own browser. The key is used only by localhost development mode and is not committed to GitHub. If the key was shared in chat, screenshots, or source control, revoke it and make a new one first.
 
-## Deploy
+The simple Python server cannot run Cloudflare Pages Functions. For production-like local proxy testing, install Wrangler and run Pages locally with the new key as a binding, for example:
 
-Deploy the **`rapiflix/` directory** as the root of a static site. This is intentionally isolated from the existing Next.js Rapigents site; deploying the repository root will not automatically deploy this subdirectory. A separate Cloudflare Pages project can use `rapiflix` as its build output/root directory, or the folder can be deployed to any static host.
+```bash
+npx wrangler pages dev . --binding=TMDB_API_KEY=YOUR_NEW_V3_API_KEY
+```
 
-## Upstream projects studied
+Do not paste a real key into a source file or commit it to the repository.
 
-- [FreeReel / free-stream](https://github.com/noknows08/free-stream): reference for a static catalogue, film details, search, and direct Internet Archive playback. Rapiflix has its own interface and implementation; the curated starter catalogue uses the same public item identifiers and filenames documented by its upstream catalogue. Check that repository's current license and individual film rights before reuse.
-- [MovieTube](https://github.com/chriskwann/movietube): reference for the Internet Archive `feature_films` discovery workflow, metadata enrichment, and the distinction between free-library films and links to newer titles on legitimate streaming services. Rapiflix implements a lightweight browser-side discovery path rather than copying MovieTube's FastAPI/SQLite backend or harvester.
+## Deploy on Cloudflare Pages
 
-## Content, licensing and reliability
+Use a Git-integrated Cloudflare Pages project configured as follows:
 
-- Movie metadata, posters and playback files are fetched from the Internet Archive. The Archive does not guarantee that every uploader has cleared all rights. Public availability is not proof that a title is public domain or available for commercial redistribution in every country.
-- The “FREE” badge means the prototype expects the item to be accessible without a site subscription; it is **not a legal rights certification**. Verify the rights, license, territorial restrictions and embedding/download terms for each film before operating a public service.
-- Rapiflix does not bypass DRM, authentication, paywalls, or access controls and does not aggregate unofficial commercial streaming links.
-- The optional discovery API is public and may rate-limit, change, or return metadata with missing/broken playback files. The interface falls back to the original archive item page when playback fails.
-- The current app uses a browser-local saved list. No user accounts, analytics, advertising, or backend database are configured.
-- Poster artwork is served by the Internet Archive. Fonts are loaded from Google Fonts.
+1. Select branch `rapiflix/site`.
+2. Set **Root directory** to `rapiflix`.
+3. Use no build command and serve the current directory as the static output.
+4. In **Settings → Variables and Secrets**, add a **Secret** named `TMDB_API_KEY` with a new, unexposed TMDB v3 key.
+5. Trigger a new deployment.
 
-## Current limitations
+The Pages Function at `functions/api/tmdb/[[path]].js` proxies only the approved, read-only catalogue and watch-provider endpoints. It keeps the API key on the server and limits which API paths can be requested. `_routes.json` restricts Function handling to `/api/tmdb/*`. If the secret is missing, the site's Archive search/player still work, but TMDB catalogue and watch-provider calls show an error.
 
-This is a front-end prototype, not a commercial streaming rights package. It does not provide every new release, guarantee uptime, or validate each item's legal status automatically. A commercial launch needs a documented rights review, a contact/takedown process, privacy and terms pages, and a backend or service strategy appropriate to the chosen catalogue.
+## Content rights and reliability
 
+Internet Archive explicitly warns that it does **not** guarantee that an uploaded item's claimed copyright status or license is accurate. The player therefore does not treat public availability as proof of permission. For newly discovered Archive titles, in-page playback requires a public-domain or Creative Commons rights statement in that item's metadata. This is a conservative technical screen, not a legal determination; metadata can be incomplete or incorrect and license conditions can vary by country.
 
-## TMDB live discovery
+The original 17-title curated starter list predates this screening gate. Before launching Rapiflix publicly, review every individual title's rights in your target countries and remove anything that is not cleared. An uploader's statement is not a guarantee. Keep a rights/takedown contact and process before inviting public submissions or operating the site at scale.
 
-The Discover page can load trending, now-playing, upcoming and popular movie metadata from TMDB. Click **Connect TMDB** and paste a TMDB v3 API key. The temporary test flow stores it in the current browser's local storage and does not put it in this repository. Clear it by clicking **Connect TMDB** and submitting an empty value. Revoke any key that has been exposed publicly.
+Rapiflix does not bypass DRM, authentication, paywalls, or access controls, and it does not scrape unofficial links to copyrighted commercial releases. New-release cards provide discovery data and official watch options, not the movie file. There is no legitimate universal API that grants a new commercial release for free, ad-free streaming without the rightsholder's permission. For that catalogue you need a licensing agreement or a service that authorizes embedding.
 
-TMDB data includes titles, release dates, synopses, posters and genres. It does not provide movie files or grant streaming rights. TMDB cards link to the official watch-options page; the built-in player remains reserved for titles that have an actual source URL, such as Internet Archive discoveries. TMDB requires attribution and its free developer API is not intended for a revenue-generating commercial product without the appropriate permission. See the [official authentication guide](https://developer.themoviedb.org/docs/authentication-application) and [TMDB FAQ](https://developer.themoviedb.org/docs/faq).
+## Research references
 
+- [FreeReel / free-stream](https://github.com/noknows08/free-stream): an open-source reference for a static interface and Internet Archive playback of public-domain/Creative Commons classics.
+- [Movie-App public-domain streaming example](https://github.com/AlaaAl-Gohary/Movie-App): separates titles confirmed for public-domain playback from titles without a confirmed stream.
+- [Internet Archive rights guidance](https://archivesupport.zendesk.com/hc/en-us/articles/360014759692-Rights): Archive uploads are not guaranteed to be correctly labeled from a rights perspective.
+- [Internet Archive metadata API](https://archive.org/developers/metadata.html): metadata and files used to resolve candidate video files.
+- [TMDB movie watch-provider endpoint](https://developer.themoviedb.org/reference/movie-watch-providers): provides regional service availability, not video files; JustWatch attribution is required.
+- [TMDB authentication](https://developer.themoviedb.org/docs/authentication-application): v3 API key and application-level auth details.
+- [TMDB attribution and commercial-use FAQ](https://developer.themoviedb.org/docs/faq): requires the approved logo and attribution notice, and says commercial use requires a separate license.
 
-## Hybrid streaming features
+## TMDB attribution
 
-- TMDB discovery is metadata-only. TMDB title cards are labelled **DISCOVER**, not free streams.
-- The details panel requests regional movie availability from TMDB's watch-provider endpoint using the selected country (Pakistan by default). Listings are supplied through TMDB/JustWatch and require JustWatch attribution; provider listings are not a playback feed. The official availability link is shown when returned.
-- For Internet Archive entries, the details panel checks the item metadata for compatible video files and any declared rights/licence fields. This is a screening aid, **not a legal determination**; review the original item and license before public distribution or monetization.
-- The existing Rapiflix player remains in place and attempts a direct HTML video source where one is available, with a fallback link to the original host.
-- For local testing, connect the temporary TMDB key in the browser. This remains a prototype: the key is visible to the browser and can be inspected by a visitor. Before public deployment, replace browser-key storage with a server-side proxy and a secret environment variable.
+The About section includes the approved TMDB logo and required notice: “This website uses TMDB and the TMDB APIs but is not endorsed, certified, or otherwise approved by TMDB.” Provider availability is attributed to JustWatch via TMDB.
 
-The regional provider feature uses TMDB's [movie watch-provider API](https://developer.themoviedb.org/reference/movie-watch-providers); provider availability is regional and can change. Attribution to JustWatch is required for this dataset.
+TMDB's developer API is for non-commercial use under its standard terms. If the project's primary purpose becomes revenue generation, obtain the appropriate commercial permission from TMDB before operating it that way.
