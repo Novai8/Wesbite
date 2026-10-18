@@ -73,7 +73,7 @@ export function SiteHeader() {
         </nav>
 
         <div className="ml-auto flex items-center gap-2">
-          <a href="https://rapiflix.online/" target="_blank" rel="noopener noreferrer" className="hidden h-10 items-center gap-1.5 rounded-full border border-line bg-white px-3 text-xs font-semibold text-ink no-underline transition-transform hover:-translate-y-0.5 lg:inline-flex" aria-label="Watch free movies with no ads on Rapiflix">
+          <a href="https://rapiflix.online/" target="_blank" rel="noopener noreferrer" className="hidden h-10 items-center gap-1.5 rounded-full border border-line bg-white px-3 text-xs font-semibold text-ink no-underline transition-transform hover:-translate-y-0.5 md:inline-flex" aria-label="Watch free movies with no ads on Rapiflix">
             Watch Free Movies With No Ads <span aria-hidden="true">↗</span>
           </a>
           <Link href="/#analyze" className="hidden h-10 items-center gap-1.5 rounded-full bg-ink px-4 text-sm font-medium text-white no-underline transition-transform hover:-translate-y-0.5 sm:inline-flex">
