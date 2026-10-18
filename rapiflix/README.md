@@ -1,5 +1,9 @@
 # Rapiflix
 
+## Redesign v2 (in review)
+
+The redesign branch replaces the previous visual shell with a responsive hue-reactive interface. Client-side routes are `/`, `/movies`, `/series`, `/anime`, `/search?q=...`, and `/title/:slug`; Cloudflare Pages rewrites are defined in `_redirects`. The catalog and player runtime is retained until the redesigned shell is browser-tested against the configured Cloudflare Pages environment. See [REDESIGN-REVIEW.md](./REDESIGN-REVIEW.md) for removals, preserved logic and QA gaps.
+
 Rapiflix is a standalone movie-discovery and playback project in `/rapiflix` on branch `rapiflix/site`. It is separate from the existing Rapigents site branch.
 
 ## What works in this build

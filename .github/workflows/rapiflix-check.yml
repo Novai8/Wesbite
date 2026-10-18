@@ -21,7 +21,9 @@ jobs:
         with:
           node-version: 22
       - name: Check browser JavaScript syntax
-        run: node --check rapiflix/app.js
+        run: |
+          node --check rapiflix/app.js
+          node --check rapiflix/routes.js
       - name: Check Cloudflare Pages Function syntax
         run: node --input-type=module --check < 'rapiflix/functions/api/tmdb/[[path]].js'
       - name: Validate Cloudflare Pages routes JSON

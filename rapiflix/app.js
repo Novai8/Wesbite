@@ -41,15 +41,9 @@
     }
   }
   async function tmdbRequest(path,params={}){
-    let url;
-    if(isLocalPreview()){
-      const key=tmdbKey();
-      if(!key)throw new Error('For local testing, click Connect TMDB and add a temporary key. The deployed site uses a server-side secret.');
-      url=new URL('https://api.themoviedb.org/3/'+path);
-      url.searchParams.set('api_key',key);
-    }else{
-      url=new URL('/api/tmdb/'+path.split('/').map(encodeURIComponent).join('/'),location.origin);
-    }
+    // Always use the same server-side proxy in local Wrangler and deployed Pages.
+    // Wrangler reads TMDB_API_KEY from rapiflix/.dev.vars; no key is exposed to the browser.
+    const url=new URL('/api/tmdb/'+path.split('/').map(encodeURIComponent).join('/'),location.origin);
     Object.entries(params).forEach(([key,value])=>{if(value!==undefined&&value!==null&&value!=='')url.searchParams.set(key,String(value));});
     return fetch(url);
   }
@@ -68,7 +62,6 @@
     $('#resultsCount').textContent='LOADING…';
   }
   async function loadTmdb(endpoint,label){
-    if(isLocalPreview()&&!tmdbKey()){if(!connectTmdb())return;}
     currentTmdbEndpoint=endpoint;currentTmdbLabel=label||'TMDB';currentTmdbPage=1;
     const isAnime=endpoint==='anime';
     currentTmdbParams=endpoint==='discover/movie'
@@ -151,7 +144,8 @@
   const fallbackGradients = ['linear-gradient(130deg,#6b3c39,#201823 58%,#0a0a0f)','linear-gradient(130deg,#3b4e4d,#1a2026 58%,#09090d)','linear-gradient(130deg,#826b47,#33242c 58%,#0b0b10)','linear-gradient(130deg,#39445c,#241c2b 58%,#09090d)'];
   function escapeHtml(v=''){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
   function imageUrl(m){return m.poster || (m.kind==='tmdb'?'':`${archive}/services/img/${m.id}`);}
-  function updateHero(index=heroIndex){if(!featuredIds.length||!catalog.length){selected=null;heroIndex=0;$('#heroTitle').textContent='Find your next favourite film.';$('#heroKicker').textContent='CURRENT MOVIES & SERIES';$('#heroCopy').textContent='Load trending releases or search for a title. Available watch options depend on your region.';$('#heroYear').textContent='NEW';$('#heroGenre').textContent='Trending · Popular · Upcoming';$('.quality-pill').textContent='DISCOVERY';heroArt.style.backgroundImage='linear-gradient(130deg,#28203c,#09090d)';$('.index-current').textContent='01';$('.hero-index>span:last-child').textContent='01';$('#heroPlay').disabled=true;$('#heroPlay').innerHTML='<span>⌕</span> Find movies';return;}heroIndex=(index+featuredIds.length)%featuredIds.length;selected=byId(featuredIds[heroIndex])||catalog[0];heroIndex=featuredIds.indexOf(selected.id);$('#heroPlay').disabled=false;$('#heroPlay').innerHTML=selected.kind==='tmdb'?'<span>▶</span> Watch now':'<span>▶</span> Play free film';$('#heroTitle').innerHTML=escapeHtml(selected.title).replace(/ (.+)/,'<br><em>$1</em>');if(!$('#heroTitle').innerHTML.includes('<em>'))$('#heroTitle').innerHTML=escapeHtml(selected.title)+'<br><em>forever.</em>';$('#heroKicker').textContent=(selected.tag||'FEATURED FILM')+' · RAPIFLIX SELECTION';$('#heroCopy').textContent=selected.desc;$('#heroYear').textContent=selected.year||'—';$('#heroGenre').textContent=selected.genres.join(' · ');$('.quality-pill').textContent=selected.kind==='tmdb'?'WATCH OPTIONS':'IN-PLAYER';heroArt.style.backgroundImage=`linear-gradient(90deg,#09090d70,transparent),url("${imageUrl(selected)}")`;heroArt.onerror=null;heroArt.style.backgroundColor='#1b1721';$('.index-current').textContent=String(heroIndex+1).padStart(2,'0');$('.hero-index>span:last-child').textContent=String(featuredIds.length).padStart(2,'0');}
+  function setText(selector,value){const element=$(selector);if(element)element.textContent=value;}
+  function updateHero(index=heroIndex){if(!featuredIds.length||!catalog.length){selected=null;heroIndex=0;$('#heroTitle').textContent='Find your next favourite film.';$('#heroKicker').textContent='CURRENT MOVIES & SERIES';$('#heroCopy').textContent='Load trending releases or search for a title. Available watch options depend on your region.';$('#heroYear').textContent='NEW';$('#heroGenre').textContent='Trending · Popular · Upcoming';setText('.quality-pill','DISCOVERY');heroArt.style.backgroundImage='linear-gradient(130deg,#28203c,#09090d)';setText('.index-current','01');setText('.hero-index>span:last-child','01');$('#heroPlay').disabled=true;$('#heroPlay').innerHTML='<span>⌕</span> Find movies';return;}heroIndex=(index+featuredIds.length)%featuredIds.length;selected=byId(featuredIds[heroIndex])||catalog[0];heroIndex=featuredIds.indexOf(selected.id);$('#heroPlay').disabled=false;$('#heroPlay').innerHTML=selected.kind==='tmdb'?'<span>▶</span> Watch now':'<span>▶</span> Play free film';$('#heroTitle').innerHTML=escapeHtml(selected.title).replace(/ (.+)/,'<br><em>$1</em>');if(!$('#heroTitle').innerHTML.includes('<em>'))$('#heroTitle').innerHTML=escapeHtml(selected.title)+'<br><em>forever.</em>';$('#heroKicker').textContent=(selected.tag||'FEATURED FILM')+' · RAPIFLIX SELECTION';$('#heroCopy').textContent=selected.desc;$('#heroYear').textContent=selected.year||'—';$('#heroGenre').textContent=selected.genres.join(' · ');setText('.quality-pill',selected.kind==='tmdb'?'WATCH OPTIONS':'IN-PLAYER');heroArt.style.backgroundImage=`linear-gradient(90deg,#09090d70,transparent),url("${imageUrl(selected)}")`;heroArt.onerror=null;heroArt.style.backgroundColor='#1b1721';setText('.index-current',String(heroIndex+1).padStart(2,'0'));setText('.hero-index>span:last-child',String(featuredIds.length).padStart(2,'0'));}
   function posterMarkup(m){return `<div class="poster-wrap" style="background:${fallbackGradients[Math.abs(m.title.length)%fallbackGradients.length]}"><div class="poster-fallback"><div><span>${m.kind==='tmdb'?'MOVIE DISCOVERY':'FREE FILM LIBRARY'}</span>${escapeHtml(m.title)}</div></div><img loading="lazy" src="${escapeHtml(imageUrl(m))}" alt="Poster for ${escapeHtml(m.title)}" onerror="this.style.display='none'" onload="this.previousElementSibling.style.display='none'"><div class="poster-overlay"></div><span class="poster-badge">${escapeHtml(m.tag||'ARCHIVE PICK')}</span><button class="save-card ${saved.has(m.id)?'saved':''}" data-save="${escapeHtml(m.id)}" aria-label="${saved.has(m.id)?'Remove from':'Save to'} my list">${saved.has(m.id)?'♥':'♡'}</button><button class="card-play" data-details="${escapeHtml(m.id)}" aria-label="View ${escapeHtml(m.title)}">▶</button></div>`;}
   function render(){
     const needle=query.trim().toLowerCase();
@@ -742,12 +736,12 @@
   licensedStreamsReady=loadLicensedStreamManifest();
   tmdbRequest('genre/movie/list',{language:'en-US'}).catch(()=>null).then(r=>r&&r.ok?r.json():null).then(d=>{(d&&d.genres||[]).forEach(g=>tmdbGenreMap[g.id]=g.name);}).catch(()=>{});
   if(!isLocalPreview())$('#tmdbConnect').textContent='Refresh catalogue';
-  $('#tmdbConnect').addEventListener('click',()=>{if(isLocalPreview()){if(connectTmdb())loadTmdb(currentTmdbEndpoint,currentTmdbLabel);}else loadTmdb(currentTmdbEndpoint,currentTmdbLabel);});
-  if(!isLocalPreview()||tmdbKey())loadTmdb('trending/movie/week','Trending this week');
+  $('#tmdbConnect').addEventListener('click',()=>loadTmdb(currentTmdbEndpoint,currentTmdbLabel));
+  loadTmdb('trending/movie/week','Trending this week');
   $('#loadMoreTmdb').addEventListener('click',loadMoreTmdb);
   document.querySelector('.tmdb-actions').addEventListener('click',e=>{const b=e.target.closest('[data-tmdb]');if(b)loadTmdb(b.dataset.tmdb,b.textContent.trim());});
   let tmdbSearchTimer,archiveSearchTimer;
-  $('#searchInput').addEventListener('input',e=>{query=e.target.value;render();clearTimeout(tmdbSearchTimer);clearTimeout(archiveSearchTimer);if(query.trim().length>=2){if(!isLocalPreview()||tmdbKey())tmdbSearchTimer=setTimeout(()=>searchTmdb(query),450);archiveSearchTimer=setTimeout(()=>searchArchive(query),650);}});
+  $('#searchInput').addEventListener('input',e=>{query=e.target.value;render();clearTimeout(tmdbSearchTimer);clearTimeout(archiveSearchTimer);if(query.trim().length>=2){tmdbSearchTimer=setTimeout(()=>searchTmdb(query),450);archiveSearchTimer=setTimeout(()=>searchArchive(query),650);}});
   $('#heroPlay').addEventListener('click',()=>{if(selected)playFilm(selected);else loadTmdb('trending/movie/week','Trending');});$('#heroDetails').addEventListener('click',()=>{if(selected)openDetails(selected.id);else loadTmdb('trending/movie/week','Trending');});$('#genreFilter').addEventListener('change',e=>{activeGenre=e.target.value;renderChips();render();});$('#eraFilter').addEventListener('change',e=>{activeEra=e.target.value;render();});$('#genreChips').addEventListener('click',e=>{const b=e.target.closest('[data-genre]');if(!b)return;activeGenre=b.dataset.genre;$('#genreFilter').value=activeGenre;renderChips();render();});$('#sortButton').addEventListener('click',()=>{sortNewest=!sortNewest;$('#sortButton').innerHTML=`↕ <span>${sortNewest?'Newest first':'Featured'}</span>`;render();});$('#movieGrid').addEventListener('click',e=>{const saveBtn=e.target.closest('[data-save]');if(saveBtn){e.stopPropagation();toggleSave(saveBtn.dataset.save);return;}const details=e.target.closest('[data-details]');if(details){openDetails(details.dataset.details);return;}const card=e.target.closest('[data-card]');if(card)openDetails(card.dataset.card);});$('#savedToggle').addEventListener('click',()=>{showingSaved=!showingSaved;$('#savedToggle').style.borderColor=showingSaved?'var(--accent)':'';$('#savedToggle').innerHTML=`${showingSaved?'♥':'♡'} <span class="saved-count" id="savedCount">${saved.size}</span>`;document.querySelector('#library').scrollIntoView({behavior:'smooth'});render();});$('#loadMore').addEventListener('click',loadMore);$('#modalClose').addEventListener('click',()=>closeModal('#modalBackdrop'));$('#modalBackdrop').addEventListener('click',e=>{if(e.target===$('#modalBackdrop'))closeModal('#modalBackdrop');});$('#modalPlay').addEventListener('click',()=>playFilm(selected));$('#modalSave').addEventListener('click',()=>toggleSave(selected.id));$('#playerClose').addEventListener('click',()=>{const v=$('#playerFrame video');if(v)v.pause();$('#playerFrame').replaceChildren();closeModal('#playerBackdrop');});$('#playerBackdrop').addEventListener('click',e=>{if(e.target===$('#playerBackdrop')){$('#playerClose').click();}});$('#menuButton').addEventListener('click',()=>$('.nav-links').classList.toggle('open'));$('.nav-links').addEventListener('click',e=>{if(e.target.closest('a'))$('.nav-links').classList.remove('open');});document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!$('#playerBackdrop').hidden)$('#playerClose').click();else closeModal('#modalBackdrop');}if(e.key==='/'&&!/input|textarea/i.test(document.activeElement.tagName)){e.preventDefault();$('#searchInput').focus();}});
   // Subtle pointer-responsive poster tilt, with no distracting glow effects.
   ['#movieGrid','#freeMovieGrid'].forEach(selector=>{
@@ -769,4 +763,75 @@
   verifyCuratedCatalog().catch(error=>console.error('Rapiflix preflight failed',error));
   // Gentle hero rotation, paused when the visitor is interacting with the hero or has reduced motion enabled.
   if(!window.matchMedia('(prefers-reduced-motion: reduce)').matches){setInterval(()=>{if(featuredIds.length&&!document.hidden&&!document.body.classList.contains('modal-open')&&!$('#searchInput').value)updateHero((heroIndex+1)%featuredIds.length);},12000);}
+})();
+
+
+/* Rapiflix custom cursor: viewport coordinates, one positioning system. */
+(() => {
+  const dot = document.querySelector('.cursor-dot');
+  const ring = document.querySelector('.cursor-ring');
+  if (!dot || !ring) return;
+  const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)');
+  if (!finePointer.matches) return;
+
+  const label = ring.querySelector('span');
+  const root = document.documentElement;
+  root.classList.add('cc');
+
+  function move(event) {
+    if (event.pointerType === 'touch') return;
+    const x = event.clientX;
+    const y = event.clientY;
+    dot.style.left = x + 'px';
+    dot.style.top = y + 'px';
+    ring.style.left = x + 'px';
+    ring.style.top = y + 'px';
+    dot.style.opacity = '1';
+    ring.style.opacity = '1';
+  }
+
+  function hide() {
+    dot.style.opacity = '0';
+    ring.style.opacity = '0';
+  }
+
+  function setMode(target) {
+    ring.classList.remove('view', 'cursor-violet', 'cursor-cyan', 'cursor-pink', 'cursor-lime', 'link', 'text');
+    if (!(target instanceof Element)) return;
+    if (target.closest('.save-card')) {
+      ring.classList.add('cursor-pink');
+      if (label) label.textContent = 'SAVE';
+    } else if (target.closest('.card-play')) {
+      ring.classList.add('cursor-lime');
+      if (label) label.textContent = 'PLAY';
+    } else if (target.closest('.movie-card, .poster-wrap')) {
+      ring.classList.add('view');
+      if (label) label.textContent = 'VIEW';
+    } else if (target.closest('.tmdb-tab, .nav-links a')) {
+      ring.classList.add('cursor-cyan');
+      if (label) label.textContent = 'EXPLORE';
+    } else if (target.closest('button, .tmdb-connect, [role="button"]')) {
+      ring.classList.add('cursor-violet');
+      if (label) label.textContent = 'SELECT';
+    } else if (target.closest('input, textarea, select, [contenteditable="true"]')) {
+      ring.classList.add('text');
+    } else if (target.closest('a')) {
+      ring.classList.add('link');
+      if (label) label.textContent = 'OPEN';
+    }
+  }
+
+  document.addEventListener('pointermove', move, { passive: true });
+  document.addEventListener('pointerover', event => setMode(event.target));
+  document.addEventListener('pointerout', event => {
+    if (!event.relatedTarget) hide();
+  });
+  window.addEventListener('blur', hide);
+  window.addEventListener('focus', () => { /* cursor becomes visible on the next pointer move */ });
+  finePointer.addEventListener?.('change', event => {
+    if (!event.matches) {
+      root.classList.remove('cc');
+      hide();
+    }
+  });
 })();
