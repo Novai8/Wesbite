@@ -284,7 +284,7 @@
       if(Array.isArray(m.authorizedSources)){
         for(const source of m.authorizedSources){
           if(source&&source.authorized===true&&typeof source.url==='string'&&/^https:\/\//i.test(source.url)){
-            candidates.push({name:source.label||source.provider||'Authorized provider',provider:source.provider||'Authorized provider',height:Number(source.height)||0,ext:source.type||'mp4',score:Number(source.score)||0,url:source.url,subtitles:Array.isArray(source.subtitles)?source.subtitles:[],audioTracks:Array.isArray(source.audioTracks)?source.audioTracks:[]});
+            candidates.push({name:source.label||source.provider||'Authorized provider',provider:source.provider||'Authorized provider',height:Number(source.height)||0,ext:source.type||'mp4',type:source.type||'',score:Number(source.score)||0,url:source.url,subtitles:Array.isArray(source.subtitles)?source.subtitles:[],audioTracks:Array.isArray(source.audioTracks)?source.audioTracks:[]});
           }
         }
       }
@@ -297,7 +297,6 @@
       const sourceSelect=$('#playerSource'),qualitySelect=$('#playerQuality'),subtitleSelect=$('#playerSubtitles'),audioSelect=$('#playerAudio');
       const heightLabel=h=>h?({2160:'2160p / 4K',1440:'1440p',1080:'1080p',720:'720p',576:'576p',480:'480p',360:'360p'}[h]||h+'p'):'Auto / source default';
       function setSourceOptions(){sourceSelect.innerHTML=candidates.map((c,i)=>'<option value="'+i+'">'+escapeHtml((c.provider||'Authorized source')+' · '+(c.name||'Video file'))+'</option>').join('');sourceSelect.disabled=candidates.length<2;}
-      function setQualityOptions(){const heights=[...new Set(candidates.map(c=>Number(c.height)||0).filter(Boolean))].sort((a,b)=>b-a);qualitySelect.innerHTML='<option value="auto">Auto (best available)</option>'+heights.map(h=>'<option value="'+h+'">'+heightLabel(h)+'</option>').join('');qualitySelect.disabled=heights.length<2;}
       let hlsEngine=null;
       function attachSubtitles(candidate){
         video.querySelectorAll('track').forEach(t=>t.remove());
