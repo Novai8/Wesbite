@@ -41,15 +41,9 @@
     }
   }
   async function tmdbRequest(path,params={}){
-    let url;
-    if(isLocalPreview()){
-      const key=tmdbKey();
-      if(!key)throw new Error('For local testing, click Connect TMDB and add a temporary key. The deployed site uses a server-side secret.');
-      url=new URL('https://api.themoviedb.org/3/'+path);
-      url.searchParams.set('api_key',key);
-    }else{
-      url=new URL('/api/tmdb/'+path.split('/').map(encodeURIComponent).join('/'),location.origin);
-    }
+    // Always use the same server-side proxy in local Wrangler and deployed Pages.
+    // Wrangler reads TMDB_API_KEY from rapiflix/.dev.vars; no key is exposed to the browser.
+    const url=new URL('/api/tmdb/'+path.split('/').map(encodeURIComponent).join('/'),location.origin);
     Object.entries(params).forEach(([key,value])=>{if(value!==undefined&&value!==null&&value!=='')url.searchParams.set(key,String(value));});
     return fetch(url);
   }
@@ -68,7 +62,6 @@
     $('#resultsCount').textContent='LOADING…';
   }
   async function loadTmdb(endpoint,label){
-    if(isLocalPreview()&&!tmdbKey()){if(!connectTmdb())return;}
     currentTmdbEndpoint=endpoint;currentTmdbLabel=label||'TMDB';currentTmdbPage=1;
     const isAnime=endpoint==='anime';
     currentTmdbParams=endpoint==='discover/movie'
@@ -742,12 +735,12 @@
   licensedStreamsReady=loadLicensedStreamManifest();
   tmdbRequest('genre/movie/list',{language:'en-US'}).catch(()=>null).then(r=>r&&r.ok?r.json():null).then(d=>{(d&&d.genres||[]).forEach(g=>tmdbGenreMap[g.id]=g.name);}).catch(()=>{});
   if(!isLocalPreview())$('#tmdbConnect').textContent='Refresh catalogue';
-  $('#tmdbConnect').addEventListener('click',()=>{if(isLocalPreview()){if(connectTmdb())loadTmdb(currentTmdbEndpoint,currentTmdbLabel);}else loadTmdb(currentTmdbEndpoint,currentTmdbLabel);});
-  if(!isLocalPreview()||tmdbKey())loadTmdb('trending/movie/week','Trending this week');
+  $('#tmdbConnect').addEventListener('click',()=>loadTmdb(currentTmdbEndpoint,currentTmdbLabel));
+  loadTmdb('trending/movie/week','Trending this week');
   $('#loadMoreTmdb').addEventListener('click',loadMoreTmdb);
   document.querySelector('.tmdb-actions').addEventListener('click',e=>{const b=e.target.closest('[data-tmdb]');if(b)loadTmdb(b.dataset.tmdb,b.textContent.trim());});
   let tmdbSearchTimer,archiveSearchTimer;
-  $('#searchInput').addEventListener('input',e=>{query=e.target.value;render();clearTimeout(tmdbSearchTimer);clearTimeout(archiveSearchTimer);if(query.trim().length>=2){if(!isLocalPreview()||tmdbKey())tmdbSearchTimer=setTimeout(()=>searchTmdb(query),450);archiveSearchTimer=setTimeout(()=>searchArchive(query),650);}});
+  $('#searchInput').addEventListener('input',e=>{query=e.target.value;render();clearTimeout(tmdbSearchTimer);clearTimeout(archiveSearchTimer);if(query.trim().length>=2){tmdbSearchTimer=setTimeout(()=>searchTmdb(query),450);archiveSearchTimer=setTimeout(()=>searchArchive(query),650);}});
   $('#heroPlay').addEventListener('click',()=>{if(selected)playFilm(selected);else loadTmdb('trending/movie/week','Trending');});$('#heroDetails').addEventListener('click',()=>{if(selected)openDetails(selected.id);else loadTmdb('trending/movie/week','Trending');});$('#genreFilter').addEventListener('change',e=>{activeGenre=e.target.value;renderChips();render();});$('#eraFilter').addEventListener('change',e=>{activeEra=e.target.value;render();});$('#genreChips').addEventListener('click',e=>{const b=e.target.closest('[data-genre]');if(!b)return;activeGenre=b.dataset.genre;$('#genreFilter').value=activeGenre;renderChips();render();});$('#sortButton').addEventListener('click',()=>{sortNewest=!sortNewest;$('#sortButton').innerHTML=`↕ <span>${sortNewest?'Newest first':'Featured'}</span>`;render();});$('#movieGrid').addEventListener('click',e=>{const saveBtn=e.target.closest('[data-save]');if(saveBtn){e.stopPropagation();toggleSave(saveBtn.dataset.save);return;}const details=e.target.closest('[data-details]');if(details){openDetails(details.dataset.details);return;}const card=e.target.closest('[data-card]');if(card)openDetails(card.dataset.card);});$('#savedToggle').addEventListener('click',()=>{showingSaved=!showingSaved;$('#savedToggle').style.borderColor=showingSaved?'var(--accent)':'';$('#savedToggle').innerHTML=`${showingSaved?'♥':'♡'} <span class="saved-count" id="savedCount">${saved.size}</span>`;document.querySelector('#library').scrollIntoView({behavior:'smooth'});render();});$('#loadMore').addEventListener('click',loadMore);$('#modalClose').addEventListener('click',()=>closeModal('#modalBackdrop'));$('#modalBackdrop').addEventListener('click',e=>{if(e.target===$('#modalBackdrop'))closeModal('#modalBackdrop');});$('#modalPlay').addEventListener('click',()=>playFilm(selected));$('#modalSave').addEventListener('click',()=>toggleSave(selected.id));$('#playerClose').addEventListener('click',()=>{const v=$('#playerFrame video');if(v)v.pause();$('#playerFrame').replaceChildren();closeModal('#playerBackdrop');});$('#playerBackdrop').addEventListener('click',e=>{if(e.target===$('#playerBackdrop')){$('#playerClose').click();}});$('#menuButton').addEventListener('click',()=>$('.nav-links').classList.toggle('open'));$('.nav-links').addEventListener('click',e=>{if(e.target.closest('a'))$('.nav-links').classList.remove('open');});document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!$('#playerBackdrop').hidden)$('#playerClose').click();else closeModal('#modalBackdrop');}if(e.key==='/'&&!/input|textarea/i.test(document.activeElement.tagName)){e.preventDefault();$('#searchInput').focus();}});
   // Subtle pointer-responsive poster tilt, with no distracting glow effects.
   ['#movieGrid','#freeMovieGrid'].forEach(selector=>{
