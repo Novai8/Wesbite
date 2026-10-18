@@ -1,4 +1,5 @@
 {
-  "_notice": "Only add titles and video URLs that you own or are explicitly licensed to stream on Rapiflix. `authorized: true` is an operator attestation, not a license.",
+  "_notice": "Only add embed providers and movie URLs that are explicitly licensed or authorized for Rapiflix. Setting authorized:true is an operator attestation, not proof of a license. Embed provider urlTemplate may include {tmdb_id}.",
+  "embedProviders": [],
   "movies": {}
 }
