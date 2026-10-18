@@ -35,7 +35,7 @@ export async function onRequest(context) {
 
   const incoming = new URL(request.url);
   const upstream = new URL("https://api.themoviedb.org/3/" + path);
-  const acceptedParams = new Set(["language", "region", "page", "query"]);
+  const acceptedParams = new Set(["language", "region", "page", "query", "sort_by", "primary_release_date.gte", "primary_release_date.lte", "first_air_date.gte", "first_air_date.lte", "with_genres", "with_original_language", "include_adult"]);
   for (const [key, value] of incoming.searchParams.entries()) {
     if (acceptedParams.has(key)) {
       upstream.searchParams.set(key, value.slice(0, 160));
