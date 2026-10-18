@@ -99,7 +99,36 @@
     if(/all rights reserved|not for distribution|no permission to redistribute|copyrighted material/.test(text))return false;
     return /public[\s-]?domain|creativecommons\.org|creative commons|\bcc0\b/.test(text);
   }
-  async function checkArchiveRights(m){const host=$('#providerOptions');if(!host)return;host.innerHTML='<p class="source-note">Checking source metadata and playable files…</p>';try{const r=await fetch('https://archive.org/metadata/'+encodeURIComponent(m.id));if(!r.ok)throw new Error('Source metadata unavailable');const d=await r.json();const md=d.metadata||{};const files=(d.files||[]).filter(f=>/\.(mp4|webm|ogv)$/i.test(f.name||'')&&!/thumb|sample|trailer|preview/i.test(f.name||''));const rights=md.licenseurl||md.rights||md.license||'';const explicit=hasExplicitStreamRights(md);host.innerHTML='<strong>Free-film source check</strong><p class="source-note">'+(files.length?'Compatible video file(s) found: '+files.length+'.':'No compatible video file was found in metadata.')+'</p><p class="source-note">'+(explicit?'Public-domain/Creative Commons wording is present in source metadata. Review its exact terms.':'No explicit public-domain or Creative Commons statement was found. Rapiflix will not play dynamically discovered items without a clear rights statement.')+'</p>'+(rights?'<p class="source-note">Declared rights: '+escapeHtml(String(rights).slice(0,320))+'</p>':'')+'<a class="provider-source-link" href="'+escapeHtml(m.source||'https://archive.org/details/'+encodeURIComponent(m.id))+'" target="_blank" rel="noreferrer">Review original item and rights ↗</a>';}catch(e){host.innerHTML='<strong>Source check unavailable</strong><p class="source-note">Could not verify playable files or rights metadata. Open the original item page before relying on this source.</p>';}}
+  const archiveMetadataCache=new Map();
+  async function fetchArchiveMetadata(id){
+    if(archiveMetadataCache.has(id))return archiveMetadataCache.get(id);
+    const request=fetch(archive+'/metadata/'+encodeURIComponent(id),{cache:'no-store'}).then(async response=>{
+      if(!response.ok)throw new Error('Source metadata unavailable');
+      return response.json();
+    });
+    archiveMetadataCache.set(id,request);
+    try{return await request;}catch(error){archiveMetadataCache.delete(id);throw error;}
+  }
+  async function licensedPlayableArchiveDocs(docs,tag){
+    const accepted=[];
+    for(let start=0;start<docs.length;start+=6){
+      const batch=await Promise.all(docs.slice(start,start+6).map(async d=>{
+        try{
+          const id=String(d.identifier||'');
+          const title=Array.isArray(d.title)?d.title[0]:d.title;
+          if(!id||!title||byId(id))return null;
+          const metadata=await fetchArchiveMetadata(id);
+          if(!hasExplicitStreamRights(metadata.metadata||{})||!archiveVideoFiles(metadata).length)return null;
+          const yearValue=Array.isArray(d.year)?d.year[0]:d.year;
+          const descValue=Array.isArray(d.description)?d.description[0]:d.description;
+          return {id,title:String(title).slice(0,140),year:Number(yearValue)||0,runtime:'Runtime varies',genres:['Archive'],desc:String(descValue||'A film with a public-domain or Creative Commons rights statement.').replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').slice(0,500),poster:archive+'/services/img/'+encodeURIComponent(id),video:'',source:archive+'/details/'+encodeURIComponent(id),sourceName:'Internet Archive',kind:'archive-search',tag};
+        }catch(_){return null;}
+      }));
+      accepted.push(...batch.filter(Boolean));
+    }
+    return accepted;
+  }
+  async function checkArchiveRights(m){const host=$('#providerOptions');if(!host)return;host.innerHTML='<p class="source-note">Checking source metadata and playable files…</p>';try{const d=await fetchArchiveMetadata(m.id);const md=d.metadata||{};const files=(d.files||[]).filter(f=>/\.(mp4|webm|ogv)$/i.test(f.name||'')&&!/thumb|sample|trailer|preview/i.test(f.name||''));const rights=md.licenseurl||md.rights||md.license||'';const explicit=hasExplicitStreamRights(md);host.innerHTML='<strong>Free-film source check</strong><p class="source-note">'+(files.length?'Compatible video file(s) found: '+files.length+'.':'No compatible video file was found in metadata.')+'</p><p class="source-note">'+(explicit?'Public-domain/Creative Commons wording is present in source metadata. Review its exact terms.':'No explicit public-domain or Creative Commons statement was found. Rapiflix will not play dynamically discovered items without a clear rights statement.')+'</p>'+(rights?'<p class="source-note">Declared rights: '+escapeHtml(String(rights).slice(0,320))+'</p>':'')+'<a class="provider-source-link" href="'+escapeHtml(m.source||'https://archive.org/details/'+encodeURIComponent(m.id))+'" target="_blank" rel="noreferrer">Review original item and rights ↗</a>';}catch(e){host.innerHTML='<strong>Source check unavailable</strong><p class="source-note">Could not verify playable files or rights metadata. Open the original item page before relying on this source.</p>';}}
   const progressKey='rapiflix-watch-progress';
   function readProgress(id){try{return Number((JSON.parse(localStorage.getItem(progressKey)||'{}'))[id]||0);}catch(_){return 0;}}
   function writeProgress(id,time,duration){try{const all=JSON.parse(localStorage.getItem(progressKey)||'{}');if(duration>0&&time/duration>.96)delete all[id];else if(time>5)all[id]=Math.floor(time);localStorage.setItem(progressKey,JSON.stringify(all));}catch(_){}}
@@ -120,9 +149,7 @@
     try{
       let candidates=[];
       try{
-        const response=await fetch(archive+'/metadata/'+encodeURIComponent(m.id),{cache:'no-store'});
-        if(!response.ok)throw new Error('The archive metadata request failed.');
-        const data=await response.json();
+        const data=await fetchArchiveMetadata(m.id);
         if(m.kind==='archive-search'&&!hasExplicitStreamRights(data.metadata||{}))throw new Error('This Archive upload has no explicit public-domain or Creative Commons rights statement, so Rapiflix will not play it here.');
         candidates=archiveVideoFiles(data).map(f=>({...f,url:archive+'/download/'+encodeURIComponent(m.id)+'/'+f.name.split('/').map(encodeURIComponent).join('/')}));
       }catch(metadataError){
@@ -164,38 +191,44 @@
       for(const m of cached)if(!byId(m.id))catalog.unshift(m);
       render();return;
     }
-    setTmdbStatus('Searching the Internet Archive for full films…');
+    setTmdbStatus('Searching for full films with declared rights and playable files…');
     try{
       const safeTerm=term.replace(/["\\]/g,' ').replace(/\s+/g,' ').trim();
       const url=new URL(archive+'/advancedsearch.php');
       url.searchParams.set('q','title:("'+safeTerm+'") AND mediatype:movies');
       ['identifier','title','year','description'].forEach(field=>url.searchParams.append('fl[]',field));
-      url.searchParams.set('rows','24');url.searchParams.set('page','1');
+      url.searchParams.set('rows','12');url.searchParams.set('page','1');
       url.searchParams.append('sort[]','downloads desc');url.searchParams.set('output','json');
       const response=await fetch(url);
       if(!response.ok)throw new Error('Internet Archive search did not respond');
       const data=await response.json();
       if(query.trim().toLowerCase()!==cacheKey)return;
-      const docs=data.response?.docs||[];
-      const found=[];
-      for(const d of docs){
-        if(!d.identifier)continue;
-        const id=String(d.identifier);
-        const title=Array.isArray(d.title)?d.title[0]:d.title;
-        if(!title||byId(id))continue;
-        const yearValue=Array.isArray(d.year)?d.year[0]:d.year;
-        const descValue=Array.isArray(d.description)?d.description[0]:d.description;
-        found.push({id,title:String(title).slice(0,140),year:Number(yearValue)||0,runtime:'Runtime varies',genres:['Archive'],desc:String(descValue||'A film hosted in the Internet Archive collection.').replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').slice(0,500),poster:archive+'/services/img/'+encodeURIComponent(id),video:'',source:archive+'/details/'+encodeURIComponent(id),sourceName:'Internet Archive',kind:'archive-search',tag:'ARCHIVE SEARCH'});
-      }
+      const found=await licensedPlayableArchiveDocs(data.response?.docs||[],'ARCHIVE SEARCH');
+      if(query.trim().toLowerCase()!==cacheKey)return;
       archiveSearchCache.set(cacheKey,found);
       for(const m of found)if(!byId(m.id))catalog.unshift(m);
       render();
-      setTmdbStatus(found.length?'Found '+found.length+' Archive title(s). Open a title to check playable files and rights metadata.':'No Archive titles matched that exact search. Try a shorter title.');
+      setTmdbStatus(found.length?'Found '+found.length+' Archive title(s) with a compatible file and declared rights.':'No matching Archive titles passed the rights and playback check. Try a shorter title or another film.');
     }catch(error){
       setTmdbStatus('Archive search error: '+(error.message||'Could not search the source collection.'));
     }
   }
-  async function loadMore(){const btn=$('#loadMore');btn.disabled=true;btn.textContent='Finding more archive films…';try{const q='collection:feature_films AND mediatype:movies';const url=`${archive}/advancedsearch.php?q=${encodeURIComponent(q)}&fl[]=identifier&fl[]=title&fl[]=year&fl[]=description&rows=24&page=${extraPage}&sort[]=downloads desc&output=json`;const res=await fetch(url);if(!res.ok)throw new Error('Archive search did not respond');const data=await res.json();const docs=data.response?.docs||[];let added=0;for(const d of docs){if(!d.identifier||byId(d.identifier))continue;const title=Array.isArray(d.title)?d.title[0]:d.title;if(!title)continue;const year=Number(Array.isArray(d.year)?d.year[0]:d.year)||0;const desc=Array.isArray(d.description)?d.description[0]:d.description;catalog.push({id:d.identifier,title:String(title).slice(0,140),year,runtime:'Runtime varies',genres:['Archive'],desc:String(desc||'A film discovered in the Internet Archive feature-films collection.').replace(/<[^>]*>/g,' ').slice(0,420),poster:`${archive}/services/img/${d.identifier}`,video:'',source:`${archive}/details/${d.identifier}`,sourceName:'Internet Archive',kind:'archive-search',tag:'ARCHIVE DISCOVERY'});added++;}extraPage++;activeGenre='all';$('#genreFilter').value='all';renderChips();render();toast(added?`Added ${added} archive discoveries`:'No new titles found on this page');}catch(e){toast('Archive discovery is temporarily unavailable');console.error(e);}finally{btn.disabled=false;btn.innerHTML='Explore more classics <span>↗</span>';}}
+  async function loadMore(){
+    const btn=$('#loadMore');btn.disabled=true;btn.textContent='Checking more films…';
+    try{
+      const q='collection:feature_films AND mediatype:movies';
+      const url=archive+'/advancedsearch.php?q='+encodeURIComponent(q)+'&fl[]=identifier&fl[]=title&fl[]=year&fl[]=description&rows=24&page='+extraPage+'&sort[]=downloads desc&output=json';
+      const response=await fetch(url);
+      if(!response.ok)throw new Error('Archive search did not respond');
+      const data=await response.json();
+      const found=await licensedPlayableArchiveDocs(data.response?.docs||[],'ARCHIVE DISCOVERY');
+      let added=0;
+      for(const m of found){if(byId(m.id))continue;catalog.push(m);added++;}
+      extraPage++;activeGenre='all';$('#genreFilter').value='all';renderChips();render();
+      toast(added?'Added '+added+' playable, rights-labelled films':'No new films on this page passed the rights and playback check');
+    }catch(error){toast('Archive discovery is temporarily unavailable');console.error(error);}
+    finally{btn.disabled=false;btn.innerHTML='Explore more classics <span>↗</span>';}
+  }
   renderChips();updateHero(0);render();
   tmdbRequest('genre/movie/list',{language:'en-US'}).catch(()=>null).then(r=>r&&r.ok?r.json():null).then(d=>{(d&&d.genres||[]).forEach(g=>tmdbGenreMap[g.id]=g.name);}).catch(()=>{});
   if(!isLocalPreview())$('#tmdbConnect').textContent='Refresh catalogue';
