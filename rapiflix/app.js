@@ -10,7 +10,7 @@
   let activeGenre = 'all', activeEra = '2000-2026', query = '', sortNewest = false, showingSaved = false, extraPage = 1, selected = catalog[0], heroIndex = 0;
   let currentTmdbEndpoint = 'discover/movie', currentTmdbLabel = '2000–2026', currentTmdbPage = 1, currentTmdbTotalPages = 1, currentTmdbParams = { 'primary_release_date.gte': '2000-01-01', 'primary_release_date.lte': '2026-12-31', sort_by: 'popularity.desc' };
   const tmdbKeyName = 'rapiflix-tmdb-key';
-  let tmdbGenreMap = {};
+  let tmdbGenreMap = {}, tmdbTvGenreMap = {};
   let licensedStreams = {};
   let authorizedEmbedProviders = [];
   let licensedStreamsReady = Promise.resolve();
@@ -55,66 +55,89 @@
   }
   function setTmdbStatus(message){const el=$('#tmdbStatus');if(el)el.textContent=message;}
   function connectTmdb(){const value=window.prompt('Paste your temporary TMDB v3 API key. It is saved in this browser only, not in GitHub.',tmdbKey());if(value===null)return false;const key=value.trim();try{if(key)localStorage.setItem(tmdbKeyName,key);else localStorage.removeItem(tmdbKeyName);}catch(_){setTmdbStatus('Browser storage is unavailable.');return false;}if(!key){setTmdbStatus('TMDB key cleared from this browser.');return false;}return true;}
-  function mapTmdbMovie(m,label){
-    return {id:'tmdb-'+m.id,tmdbId:m.id,title:m.title,year:Number((m.release_date||'').slice(0,4))||0,runtime:'Runtime varies',genres:(m.genre_ids||[]).map(g=>tmdbGenreMap[g]).filter(Boolean).slice(0,3),originalLanguage:m.original_language||'',desc:m.overview||'No synopsis is available yet.',poster:m.poster_path?'https://image.tmdb.org/t/p/w500'+m.poster_path:'',source:'https://www.themoviedb.org/movie/'+m.id,sourceName:'TMDB',kind:'tmdb',tag:(label||'TMDB').toUpperCase()};
+  function mapTmdbMovie(m,label,mediaType='movie'){
+    const isTv=mediaType==='tv'||m.media_type==='tv';
+    const title=isTv?(m.name||m.original_name):(m.title||m.original_title);
+    const releaseDate=isTv?(m.first_air_date||''):(m.release_date||'');
+    const genresMap=isTv?tmdbTvGenreMap:tmdbGenreMap;
+    return {id:'tmdb-'+(isTv?'tv-':'movie-')+m.id,tmdbId:m.id,mediaType:isTv?'tv':'movie',title:title||'Untitled',year:Number(releaseDate.slice(0,4))||0,runtime:isTv?'TV series':'Runtime varies',genres:(m.genre_ids||[]).map(g=>genresMap[g]||tmdbGenreMap[g]||tmdbTvGenreMap[g]).filter(Boolean).slice(0,3),originalLanguage:m.original_language||'',desc:m.overview||'No synopsis is available yet.',poster:m.poster_path?'https://image.tmdb.org/t/p/w500'+m.poster_path:'',source:'https://www.themoviedb.org/'+(isTv?'tv/':'movie/')+m.id,sourceName:'TMDB',kind:'tmdb',tag:(label||'TMDB').toUpperCase()};
   }
   async function loadTmdb(endpoint,label){
     if(isLocalPreview()&&!tmdbKey()){if(!connectTmdb())return;}
     currentTmdbEndpoint=endpoint;currentTmdbLabel=label||'TMDB';currentTmdbPage=1;
+    const isAnime=endpoint==='anime';
     currentTmdbParams=endpoint==='discover/movie'
       ? {'primary_release_date.gte':'2000-01-01','primary_release_date.lte':'2026-12-31',sort_by:sortNewest?'primary_release_date.desc':'popularity.desc','vote_count.gte':10}
-      : {};
-    setTmdbStatus('Loading films from 2000 through 2026…');
+      : endpoint==='discover/tv'
+        ? {'first_air_date.gte':'2000-01-01','first_air_date.lte':'2026-12-31',sort_by:sortNewest?'first_air_date.desc':'popularity.desc','vote_count.gte':5}
+        : {};
+    setTmdbStatus('Loading '+(isAnime?'anime films and series':currentTmdbLabel)+'…');
     const moreButton=$('#loadMoreTmdb');if(moreButton){moreButton.disabled=true;moreButton.textContent='Loading catalogue…';}
     try{
-      try{const genreResponse=await tmdbRequest('genre/movie/list',{language:'en-US'});if(genreResponse.ok){const genreData=await genreResponse.json();(genreData.genres||[]).forEach(g=>tmdbGenreMap[g.id]=g.name);}}catch(_){}
-      document.querySelectorAll('[data-tmdb]').forEach(b=>b.classList.toggle('active',b.dataset.tmdb===endpoint));
-      const response=await tmdbRequest(endpoint,{language:'en-US',page:'1',region:'PK',...currentTmdbParams});
-      const data=await response.json();
-      if(!response.ok)throw new Error(data.status_message||data.error||'Movie catalogue request failed');
-      const fresh=(data.results||[]).filter(m=>m&&m.id&&m.title).map(m=>mapTmdbMovie(m,currentTmdbLabel));
+      const [movieGenreResponse,tvGenreResponse]=await Promise.all([tmdbRequest('genre/movie/list',{language:'en-US'}),tmdbRequest('genre/tv/list',{language:'en-US'})]);
+      if(movieGenreResponse.ok){const d=await movieGenreResponse.json();(d.genres||[]).forEach(g=>tmdbGenreMap[g.id]=g.name);}
+      if(tvGenreResponse.ok){const d=await tvGenreResponse.json();(d.genres||[]).forEach(g=>tmdbTvGenreMap[g.id]=g.name);}
+      document.querySelectorAll('[data-tmdb]').forEach(btn=>btn.classList.toggle('active',btn.dataset.tmdb===endpoint));
+      let fresh=[],totalPages=1;
+      if(isAnime){
+        const [mr,tr]=await Promise.all([
+          tmdbRequest('discover/movie',{language:'en-US',page:'1',region:'PK',sort_by:'popularity.desc','primary_release_date.gte':'2000-01-01','primary_release_date.lte':'2026-12-31','with_genres':'16','with_original_language':'ja','vote_count.gte':2}),
+          tmdbRequest('discover/tv',{language:'en-US',page:'1',sort_by:'popularity.desc','first_air_date.gte':'2000-01-01','first_air_date.lte':'2026-12-31','with_genres':'16','with_original_language':'ja','vote_count.gte':2})
+        ]);
+        const [md,td]=await Promise.all([mr.json(),tr.json()]);
+        if(!mr.ok&&!tr.ok)throw new Error(md.status_message||td.status_message||'Anime catalogue request failed');
+        fresh=(md.results||[]).filter(m=>m&&m.id).map(m=>mapTmdbMovie(m,currentTmdbLabel,'movie')).concat((td.results||[]).filter(m=>m&&m.id).map(m=>mapTmdbMovie(m,currentTmdbLabel,'tv')));
+        totalPages=Math.max(Number(md.total_pages)||1,Number(td.total_pages)||1);
+      }else{
+        const response=await tmdbRequest(endpoint,{language:'en-US',page:'1',region:'PK',...currentTmdbParams});
+        const data=await response.json();if(!response.ok)throw new Error(data.status_message||data.error||'Catalogue request failed');
+        fresh=(data.results||[]).filter(m=>m&&m.id).map(m=>mapTmdbMovie(m,currentTmdbLabel,endpoint==='discover/tv'||endpoint.includes('/tv')?'tv':'movie'));
+        totalPages=Number(data.total_pages)||1;
+      }
       for(let i=catalog.length-1;i>=0;i--)if(catalog[i].kind==='tmdb')catalog.splice(i,1);
-      catalog.unshift(...fresh);currentTmdbTotalPages=Math.min(Number(data.total_pages)||1,500);
+      catalog.unshift(...fresh);currentTmdbTotalPages=Math.min(totalPages,500);
       if(fresh.length){featuredIds.splice(0,featuredIds.length,...fresh.slice(0,4).map(m=>m.id));heroIndex=0;updateHero(0);}
-      activeGenre='all';activeEra=endpoint==='discover/movie'?'2000-2026':'all';showingSaved=false;query='';$('#searchInput').value='';$('#genreFilter').value='all';$('#eraFilter').value=activeEra;renderChips();render();
-      setTmdbStatus('Loaded '+fresh.length+' films from '+currentTmdbLabel+'. '+(currentTmdbPage<currentTmdbTotalPages?'More results are ready to load.':'No further pages available in this catalogue query.'));
-    }catch(error){
-      setTmdbStatus('Movie catalogue unavailable: '+error.message+'. Check the TMDB server secret and redeploy if this is the live site.');
-      console.error(error);
-    }finally{
-      if(moreButton){moreButton.disabled=false;moreButton.textContent=currentTmdbPage<currentTmdbTotalPages?'Load more movies · '+currentTmdbLabel:'Catalogue page limit reached';moreButton.disabled=currentTmdbPage>=currentTmdbTotalPages;}
-    }
+      activeGenre='all';activeEra=(endpoint==='discover/movie'||endpoint==='discover/tv'||isAnime)?'2000-2026':'all';showingSaved=false;query='';$('#searchInput').value='';$('#genreFilter').value='all';$('#eraFilter').value=activeEra;renderChips();render();
+      setTmdbStatus('Loaded '+fresh.length+' '+(isAnime?'anime films and series':endpoint==='discover/tv'?'TV series':'films')+'. '+(currentTmdbPage<currentTmdbTotalPages?'Load more to continue browsing.':'No further pages available.'));
+    }catch(error){setTmdbStatus('Catalogue unavailable: '+error.message+'. Check the TMDB server secret and redeploy if this is the live site.');console.error(error);}
+    finally{if(moreButton){moreButton.disabled=false;moreButton.textContent=currentTmdbPage<currentTmdbTotalPages?'Load more · '+currentTmdbLabel:'Catalogue page limit reached';moreButton.disabled=currentTmdbPage>=currentTmdbTotalPages;}}
   }
   async function loadMoreTmdb(){
     if(currentTmdbPage>=currentTmdbTotalPages)return;
-    const btn=$('#loadMoreTmdb');btn.disabled=true;btn.textContent='Loading more movies…';
+    const btn=$('#loadMoreTmdb');btn.disabled=true;btn.textContent='Loading more…';
     try{
-      const next=currentTmdbPage+1;
-      const response=await tmdbRequest(currentTmdbEndpoint,{language:'en-US',page:String(next),region:'PK',...currentTmdbParams});
-      const data=await response.json();
-      if(!response.ok)throw new Error(data.status_message||data.error||'Could not load the next page');
-      const existing=new Set(catalog.filter(m=>m.kind==='tmdb').map(m=>m.id));
-      const fresh=(data.results||[]).filter(m=>m&&m.id&&m.title&&!existing.has('tmdb-'+m.id)).map(m=>mapTmdbMovie(m,currentTmdbLabel));
-      catalog.push(...fresh);currentTmdbPage=next;currentTmdbTotalPages=Math.min(Number(data.total_pages)||currentTmdbTotalPages,500);
-      render();setTmdbStatus('Showing '+catalog.filter(m=>m.kind==='tmdb').length+' discovered films. Page '+currentTmdbPage+' of '+currentTmdbTotalPages+' for '+currentTmdbLabel+'.');
-      if(fresh.length)toast('Added '+fresh.length+' more movies');
-    }catch(error){setTmdbStatus('Could not load more movies: '+error.message);toast('Movie catalogue page failed to load');}
-    finally{btn.disabled=currentTmdbPage>=currentTmdbTotalPages;btn.textContent=btn.disabled?'Catalogue page limit reached':'Load more movies · '+currentTmdbLabel;}
+      const next=currentTmdbPage+1;let fresh=[],totalPages=currentTmdbTotalPages;
+      if(currentTmdbEndpoint==='anime'){
+        const [mr,tr]=await Promise.all([
+          tmdbRequest('discover/movie',{language:'en-US',page:String(next),region:'PK',sort_by:'popularity.desc','primary_release_date.gte':'2000-01-01','primary_release_date.lte':'2026-12-31','with_genres':'16','with_original_language':'ja','vote_count.gte':2}),
+          tmdbRequest('discover/tv',{language:'en-US',page:String(next),sort_by:'popularity.desc','first_air_date.gte':'2000-01-01','first_air_date.lte':'2026-12-31','with_genres':'16','with_original_language':'ja','vote_count.gte':2})
+        ]);
+        const [md,td]=await Promise.all([mr.json(),tr.json()]);
+        if(!mr.ok&&!tr.ok)throw new Error(md.status_message||td.status_message||'Could not load more anime');
+        fresh=(md.results||[]).map(m=>mapTmdbMovie(m,currentTmdbLabel,'movie')).concat((td.results||[]).map(m=>mapTmdbMovie(m,currentTmdbLabel,'tv')));
+        totalPages=Math.max(Number(md.total_pages)||1,Number(td.total_pages)||1);
+      }else{
+        const response=await tmdbRequest(currentTmdbEndpoint,{language:'en-US',page:String(next),region:'PK',...currentTmdbParams});
+        const data=await response.json();if(!response.ok)throw new Error(data.status_message||data.error||'Could not load the next page');
+        fresh=(data.results||[]).map(m=>mapTmdbMovie(m,currentTmdbLabel,currentTmdbEndpoint==='discover/tv'||currentTmdbEndpoint.includes('/tv')?'tv':'movie'));totalPages=Number(data.total_pages)||totalPages;
+      }
+      const existing=new Set(catalog.filter(m=>m.kind==='tmdb').map(m=>m.id));fresh=fresh.filter(m=>!existing.has(m.id));
+      catalog.push(...fresh);currentTmdbPage=next;currentTmdbTotalPages=Math.min(totalPages,500);render();
+      setTmdbStatus('Showing '+catalog.filter(m=>m.kind==='tmdb').length+' results. Page '+currentTmdbPage+' of '+currentTmdbTotalPages+' · '+currentTmdbLabel+'.');
+      if(fresh.length)toast('Added '+fresh.length+' more titles');
+    }catch(error){setTmdbStatus('Could not load more titles: '+error.message);toast('Catalogue page failed to load');}
+    finally{btn.disabled=currentTmdbPage>=currentTmdbTotalPages;btn.textContent=btn.disabled?'Catalogue page limit reached':'Load more · '+currentTmdbLabel;}
   }
   async function searchTmdb(text){
     if(!text.trim())return;
     try{
-      const response=await tmdbRequest('search/movie',{query:text.trim(),language:'en-US',region:'PK'});
-      const data=await response.json();
-      if(!response.ok)throw new Error(data.status_message||data.error||'Search failed');
+      const response=await tmdbRequest('search/multi',{query:text.trim(),language:'en-US',region:'PK',include_adult:'false'});
+      const data=await response.json();if(!response.ok)throw new Error(data.status_message||data.error||'Search failed');
       if(query.trim()!==text.trim())return;
-      const fresh=(data.results||[]).filter(m=>m&&m.id&&m.title).map(m=>mapTmdbMovie(m,'SEARCH RESULT'));
+      const fresh=(data.results||[]).filter(m=>m&&m.id&&['movie','tv'].includes(m.media_type)).map(m=>mapTmdbMovie(m,'SEARCH RESULT',m.media_type));
       for(let i=catalog.length-1;i>=0;i--)if(catalog[i].kind==='tmdb')catalog.splice(i,1);
-      catalog.unshift(...fresh);render();setTmdbStatus('Movie search results loaded. Commercial titles are not falsely labelled as playable.');
-    }catch(error){
-      setTmdbStatus('Movie search unavailable: '+error.message);
-      console.error(error);
-    }
+      catalog.unshift(...fresh);render();setTmdbStatus('Search results include films and TV series. Select a title for official watch options.');
+    }catch(error){setTmdbStatus('Search unavailable: '+error.message);console.error(error);}
   }
   let saved = new Set();
   try { saved = new Set(JSON.parse(localStorage.getItem('rapiflix-saved') || '[]')); } catch (_) {}
@@ -146,14 +169,14 @@
   function toggleSave(id){if(saved.has(id)){saved.delete(id);toast('Removed from your list');}else{saved.add(id);toast('Saved to your list');}try{localStorage.setItem('rapiflix-saved',JSON.stringify([...saved]));}catch(_){}render();if(selected?.id===id)$('#modalSave').textContent=saved.has(id)?'♥ Saved to my list':'♡ Save to my list';}
   function languageName(code){try{return new Intl.DisplayNames(['en'],{type:'language'}).of(code)||String(code||'').toUpperCase();}catch(_){return String(code||'').toUpperCase();}}
   function addSubtitleSearch(host,m){const link=document.createElement('a');link.href='https://www.opensubtitles.com/en/search-all/q-'+encodeURIComponent(m.title);link.target='_blank';link.rel='noreferrer';link.className='provider-source-link';link.textContent='Search subtitle listings for this title ↗';host.append(link);const note=document.createElement('p');note.className='source-note';note.textContent='Subtitle availability and permitted use depend on each listing. Rapiflix does not claim a subtitle or dubbed audio exists until the source confirms it.';host.append(note);}
-  async function openDetails(id){await licensedStreamsReady;const m=byId(id)||catalog.find(x=>x.id===id);if(!m)return;selected=m;$('#providerOptions').innerHTML='';if(m.kind==='tmdb'){loadWatchProviders(m);loadOfficialTrailer(m);}else{$('#trailerPreview').hidden=true;$('#trailerPreview').replaceChildren();checkArchiveRights(m);}$('#modalPoster').style.backgroundImage=`url("${imageUrl(m)}")`;$('#modalTitle').textContent=m.title;$('#modalKicker').textContent=m.tag||'RAPIFLIX SELECTION';const lang=m.originalLanguage?languageName(m.originalLanguage):'';$('#modalMeta').innerHTML=`<span>${m.year||'Year unknown'}</span><span>•</span><span>${escapeHtml(m.runtime||'Runtime varies')}</span><span>•</span><span>${escapeHtml(m.genres.join(' · '))}</span>${lang?`<span>•</span><span>Original language: ${escapeHtml(lang)}</span>`:''}`;$('#modalDescription').textContent=m.desc||'Explore this film from its original collection.';$('#modalSave').textContent=saved.has(m.id)?'♥ Saved to my list':'♡ Save to my list';$('#sourceNote').textContent=m.kind==='tmdb'?'Movie data from TMDB. Original language is not a guarantee of dubbed tracks. View official watch options for services in your region.':`Source: ${m.sourceName||'Internet Archive'}. Verify rights and availability for your intended use.`;$('#modalPlay').innerHTML=m.kind==='tmdb'?(getAuthorizedSources(m).length?'▶ Play full movie':'↗ Find legal stream'):'▶ Watch film';$('#modalBackdrop').hidden=false;document.body.classList.add('modal-open');$('#modalClose').focus();}
+  async function openDetails(id){await licensedStreamsReady;const m=byId(id)||catalog.find(x=>x.id===id);if(!m)return;selected=m;$('#providerOptions').innerHTML='';if(m.kind==='tmdb'){loadWatchProviders(m);loadOfficialTrailer(m);}else{$('#trailerPreview').hidden=true;$('#trailerPreview').replaceChildren();checkArchiveRights(m);}$('#modalPoster').style.backgroundImage=`url("${imageUrl(m)}")`;$('#modalTitle').textContent=m.title;$('#modalKicker').textContent=m.tag||'RAPIFLIX SELECTION';const lang=m.originalLanguage?languageName(m.originalLanguage):'';$('#modalMeta').innerHTML=`<span>${m.year||'Year unknown'}</span><span>•</span><span>${escapeHtml(m.runtime||'Runtime varies')}</span><span>•</span><span>${escapeHtml(m.genres.join(' · '))}</span>${lang?`<span>•</span><span>Original language: ${escapeHtml(lang)}</span>`:''}`;$('#modalDescription').textContent=m.desc||'Explore this film from its original collection.';$('#modalSave').textContent=saved.has(m.id)?'♥ Saved to my list':'♡ Save to my list';$('#sourceNote').textContent=m.kind==='tmdb'?(m.mediaType==='tv'?'TV series data from TMDB. Original language is not a guarantee of dubbed tracks. View official watch options for services in your region.':'Movie data from TMDB. Original language is not a guarantee of dubbed tracks. View official watch options for services in your region.'):`Source: ${m.sourceName||'Internet Archive'}. Verify rights and availability for your intended use.`;$('#modalPlay').innerHTML=m.kind==='tmdb'?(getAuthorizedSources(m).length?'▶ Play full movie':'↗ Find legal stream'):'▶ Watch film';$('#modalBackdrop').hidden=false;document.body.classList.add('modal-open');$('#modalClose').focus();}
   async function loadOfficialTrailer(m){
     const box=$('#trailerPreview');
     box.hidden=true;
     box.replaceChildren();
     if(!m||m.kind!=='tmdb'||!m.tmdbId)return;
     try{
-      const response=await tmdbRequest('movie/'+encodeURIComponent(m.tmdbId)+'/videos',{language:'en-US'});
+      const response=await tmdbRequest((m.mediaType==='tv'?'tv/':'movie/')+encodeURIComponent(m.tmdbId)+'/videos',{language:'en-US'});
       const data=await response.json();
       if(!response.ok)throw new Error('Trailer lookup failed');
       const videos=(data.results||[]).filter(v=>v&&v.site==='YouTube'&&v.key&&/^[A-Za-z0-9_-]{6,20}$/.test(v.key));
@@ -215,7 +238,7 @@
     host.innerHTML='<p class="source-note">Checking licensed streaming, rental and purchase options for your region…</p>';
     const region=watchRegion();
     try{
-      const r=await tmdbRequest('movie/'+encodeURIComponent(m.tmdbId)+'/watch/providers',{});
+      const r=await tmdbRequest((m.mediaType==='tv'?'tv/':'movie/')+encodeURIComponent(m.tmdbId)+'/watch/providers',{});
       const d=await r.json();
       if(!r.ok)throw new Error(d.status_message||'Provider lookup failed');
       const data=d.results?.[region];
@@ -296,7 +319,7 @@
     await licensedStreamsReady;
     if(!m)return;
     if(m.kind==='tmdb'&&!getAuthorizedSources(m).length){
-      const watchUrl=m.watchLink||('https://www.themoviedb.org/movie/'+encodeURIComponent(m.tmdbId)+'/watch');
+      const watchUrl=m.watchLink||('https://www.themoviedb.org/'+(m.mediaType==='tv'?'tv/':'movie/')+encodeURIComponent(m.tmdbId)+'/watch');
       window.open(watchUrl,'_blank','noopener,noreferrer');
       closeModal('#modalBackdrop');
       toast('Opened official watch options for this title');
@@ -578,8 +601,8 @@
   licensedStreamsReady=loadLicensedStreamManifest();
   tmdbRequest('genre/movie/list',{language:'en-US'}).catch(()=>null).then(r=>r&&r.ok?r.json():null).then(d=>{(d&&d.genres||[]).forEach(g=>tmdbGenreMap[g.id]=g.name);}).catch(()=>{});
   if(!isLocalPreview())$('#tmdbConnect').textContent='Refresh catalogue';
-  $('#tmdbConnect').addEventListener('click',()=>{if(isLocalPreview()){if(connectTmdb())loadTmdb('discover/movie','2000–2026');}else loadTmdb('discover/movie','2000–2026');});
-  if(!isLocalPreview()||tmdbKey())loadTmdb('discover/movie','2000–2026');
+  $('#tmdbConnect').addEventListener('click',()=>{if(isLocalPreview()){if(connectTmdb())loadTmdb(currentTmdbEndpoint,currentTmdbLabel);}else loadTmdb(currentTmdbEndpoint,currentTmdbLabel);});
+  if(!isLocalPreview()||tmdbKey())loadTmdb('discover/movie','Films 2000–2026');
   $('#loadMoreTmdb').addEventListener('click',loadMoreTmdb);
   document.querySelector('.tmdb-actions').addEventListener('click',e=>{const b=e.target.closest('[data-tmdb]');if(b)loadTmdb(b.dataset.tmdb,b.textContent.trim());});
   let tmdbSearchTimer,archiveSearchTimer;
