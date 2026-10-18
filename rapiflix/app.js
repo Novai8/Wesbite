@@ -216,6 +216,27 @@
       setTmdbStatus('Archive search error: '+(error.message||'Could not search the source collection.'));
     }
   }
+  async function verifyCuratedCatalog(){
+    const originals=catalog.filter(m=>m.kind==='curated');
+    const checked=await Promise.all(originals.map(async m=>{
+      try{
+        const data=await fetchArchiveMetadata(m.id);
+        const rightsOk=hasExplicitStreamRights(data.metadata||{});
+        const filesOk=archiveVideoFiles(data).length>0;
+        return {id:m.id,ok:rightsOk&&filesOk};
+      }catch(_){return {id:m.id,ok:false};}
+    }));
+    const rejected=new Set(checked.filter(x=>!x.ok).map(x=>x.id));
+    if(rejected.size){
+      for(let i=catalog.length-1;i>=0;i--)if(rejected.has(catalog[i].id))catalog.splice(i,1);
+      const retained=featuredIds.filter(id=>byId(id));
+      if(retained.length){featuredIds.splice(0,featuredIds.length,...retained);heroIndex=0;updateHero(0);}
+      renderChips();render();
+    }
+    const retainedCount=originals.length-rejected.size;
+    const liveTitles=catalog.filter(m=>m.kind==='tmdb').length;
+    setTmdbStatus(retainedCount+' classic films passed the source rights/file screen. '+(liveTitles?'Current release discovery is also available.':'Load trending or search for current releases.')+' Commercial title cards are discovery, not included streams.');
+  }
   async function loadMore(){
     const btn=$('#loadMore');btn.disabled=true;btn.textContent='Checking more films…';
     try{
@@ -241,6 +262,7 @@
   let tmdbSearchTimer,archiveSearchTimer;
   $('#searchInput').addEventListener('input',e=>{query=e.target.value;render();clearTimeout(tmdbSearchTimer);clearTimeout(archiveSearchTimer);if(query.trim().length>=2){if(!isLocalPreview()||tmdbKey())tmdbSearchTimer=setTimeout(()=>searchTmdb(query),450);else archiveSearchTimer=setTimeout(()=>searchArchive(query),500);}});
   $('#heroPlay').addEventListener('click',()=>playFilm(selected));$('#heroDetails').addEventListener('click',()=>openDetails(selected.id));$('#genreFilter').addEventListener('change',e=>{activeGenre=e.target.value;renderChips();render();});$('#genreChips').addEventListener('click',e=>{const b=e.target.closest('[data-genre]');if(!b)return;activeGenre=b.dataset.genre;$('#genreFilter').value=activeGenre;renderChips();render();});$('#sortButton').addEventListener('click',()=>{sortNewest=!sortNewest;$('#sortButton').innerHTML=`↕ <span>${sortNewest?'Newest first':'Featured'}</span>`;render();});$('#movieGrid').addEventListener('click',e=>{const saveBtn=e.target.closest('[data-save]');if(saveBtn){e.stopPropagation();toggleSave(saveBtn.dataset.save);return;}const details=e.target.closest('[data-details]');if(details){openDetails(details.dataset.details);return;}const card=e.target.closest('[data-card]');if(card)openDetails(card.dataset.card);});$('#savedToggle').addEventListener('click',()=>{showingSaved=!showingSaved;$('#savedToggle').style.borderColor=showingSaved?'var(--accent)':'';$('#savedToggle').innerHTML=`${showingSaved?'♥':'♡'} <span class="saved-count" id="savedCount">${saved.size}</span>`;document.querySelector('#library').scrollIntoView({behavior:'smooth'});render();});$('#loadMore').addEventListener('click',loadMore);$('#modalClose').addEventListener('click',()=>closeModal('#modalBackdrop'));$('#modalBackdrop').addEventListener('click',e=>{if(e.target===$('#modalBackdrop'))closeModal('#modalBackdrop');});$('#modalPlay').addEventListener('click',()=>playFilm(selected));$('#modalSave').addEventListener('click',()=>toggleSave(selected.id));$('#playerClose').addEventListener('click',()=>{const v=$('#playerFrame video');if(v)v.pause();$('#playerFrame').replaceChildren();closeModal('#playerBackdrop');});$('#playerBackdrop').addEventListener('click',e=>{if(e.target===$('#playerBackdrop')){$('#playerClose').click();}});$('#menuButton').addEventListener('click',()=>$('.nav-links').classList.toggle('open'));$('.nav-links').addEventListener('click',e=>{if(e.target.closest('a'))$('.nav-links').classList.remove('open');});document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!$('#playerBackdrop').hidden)$('#playerClose').click();else closeModal('#modalBackdrop');}if(e.key==='/'&&!/input|textarea/i.test(document.activeElement.tagName)){e.preventDefault();$('#searchInput').focus();}});
+  verifyCuratedCatalog().catch(error=>console.error('Rapiflix preflight failed',error));
   // Gentle hero rotation, paused when the visitor is interacting with the hero or has reduced motion enabled.
   if(!window.matchMedia('(prefers-reduced-motion: reduce)').matches){setInterval(()=>{if(!document.hidden&&!document.body.classList.contains('modal-open')&&!$('#searchInput').value)updateHero((heroIndex+1)%featuredIds.length);},12000);}
 })();
