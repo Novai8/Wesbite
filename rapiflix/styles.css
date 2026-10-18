@@ -196,3 +196,14 @@ body{background:#100d10;color:#f7f0e8}::selection{background:#9f3344;color:#fff}
 @media(max-width:900px){.movie-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.tmdb-toolbar{padding:17px}.tmdb-actions{margin-top:15px}}
 @media(max-width:600px){.movie-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:25px 12px}.hero{height:740px;min-height:680px}.hero-content{width:86vw}.hero h1{letter-spacing:-2px}.section-heading{align-items:start;flex-direction:column}.tmdb-toolbar{padding:14px}.tmdb-actions{gap:6px}.tmdb-tab,.tmdb-connect{padding:9px 10px}.quick-strip{display:grid;grid-template-columns:1fr 1fr}.strip-status{display:none}.catalog-section{padding-top:65px}}
 @media(prefers-reduced-motion:reduce){.hero-art,.hero-content,.movie-card{animation:none!important;transition:none!important}}
+
+/* Loading states and season/episode navigation */
+.loading-card{min-width:0;animation:posterArrive .35s both}
+.loading-poster{aspect-ratio:2/2.85;border-radius:3px;background:linear-gradient(105deg,#21191d 8%,#36252b 18%,#21191d 33%);background-size:220% 100%;animation:skeletonSweep 1.35s linear infinite;border:1px solid #493237}
+.loading-line{height:10px;width:82%;margin:13px 2px 8px;border-radius:2px;background:linear-gradient(105deg,#21191d 8%,#36252b 18%,#21191d 33%);background-size:220% 100%;animation:skeletonSweep 1.35s linear infinite}
+.loading-line.short{width:53%;height:7px;margin-top:0;opacity:.7}
+@keyframes skeletonSweep{to{background-position-x:-220%}}
+.player-controls label{font-size:10px;letter-spacing:.4px;color:#d9c9c7}
+.player-controls select{background:#211a1e;border:1px solid #493237;border-radius:3px;color:#f7f0e8;padding:9px;min-width:115px}
+.player-controls select:focus{outline:1px solid #b65b68}
+@media(prefers-reduced-motion:reduce){.loading-poster,.loading-line{animation:none;background:#21191d}}
