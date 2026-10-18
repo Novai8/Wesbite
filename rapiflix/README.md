@@ -7,7 +7,7 @@ Rapiflix is a standalone movie-discovery and playback project in `/rapiflix` on 
 - **In-page playback:** the player looks up the Internet Archive item's live metadata instead of trusting hard-coded file names. It tries compatible MP4/M4V/WebM/OGV files, retries alternate files if playback fails, and remembers local watch progress.
 - **Separate catalogues:** current/commercial TMDB titles are shown in a discovery section with regional external watch options; the free-film section contains only source items that pass the app's compatible-file and rights-statement screening. TMDB discovery cards are not represented as playable streams.
 - **Unified playback controls:** rights-cleared items use one in-page player with source/file selection, quality selection when resolution metadata is available, WebVTT subtitle selection when tracks are present, and audio-track selection when the browser or authorized source exposes tracks. HLS `.m3u8` streams now work through HLS.js on supported browsers (or native HLS where available), with adaptive quality and manifest-provided audio/subtitle track selection. Failed sources fall through to the next available candidate.
-- **Licensed new-release stream hook:** `/streams.json` can map TMDB movie IDs to explicitly authorized full-length URLs, including HLS manifests. When an entry is configured, the title's main button plays that licensed stream inside Rapiflix. No commercial stream is bundled by default because stream URLs must come from a distributor or rightsholder that authorizes on-site playback.
+- **Licensed new-release stream hook:** `/streams.json` can map TMDB movie IDs to explicitly authorized full-length URLs, including HLS manifests and third-party iframe players. Set `mode: "iframe"` to render a provider's licensed embed page; set `type: "hls"` for a direct HLS manifest. When an entry is configured, the title's main button plays that source inside Rapiflix. No commercial stream is bundled by default because the URL must come from a distributor/rightsholder or player provider that authorizes embedding.
 
 ### Configure a licensed full-length stream
 
@@ -38,6 +38,7 @@ Edit streams.json and use the numeric TMDB movie ID as the key under movies. Exa
     }
 
 - Replace 12345 with the real TMDB movie ID. The authorized flag is an operator assertion, not a licence check.
+- For a licensed embed-player URL instead of a direct media file, use `"mode": "iframe"`, keep `"authorized": true`, and set `"url"` to the embed URL provided under your license. Rapiflix will render it inside the player and let viewers switch between configured embed sources.
 - HLS manifests need CORS enabled by the media provider for your site origin. The player supports HLS quality levels and manifest-declared audio/subtitle tracks where the source exposes them.
 - Use subtitles for authorized WebVTT subtitle URLs. HLS manifest subtitle/audio renditions may appear automatically in the track selectors.
 - Do not use store pages, TMDB IDs, trailer URLs, scraped third-party links, or DRM-protected playback URLs as if they were direct movie streams. A retailer listing is not a media file.
