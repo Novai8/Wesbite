@@ -11,6 +11,7 @@
   const tmdbKeyName = 'rapiflix-tmdb-key';
   let tmdbGenreMap = {};
   let licensedStreams = {};
+  let authorizedEmbedProviders = [];
   let licensedStreamsReady = Promise.resolve();
   function tmdbKey(){try{return localStorage.getItem(tmdbKeyName)||'';}catch(_){return '';}}
   function isLocalPreview(){return ['localhost','127.0.0.1'].includes(location.hostname);}
@@ -21,7 +22,11 @@
   }
   function getAuthorizedSources(m){
     if(!m)return [];
-    return validatedLicensedSources(m.kind==='tmdb'?licensedStreams[String(m.tmdbId)]:m.authorizedSources);
+    const perTitle=validatedLicensedSources(m.kind==='tmdb'?licensedStreams[String(m.tmdbId)]:m.authorizedSources);
+    if(m.kind!=='tmdb'||!m.tmdbId)return perTitle;
+    const templateSources=authorizedEmbedProviders.filter(provider=>provider&&provider.authorized===true&&typeof provider.urlTemplate==='string'&&provider.urlTemplate.includes('{tmdb_id}')&&/^https:\/\//i.test(provider.urlTemplate))
+      .map(provider=>({authorized:true,mode:'iframe',provider:provider.provider||provider.label||'Authorized embed',label:provider.label||provider.provider||'Authorized embed',url:provider.urlTemplate.replaceAll('{tmdb_id}',encodeURIComponent(String(m.tmdbId)))}));
+    return [...perTitle,...validatedLicensedSources(templateSources)];
   }
   async function loadLicensedStreamManifest(){
     try{
@@ -29,6 +34,7 @@
       if(!response.ok)return;
       const data=await response.json();
       licensedStreams=data&&data.movies&&typeof data.movies==='object'?data.movies:{};
+      authorizedEmbedProviders=Array.isArray(data&&data.embedProviders)?data.embedProviders.filter(provider=>provider&&provider.authorized===true&&typeof provider.urlTemplate==='string'&&provider.urlTemplate.includes('{tmdb_id}')&&/^https:\/\//i.test(provider.urlTemplate)):[];
     }catch(error){
       console.warn('Rapiflix authorized stream manifest is not available yet.',error);
     }
