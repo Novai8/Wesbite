@@ -318,6 +318,59 @@
   async function playFilm(m){
     await licensedStreamsReady;
     if(!m)return;
+    // TV playback uses the requested VidCore episode route. The series TMDB ID alone
+    // is not enough: the player URL also needs a season and episode number.
+    if(m.kind==='tmdb'&&m.mediaType==='tv'){
+      $('#modalBackdrop').hidden=true;$('#playerBackdrop').hidden=false;document.body.classList.add('modal-open');
+      $('#playerTitle').textContent=m.title;
+      const frame=$('#playerFrame'), controls=$('#playerControls');
+      frame.innerHTML='<div class="player-placeholder"><div class="live-dot"></div><strong>Loading episodes…</strong><p>Getting season and episode information.</p></div>';
+      controls.innerHTML='<label>Season <select id="tvSeason"><option value="1">Season 1</option></select></label><label>Episode <select id="tvEpisode"><option value="1">Episode 1</option></select></label>';
+      const seasonSelect=controls.querySelector('#tvSeason'), episodeSelect=controls.querySelector('#tvEpisode');
+      let seasonData=[];
+      function loadVidCoreEpisode(){
+        const season=Math.max(0,Number(seasonSelect.value)||1);
+        const episode=Math.max(1,Number(episodeSelect.value)||1);
+        const iframe=document.createElement('iframe');
+        iframe.src='https://vidcore.org/embed/tv/'+encodeURIComponent(String(m.tmdbId))+'/'+season+'/'+episode;
+        iframe.title=m.title+' — Season '+season+', Episode '+episode;
+        iframe.width='100%';iframe.height='100%';iframe.frameBorder='0';
+        iframe.allow='autoplay; encrypted-media; picture-in-picture; fullscreen';
+        iframe.allowFullscreen=true;
+        iframe.referrerPolicy='strict-origin-when-cross-origin';
+        iframe.loading='eager';
+        iframe.style.width='100%';iframe.style.height='100%';iframe.style.minHeight='min(62vw,620px)';iframe.style.border='0';iframe.style.background='#000';
+        // Do not sandbox this third-party player: sandbox restrictions can prevent playback.
+        frame.replaceChildren(iframe);
+      }
+      seasonSelect.addEventListener('change',async()=>{
+        const seasonNumber=Number(seasonSelect.value)||1;
+        const season=seasonData.find(item=>Number(item.season_number)===seasonNumber);
+        const count=Number(season&&season.episode_count)||1;
+        episodeSelect.innerHTML='';
+        for(let n=1;n<=count;n++){const option=document.createElement('option');option.value=String(n);option.textContent='Episode '+n;episodeSelect.append(option);}
+        try{
+          const response=await tmdbRequest('tv/'+encodeURIComponent(String(m.tmdbId))+'/season/'+seasonNumber,{language:'en-US'});
+          if(response.ok){const data=await response.json();(data.episodes||[]).forEach((ep,index)=>{const option=episodeSelect.options[index];if(option&&ep.name)option.textContent='Episode '+ep.episode_number+' · '+ep.name;});}
+        }catch(_){}
+        loadVidCoreEpisode();
+      });
+      episodeSelect.addEventListener('change',loadVidCoreEpisode);
+      try{
+        const response=await tmdbRequest('tv/'+encodeURIComponent(String(m.tmdbId)),{language:'en-US'});
+        if(response.ok){const data=await response.json();seasonData=(data.seasons||[]).filter(item=>Number(item.season_number)>=0);if(seasonData.length){seasonSelect.innerHTML=seasonData.map(item=>'<option value="'+Number(item.season_number)+'">'+escapeHtml(item.name||('Season '+item.season_number))+'</option>').join('');}}
+        seasonSelect.value=seasonData.some(item=>Number(item.season_number)===1)?'1':String(Number(seasonData[0]?.season_number)||0);
+        const seasonNumber=Number(seasonSelect.value)||0;
+        const season=seasonData.find(item=>Number(item.season_number)===seasonNumber);
+        const count=Math.max(1,Number(season&&season.episode_count)||1);
+        episodeSelect.innerHTML='';
+        for(let n=1;n<=count;n++){const option=document.createElement('option');option.value=String(n);option.textContent='Episode '+n;episodeSelect.append(option);}
+        const seasonResponse=await tmdbRequest('tv/'+encodeURIComponent(String(m.tmdbId))+'/season/'+seasonNumber,{language:'en-US'});
+        if(seasonResponse.ok){const data=await seasonResponse.json();(data.episodes||[]).forEach((ep,index)=>{const option=episodeSelect.options[index];if(option&&ep.name)option.textContent='Episode '+ep.episode_number+' · '+ep.name;});}
+      }catch(_){/* Still allow manual episode selection if TMDB episode metadata is unavailable. */}
+      loadVidCoreEpisode();
+      return;
+    }
     if(m.kind==='tmdb'&&!getAuthorizedSources(m).length){
       const watchUrl=m.watchLink||('https://www.themoviedb.org/'+(m.mediaType==='tv'?'tv/':'movie/')+encodeURIComponent(m.tmdbId)+'/watch');
       window.open(watchUrl,'_blank','noopener,noreferrer');
