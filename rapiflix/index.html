@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#09090d"><meta name="description" content="Rapiflix — discover cinema, explore public-domain classics, and stream films that are available to watch legally for free.">
+  <title>Rapiflix — Stories worth staying up for</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="noise" aria-hidden="true"></div>
+  <header class="topbar">
+    <a class="brand" href="#top" aria-label="Rapiflix home"><span class="brand-mark">R</span><span>rapi<span class="brand-accent">flix</span><i>.</i></span></a>
+    <nav class="nav-links" aria-label="Main navigation"><a class="active" href="#discover">Discover</a><a href="#library">Free library</a><a href="#about">About</a></nav>
+    <div class="nav-actions"><button class="icon-button" id="savedToggle" aria-label="Show saved films" title="My list">♡ <span class="saved-count" id="savedCount">0</span></button><button class="menu-button" id="menuButton" aria-label="Open menu">☰</button></div>
+  </header>
+  <main id="top">
+    <section class="hero" id="discover">
+      <div class="hero-art" id="heroArt" role="img" aria-label="Featured classic film artwork"></div><div class="hero-vignette"></div>
+      <div class="hero-content"><div class="eyebrow"><span class="live-dot"></span> YOUR NEXT FILM IS HERE <span class="eyebrow-line"></span></div>
+        <p class="hero-kicker" id="heroKicker">THE RAPIFLIX CLASSICS COLLECTION</p><h1 id="heroTitle">Cinema never<br><em>gets old.</em></h1>
+        <p class="hero-copy" id="heroCopy">Rediscover unforgettable stories, cult favourites and timeless films from the public-domain era.</p>
+        <div class="hero-meta"><span id="heroYear">1926</span><span class="meta-dot">•</span><span id="heroGenre">Adventure · Comedy</span><span class="quality-pill">FREE TO WATCH</span></div>
+        <div class="hero-actions"><button class="primary-button" id="heroPlay"><span>▶</span> Watch film</button><button class="secondary-button" id="heroDetails">＋ <span>Details</span></button></div>
+      </div>
+      <div class="hero-index"><span class="index-current">01</span><span class="index-rule"></span><span>04</span></div>
+      <div class="scroll-cue"><span></span> SCROLL TO EXPLORE</div>
+    </section>
+    <section class="quick-strip" aria-label="Rapiflix features"><div><span class="strip-icon">✳</span><span><b>Old stories. New discovery.</b><small>Handpicked cinema and hidden gems</small></span></div><div><span class="strip-icon">▷</span><span><b>Watch in your browser</b><small>No account required</small></span></div><div><span class="strip-icon">◈</span><span><b>Free to explore</b><small>Rights-aware public collections</small></span></div><div class="strip-status"><span class="status-dot"></span> LIBRARY ONLINE</div></section>
+    <section class="catalog-section" id="library">
+      <div class="section-heading"><div><p class="section-kicker">FIND YOUR NEXT FAVOURITE</p><h2>A whole world of <em>stories.</em></h2></div><p class="section-note">A growing collection of classic cinema, selected for curious people.</p></div>
+      <div class="toolbar"><label class="search-box"><span>⌕</span><input id="searchInput" type="search" placeholder="Search films, genres, years…" autocomplete="off"><kbd>/</kbd></label><div class="filter-wrap"><label for="genreFilter" class="sr-only">Filter by genre</label><select id="genreFilter"><option value="all">All genres</option></select><button class="sort-button" id="sortButton">↕ <span>Featured</span></button></div></div>
+      <div class="chips" id="genreChips" aria-label="Popular genres"></div>
+      <div class="results-line"><span id="resultsLabel">FEATURED SELECTION</span><span id="resultsCount">17 FILMS</span></div>
+      <div class="movie-grid" id="movieGrid" aria-live="polite"></div>
+      <div class="load-row"><button class="load-button" id="loadMore">Explore more classics <span>↗</span></button><p>Films are served by their source hosts. Availability can vary by title.</p></div>
+    </section>
+    <section class="archive-banner"><div class="archive-orbit orbit-one"></div><div class="archive-orbit orbit-two"></div><div class="archive-copy"><p class="section-kicker">THE ARCHIVE PROJECT</p><h2>Some stories deserve<br>to <em>live forever.</em></h2><p>Rapiflix helps you discover films made available through public collections. Every film's rights and availability should be checked at its source.</p><a href="https://archive.org/details/feature_films" target="_blank" rel="noreferrer">Explore the Internet Archive <span>↗</span></a></div><div class="archive-stat"><span class="stat-symbol">✳</span><strong>CLASSICS</strong><small>Made to be rediscovered</small><div class="stat-line"></div><span class="stat-caption">A LITTLE LESS SCROLLING.<br>A LITTLE MORE CINEMA.</span></div></section>
+    <section class="about-section" id="about"><div><p class="section-kicker">A NOTE FROM RAPIFLIX</p><h2>Made for the<br><em>movie curious.</em></h2></div><div class="about-text"><p>Rapiflix is an independent experiment in film discovery. The initial collection focuses on older films available from the Internet Archive, with more discovery features planned.</p><p>Public availability does not automatically mean a film is free of copyright restrictions. We aim to identify source and licensing information, but viewers and operators should verify each title's rights for their location and use.</p></div></section>
+  </main>
+  <footer><a class="brand footer-brand" href="#top"><span class="brand-mark">R</span><span>rapi<span class="brand-accent">flix</span><i>.</i></span></a><span>AN INDEPENDENT FILM DISCOVERY PROJECT</span><a href="https://archive.org" target="_blank" rel="noreferrer">CONTENT SOURCE: INTERNET ARCHIVE ↗</a></footer>
+  <div class="modal-backdrop" id="modalBackdrop" hidden><section class="film-modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><button class="modal-close" id="modalClose" aria-label="Close details">×</button><div class="modal-poster" id="modalPoster"></div><div class="modal-body"><p class="section-kicker" id="modalKicker">RAPIFLIX SELECTION</p><h2 id="modalTitle">Film title</h2><div class="modal-meta" id="modalMeta"></div><p id="modalDescription"></p><div class="modal-actions"><button class="primary-button" id="modalPlay">▶ Watch film</button><button class="secondary-button" id="modalSave">♡ Save to my list</button></div><p class="source-note" id="sourceNote">Playback and rights information are provided by the source collection.</p></div></section></div>
+  <div class="player-backdrop" id="playerBackdrop" hidden><section class="player-dialog" role="dialog" aria-modal="true" aria-label="Film player"><div class="player-top"><div><span class="brand-mark small-mark">R</span><strong id="playerTitle">Now playing</strong></div><button class="modal-close" id="playerClose" aria-label="Close player">×</button></div><div class="player-frame" id="playerFrame"></div><div class="player-foot"><span>PLAYBACK PROVIDED BY THE ORIGINAL HOST</span><a id="sourceLink" href="https://archive.org" target="_blank" rel="noreferrer">Open source ↗</a></div></section></div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="app.js"></script>
+</body>
+</html>
