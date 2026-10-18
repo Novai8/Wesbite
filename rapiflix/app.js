@@ -333,7 +333,7 @@
   function writeProgress(id,time,duration){try{const all=JSON.parse(localStorage.getItem(progressKey)||'{}');if(duration>0&&time/duration>.96)delete all[id];else if(time>5)all[id]=Math.floor(time);localStorage.setItem(progressKey,JSON.stringify(all));}catch(_){}}
   function archiveVideoFiles(data){return (data.files||[]).filter(f=>/\.(mp4|m4v|webm|ogv)$/i.test(f.name||'')&&!/(thumb|sample|trailer|preview|poster|torrent|storyboard|\.ia\.)/i.test(f.name||'')&&!/^(metadata|__ia_thumb)/i.test(f.name||'')).map(f=>{const name=String(f.name||'');const ext=(name.split('.').pop()||'').toLowerCase();const height=Number(f.height)||0;const size=Number(f.size)||0;let score=ext==='mp4'||ext==='m4v'?300:ext==='webm'?220:160;if(height>=360&&height<=1080)score+=25;if(height>1080)score-=20;if(size>1500*1024*1024)score-=25;if(size>0&&size<4*1024*1024)score-=60;if(/512kb|lowres|tiny/i.test(name))score-=40;return {name,ext,size,height,score,url:archive+'/download/'+encodeURIComponent(data.metadata?.identifier||'')+'/'+name.split('/').map(encodeURIComponent).join('/')}}).sort((a,b)=>b.score-a.score||(a.size||Number.MAX_SAFE_INTEGER)-(b.size||Number.MAX_SAFE_INTEGER));}
   async function fetchCineProSources(tmdbId,mediaType='movie',season,episode){
-    if(!/^\\d{1,20}$/.test(String(tmdbId)))throw new Error('Invalid TMDB title ID.');
+    if(!/^\d{1,20}$/.test(String(tmdbId)))throw new Error('Invalid TMDB title ID.');
     let path='v1/movies/'+encodeURIComponent(String(tmdbId));
     if(mediaType==='tv'){
       if(!Number.isInteger(Number(season))||Number(season)<0||Number(season)>99||!Number.isInteger(Number(episode))||Number(episode)<1||Number(episode)>9999)throw new Error('Invalid season or episode number.');
@@ -342,14 +342,14 @@
     const response=await fetch('/api/cinepro/'+path,{headers:{Accept:'application/json'},cache:'no-store'});
     let data={};try{data=await response.json();}catch(_){}
     if(!response.ok)throw new Error(data.error?.message||data.error||'CinePro request failed ('+response.status+').');
-    const subtitles=(Array.isArray(data.subtitles)?data.subtitles:[]).map(track=>({label:track.label||track.language||'Subtitle',language:track.language||'und',src:track.url})).filter(track=>typeof track.src==='string'&&/^https:\\/\\//i.test(track.src));
-    return (Array.isArray(data.sources)?data.sources:[]).filter(source=>source&&typeof source.url==='string'&&/^https:\\/\\//i.test(source.url)).map((source,index)=>({
+    const subtitles=(Array.isArray(data.subtitles)?data.subtitles:[]).map(track=>({label:track.label||track.language||'Subtitle',language:track.language||'und',src:track.url})).filter(track=>typeof track.src==='string'&&/^https:\/\//i.test(track.src));
+    return (Array.isArray(data.sources)?data.sources:[]).filter(source=>source&&typeof source.url==='string'&&/^https:\/\//i.test(source.url)).map((source,index)=>({
       authorized:true,
       provider:'CinePro · '+String(source.provider?.name||source.provider||'Source provider'),
       label:String(source.quality||source.label||('Source '+(index+1))),
       url:source.url,
       type:String(source.type||'mp4').toLowerCase(),
-      height:Number(String(source.quality||'').match(/\\d{3,4}/)?.[0])||0,
+      height:Number(String(source.quality||'').match(/\d{3,4}/)?.[0])||0,
       subtitles,
       audioTracks:Array.isArray(source.audioTracks)?source.audioTracks:[]
     }));
