@@ -19,3 +19,5 @@ html[data-page=trending] #movieGrid{counter-reset:trend-rank}
 html[data-page=search] #movieGrid .movie-card{animation:bounce .95s cubic-bezier(.3,.7,.4,1) both}
 @keyframes bounce{0%{opacity:0;transform:translateY(110px) scale(.7)}55%{opacity:1;transform:translateY(-18px) scale(1.05)}75%{transform:translateY(7px) scale(.99)}100%{opacity:1;transform:translateY(0) scale(1)}}
 @media(max-width:760px){html[data-page=trending] #movieGrid .movie-card{flex-basis:145px}html[data-page=trending] #movieGrid .movie-card::before{font-size:70px}}
+
+html[data-page=trending] #movieGrid .movie-card:nth-child(n+11){display:none}
