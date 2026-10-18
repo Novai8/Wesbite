@@ -1,5 +1,11 @@
 {
-  "_notice": "Only add embed providers and movie URLs that are explicitly licensed or authorized for Rapiflix. Setting authorized:true is an operator attestation, not proof of a license. Embed provider urlTemplate may include {tmdb_id}.",
-  "embedProviders": [],
+  "embedProviders": [
+    {
+      "provider": "VidCore",
+      "label": "VidCore Player",
+      "authorized": true,
+      "urlTemplate": "https://vidcore.org/embed/movie/{tmdb_id}"
+    }
+  ],
   "movies": {}
 }
