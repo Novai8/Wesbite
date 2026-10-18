@@ -25,7 +25,7 @@
     if(!m)return [];
     const perTitle=validatedLicensedSources(m.kind==='tmdb'?licensedStreams[String(m.tmdbId)]:m.authorizedSources);
     if(m.kind!=='tmdb'||!m.tmdbId)return perTitle;
-    const templateSources=authorizedEmbedProviders.filter(provider=>provider&&provider.authorized===true&&typeof provider.urlTemplate==='string'&&provider.urlTemplate.includes('{tmdb_id}')&&/^https:\/\//i.test(provider.urlTemplate))
+    const templateSources=(m.mediaType==='tv'?[]:authorizedEmbedProviders).filter(provider=>provider&&provider.authorized===true&&typeof provider.urlTemplate==='string'&&provider.urlTemplate.includes('{tmdb_id}')&&/^https:\/\//i.test(provider.urlTemplate))
       .map(provider=>({authorized:true,mode:'iframe',provider:provider.provider||provider.label||'Authorized embed',label:provider.label||provider.provider||'Authorized embed',url:provider.urlTemplate.replaceAll('{tmdb_id}',encodeURIComponent(String(m.tmdbId)))}));
     return [...perTitle,...validatedLicensedSources(templateSources)];
   }
