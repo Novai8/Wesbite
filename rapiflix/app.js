@@ -369,7 +369,9 @@
         iframe.title='VidCore player for '+m.title;
         iframe.width='100%';iframe.height='100%';iframe.frameBorder='0';
         iframe.allow='autoplay; encrypted-media; picture-in-picture; fullscreen';
-        iframe.allowFullscreen=true;iframe.referrerPolicy='strict-origin-when-cross-origin';iframe.loading='eager';
+        iframe.allowFullscreen=true;iframe.referrerPolicy='strict-origin-when-cross-origin';
+        // Restrict provider popups and top-level redirects. Ads drawn inside the cross-origin player cannot be removed from this site.
+        iframe.setAttribute('sandbox','allow-scripts allow-same-origin allow-forms allow-presentation');iframe.loading='eager';
         iframe.style.width='100%';iframe.style.height='100%';iframe.style.minHeight='min(62vw,620px)';iframe.style.border='0';iframe.style.background='#000';
         frame.replaceChildren(iframe);
         $('#cineProStatus').textContent='VidCore is active. Choose CinePro sources to check the second provider.';
@@ -407,9 +409,10 @@
         iframe.allow='autoplay; encrypted-media; picture-in-picture; fullscreen';
         iframe.allowFullscreen=true;
         iframe.referrerPolicy='strict-origin-when-cross-origin';
+        // Restrict provider popups and top-level redirects. Ads drawn inside the cross-origin player cannot be removed from this site.
+        iframe.setAttribute('sandbox','allow-scripts allow-same-origin allow-forms allow-presentation');
         iframe.loading='eager';
         iframe.style.width='100%';iframe.style.height='100%';iframe.style.minHeight='min(62vw,620px)';iframe.style.border='0';iframe.style.background='#000';
-        // Do not sandbox this third-party player: sandbox restrictions can prevent playback.
         frame.replaceChildren(iframe);
       }
       controls.querySelector('#playCineProEpisode').addEventListener('click',async()=>{
@@ -476,6 +479,8 @@
       iframe.allow='autoplay; encrypted-media; picture-in-picture; fullscreen';
       iframe.allowFullscreen=true;
       iframe.referrerPolicy='strict-origin-when-cross-origin';
+        // Restrict provider popups and top-level redirects. Ads drawn inside the cross-origin player cannot be removed from this site.
+        iframe.setAttribute('sandbox','allow-scripts allow-same-origin allow-forms allow-presentation');
       // Limit the third-party player iframe so it cannot open pop-up windows or navigate the top-level page.
       // This cannot remove ads rendered inside the provider's own player.
       iframe.setAttribute('sandbox','allow-scripts allow-same-origin allow-forms allow-presentation');
