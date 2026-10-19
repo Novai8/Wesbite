@@ -343,44 +343,66 @@
     await loadTitleRouteFromUrl(m);
   }
   async function loadLanguageInfo(m){
-    const host=$('body.title-page-active #titleLanguageOptions')||$('#languageOptions');if(!host)return;
-    host.hidden=false;host.innerHTML='<div class="language-panel"><h3>LANGUAGE GUIDE</h3><p class="language-note">Checking language metadata…</p></div>';
-    const media=m.mediaType==='tv'?'tv':'movie';let translations=[];
-    try{const response=await tmdbRequest(media+'/'+encodeURIComponent(String(m.tmdbId))+'/translations',{});if(response.ok){const data=await response.json();translations=(data.translations||[]).map(t=>({code:t.iso_639_1,name:t.english_name||t.name||t.iso_639_1})).filter(t=>t.code);}}catch(_){}
+    const titleRequestToken=document.body.classList.contains('title-page-active')?titleRouteToken:null;
+    const isStale=()=>titleRequestToken!==null&&(titleRequestToken!==titleRouteToken||selected?.id!==m.id);
+    const host=$('body.title-page-active #titleLanguageOptions')||$('#languageOptions');
+    if(!host)return;
+    host.hidden=false;
+    host.innerHTML='<div class="language-panel"><h3>LANGUAGE GUIDE</h3><p class="language-note">Checking language metadata…</p></div>';
+    const media=m.mediaType==='tv'?'tv':'movie';
+    let translations=[];
+    try{
+      const response=await tmdbRequest(media+'/'+encodeURIComponent(String(m.tmdbId))+'/translations',{});
+      if(isStale())return;
+      if(response.ok){
+        const data=await response.json();
+        if(isStale())return;
+        translations=(data.translations||[]).map(t=>({code:t.iso_639_1,name:t.english_name||t.name||t.iso_639_1})).filter(t=>t.code);
+      }
+    }catch(_){if(isStale())return;}
+    if(isStale())return;
     const unique=[...new Map(translations.map(t=>[t.code,t])).values()].sort((a,b)=>a.name.localeCompare(b.name));
-    host.innerHTML='';const title=document.createElement('h3');title.textContent='LANGUAGE GUIDE';host.append(title);
+    host.innerHTML='';
+    const title=document.createElement('h3');title.textContent='LANGUAGE GUIDE';host.append(title);
     const note=document.createElement('p');note.className='language-note';note.textContent='These are languages with title or metadata translations in TMDB, not confirmation of dubbed audio or subtitles in the player.';host.append(note);
-    if(unique.length){const chips=document.createElement('div');chips.className='language-chips';unique.slice(0,18).forEach(t=>{const chip=document.createElement('span');chip.className='language-chip';chip.textContent=t.name;chips.append(chip);});host.append(chips);}else{const p=document.createElement('p');p.className='language-note';p.textContent='TMDB did not return translation metadata for this title.';host.append(p);}
-    const link=document.createElement('a');link.href='https://www.opensubtitles.com/en/search-all/q-'+encodeURIComponent(m.title);link.target='_blank';link.rel='noreferrer';link.textContent='Search subtitle listings ↗';link.style.display='inline-block';link.style.marginTop='12px';host.append(link);
+    if(unique.length){
+      const chips=document.createElement('div');chips.className='language-chips';
+      unique.slice(0,18).forEach(t=>{const chip=document.createElement('span');chip.className='language-chip';chip.textContent=t.name;chips.append(chip);});
+      host.append(chips);
+    }else{
+      const p=document.createElement('p');p.className='language-note';p.textContent='TMDB did not return translation metadata for this title.';host.append(p);
+    }
+    const link=document.createElement('a');
+    link.href='https://www.opensubtitles.com/en/search-all/q-'+encodeURIComponent(m.title);
+    link.target='_blank';link.rel='noreferrer';link.textContent='Search subtitle listings ↗';link.style.display='inline-block';link.style.marginTop='12px';host.append(link);
   }
   async function loadOfficialTrailer(m){
     const titlePageActive=document.body.classList.contains('title-page-active');
+    const titleRequestToken=titlePageActive?titleRouteToken:null;
+    const isStale=()=>titleRequestToken!==null&&(titleRequestToken!==titleRouteToken||selected?.id!==m.id);
     const box=titlePageActive?$('#titleTrailerPreview'):$('#trailerPreview');
     const section=titlePageActive?$('#titleTrailerSection'):null;
-    box.hidden=true;
-    box.replaceChildren();
+    box.hidden=true;box.replaceChildren();
     if(!m||m.kind!=='tmdb'||!m.tmdbId)return;
     try{
       const response=await tmdbRequest((m.mediaType==='tv'?'tv/':'movie/')+encodeURIComponent(m.tmdbId)+'/videos',{language:'en-US'});
+      if(isStale())return;
       const data=await response.json();
+      if(isStale())return;
       if(!response.ok)throw new Error('Trailer lookup failed');
       const videos=(data.results||[]).filter(v=>v&&v.site==='YouTube'&&v.key&&/^[A-Za-z0-9_-]{6,20}$/.test(v.key));
       const trailer=videos.find(v=>v.type==='Trailer'&&v.official===true)||videos.find(v=>v.type==='Trailer')||videos.find(v=>v.type==='Teaser'&&v.official===true);
       if(!trailer)return;
-      const label=document.createElement('p');
-      label.className='trailer-label';
-      label.textContent='OFFICIAL TRAILER PREVIEW';
+      const label=document.createElement('p');label.className='trailer-label';label.textContent='OFFICIAL TRAILER PREVIEW';
       const frame=document.createElement('iframe');
       frame.src='https://www.youtube-nocookie.com/embed/'+encodeURIComponent(trailer.key);
-      frame.title='Official trailer for '+m.title;
-      frame.loading='lazy';
+      frame.title='Official trailer for '+m.title;frame.loading='lazy';
       frame.referrerPolicy='strict-origin-when-cross-origin';
       frame.allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
       frame.allowFullscreen=true;
-      box.append(label,frame);
-      box.hidden=false;
+      box.append(label,frame);box.hidden=false;
       if(section)section.hidden=false;
-    }catch(_){box.hidden=true;}
+    }catch(_){if(isStale())return;box.hidden=true;if(section)section.hidden=true;}
   }
   function addOfficialStoreSearches(host,m){
     const wrap=document.createElement('div');
@@ -419,6 +441,8 @@
   const watchRegionKey='rapiflix-watch-region';
   function watchRegion(){return localStorage.getItem(watchRegionKey)||'PK';}
   async function loadWatchProviders(m){
+    const titleRequestToken=document.body.classList.contains('title-page-active')?titleRouteToken:null;
+    const isStale=()=>titleRequestToken!==null&&(titleRequestToken!==titleRouteToken||selected?.id!==m.id);
     const host=$('body.title-page-active #titleProviderOptions')||$('#providerOptions');
     if(!host)return;
     m.watchLink='';
@@ -426,16 +450,18 @@
     const region=watchRegion();
     try{
       const r=await tmdbRequest((m.mediaType==='tv'?'tv/':'movie/')+encodeURIComponent(m.tmdbId)+'/watch/providers',{});
+      if(isStale())return;
       const d=await r.json();
+      if(isStale())return;
       if(!r.ok)throw new Error(d.status_message||'Provider lookup failed');
       const data=d.results?.[region];
       m.watchLink=data?.link||'';
       const providers=[...(data?.flatrate||[]).map(p=>({...p,kind:'Subscription'})),...(data?.free||[]).map(p=>({...p,kind:'Free'})),...(data?.ads||[]).map(p=>({...p,kind:'Ad-supported'})),...(data?.rent||[]).map(p=>({...p,kind:'Rent'})),...(data?.buy||[]).map(p=>({...p,kind:'Buy'}))];
       host.innerHTML='<div class="provider-head"><strong>Where to watch</strong><label>Region <select id="watchRegion"><option value="PK">Pakistan</option><option value="US">United States</option><option value="GB">United Kingdom</option><option value="IN">India</option><option value="CA">Canada</option><option value="AU">Australia</option></select></label></div>';
-      $('#watchRegion').value=region;
-      $('#watchRegion').addEventListener('change',e=>{localStorage.setItem(watchRegionKey,e.target.value);loadWatchProviders(m);});
+      const regionSelect=$('#watchRegion');
+      if(regionSelect){regionSelect.value=region;regionSelect.addEventListener('change',e=>{localStorage.setItem(watchRegionKey,e.target.value);loadWatchProviders(m);});}
       if(!providers.length){
-        host.insertAdjacentHTML('beforeend','<p class="source-note">No provider listings were returned for '+region+'. Availability varies by country and can change.</p>');
+        host.insertAdjacentHTML('beforeend','<p class="source-note">No provider listings were returned for '+escapeHtml(region)+'. Availability varies by country and can change.</p>');
       }else{
         const groups={};
         providers.forEach(p=>(groups[p.kind]??=[]).push(p));
@@ -455,8 +481,10 @@
       }
       const credit=document.createElement('p');credit.className='source-note';credit.textContent='Availability data powered by JustWatch via TMDB. Original language does not guarantee a dubbed version. Check the service itself for audio and subtitle options.';host.append(credit);
     }catch(e){
+      if(isStale())return;
       host.innerHTML='<p class="source-note">'+escapeHtml(e.message||'Provider data unavailable.')+'</p>';
     }
+    if(isStale())return;
     addOfficialStoreSearches(host,m);
     addSubtitleSearch(host,m);
   }
@@ -497,7 +525,28 @@
     }
     return accepted;
   }
-  async function checkArchiveRights(m){const titlePageActive=document.body.classList.contains('title-page-active');const host=titlePageActive?$('#titleSourceCheck'):$('#providerOptions');if(!host)return;if(titlePageActive)$('#titleSourceSection').hidden=false;host.innerHTML='<p class="source-note">Checking source metadata and playable files…</p>';try{const d=await fetchArchiveMetadata(m.id);const md=d.metadata||{};const files=(d.files||[]).filter(f=>/\.(mp4|m4v|webm|ogv)$/i.test(f.name||'')&&!/(thumb|sample|trailer|preview|poster|torrent|storyboard)/i.test(f.name||''));const rights=md.licenseurl||md.rights||md.license||'';const explicit=hasExplicitStreamRights(md);host.innerHTML='<strong>Free-film source check</strong><p class="source-note">'+(files.length?'Compatible video file(s) found: '+files.length+'.':'No compatible video file was found in metadata.')+'</p><p class="source-note">'+(explicit?'Public-domain/Creative Commons wording is present in source metadata. Review its exact terms.':'No clear, non-conflicting public-domain or Creative Commons statement was found. Rapiflix will not play this item in-site.')+'</p>'+(rights?'<p class="source-note">Declared rights: '+escapeHtml(String(rights).slice(0,320))+'</p>':'')+'<a class="provider-source-link" href="'+escapeHtml(m.source||'https://archive.org/details/'+encodeURIComponent(m.id))+'" target="_blank" rel="noreferrer">Review original item and rights ↗</a>';addSubtitleSearch(host,m);}catch(e){host.innerHTML='<strong>Source check unavailable</strong><p class="source-note">Could not verify playable files or rights metadata. Open the original item page before relying on this source.</p>';}}
+  async function checkArchiveRights(m){
+    const titlePageActive=document.body.classList.contains('title-page-active');
+    const titleRequestToken=titlePageActive?titleRouteToken:null;
+    const isStale=()=>titleRequestToken!==null&&(titleRequestToken!==titleRouteToken||selected?.id!==m.id);
+    const host=titlePageActive?$('#titleSourceCheck'):$('#providerOptions');
+    if(!host)return;
+    if(titlePageActive)$('#titleSourceSection').hidden=false;
+    host.innerHTML='<p class="source-note">Checking source metadata and playable files…</p>';
+    try{
+      const d=await fetchArchiveMetadata(m.id);
+      if(isStale())return;
+      const md=d.metadata||{};
+      const files=(d.files||[]).filter(f=>/\.(mp4|m4v|webm|ogv)$/i.test(f.name||'')&&!/(thumb|sample|trailer|preview|poster|torrent|storyboard)/i.test(f.name||''));
+      const rights=md.licenseurl||md.rights||md.license||'';
+      const explicit=hasExplicitStreamRights(md);
+      host.innerHTML='<strong>Free-film source check</strong><p class="source-note">'+(files.length?'Compatible video file(s) found: '+files.length+'.':'No compatible video file was found in metadata.')+'</p><p class="source-note">'+(explicit?'Public-domain/Creative Commons wording is present in source metadata. Review its exact terms.':'No clear, non-conflicting public-domain or Creative Commons statement was found. Rapiflix will not play this item in-site.')+'</p>'+(rights?'<p class="source-note">Declared rights: '+escapeHtml(String(rights).slice(0,320))+'</p>':'')+'<a class="provider-source-link" href="'+escapeHtml(m.source||'https://archive.org/details/'+encodeURIComponent(m.id))+'" target="_blank" rel="noreferrer">Review original item and rights ↗</a>';
+      addSubtitleSearch(host,m);
+    }catch(_){
+      if(isStale())return;
+      host.innerHTML='<strong>Source check unavailable</strong><p class="source-note">Could not verify playable files or rights metadata. Open the original item page before relying on this source.</p>';
+    }
+  }
   const progressKey='rapiflix-watch-progress';
   function readProgress(id){try{return Number((JSON.parse(localStorage.getItem(progressKey)||'{}'))[id]||0);}catch(_){return 0;}}
   function writeProgress(id,time,duration){try{const all=JSON.parse(localStorage.getItem(progressKey)||'{}');if(duration>0&&time/duration>.96)delete all[id];else if(time>5)all[id]=Math.floor(time);localStorage.setItem(progressKey,JSON.stringify(all));}catch(_){}}
