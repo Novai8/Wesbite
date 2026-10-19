@@ -14,6 +14,7 @@
   let licensedStreams = {};
   let authorizedEmbedProviders = [];
   let licensedStreamsReady = Promise.resolve();
+  const englishSubtitleLookupCache = new Map();
   function tmdbKey(){try{return localStorage.getItem(tmdbKeyName)||'';}catch(_){return '';}}
   function isLocalPreview(){return ['localhost','127.0.0.1'].includes(location.hostname);}
   function validatedLicensedSources(value){
@@ -354,10 +355,58 @@
       audioTracks:Array.isArray(source.audioTracks)?source.audioTracks:[]
     }));
   }
+  async function findBestEnglishSubtitle(m){
+    if(!m||m.kind!=='tmdb'||!m.tmdbId||m.mediaType==='tv')return null;
+    const cacheKey=String(m.tmdbId)+'|'+String(m.year||'')+'|'+String(m.title||'');
+    if(englishSubtitleLookupCache.has(cacheKey))return englishSubtitleLookupCache.get(cacheKey);
+    const lookup=(async()=>{
+      try{
+        const params=new URLSearchParams({query:String(m.title||'').slice(0,100),year:String(Number(m.year)||''),type:'movie'});
+        const response=await fetch('/api/subtitles/search?'+params.toString(),{headers:{Accept:'application/json'},cache:'default'});
+        if(!response.ok)return null;
+        const payload=await response.json();
+        const results=Array.isArray(payload.results)?payload.results:[];
+        if(!results.length)return null;
+        const wanted=String(m.title||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+        const exact=results.find(item=>item.titleMatch&&(!m.year||item.yearMatch));
+        const titleMatch=results.find(item=>item.titleMatch);
+        const yearMatch=results.find(item=>item.yearMatch);
+        const best=exact||titleMatch||yearMatch||results[0];
+        if(!best||!/^\d+$/.test(String(best.fileId||'')))return null;
+        // Only attach a subtitle with at least a plausible title match; avoid silently captioning a different film.
+        const candidateTitle=String(best.title||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+        if(wanted&&candidateTitle&&!candidateTitle.includes(wanted)&&!wanted.includes(candidateTitle)&&!best.yearMatch)return null;
+        return {label:'English',language:'en',src:'/api/subtitles/file/'+encodeURIComponent(String(best.fileId)),source:'OpenSubtitles',release:best.release||'',year:best.year||null,moviehashMatch:best.moviehashMatch===true};
+      }catch(_){return null;}
+    })();
+    englishSubtitleLookupCache.set(cacheKey,lookup);
+    return lookup;
+  }
+
+  async function attachEnglishSubtitleWhenMissing(m){
+    if(!m||m.kind!=='tmdb'||m.mediaType==='tv'||!Array.isArray(m.authorizedSources))return;
+    const sources=m.authorizedSources;
+    const directSources=sources.filter(source=>source&&source.mode!=='iframe'&&typeof source.url==='string'&&/^https:\/\//i.test(source.url));
+    if(!directSources.length)return;
+    const hasEnglishTrack=source=>(Array.isArray(source.subtitles)?source.subtitles:[]).some(track=>/^(en|eng)([-_]|$)/i.test(String(track.language||track.srclang||''))||/\benglish\b/i.test(String(track.label||'')));
+    if(directSources.every(hasEnglishTrack))return;
+    const english=await findBestEnglishSubtitle(m);
+    if(!english)return;
+    m.authorizedSources=sources.map(source=>{
+      if(!source||source.mode==='iframe'||typeof source.url!=='string'||!/^https:\/\//i.test(source.url)||hasEnglishTrack(source))return source;
+      return {...source,subtitles:[...(Array.isArray(source.subtitles)?source.subtitles:[]),english]};
+    });
+  }
+
   async function playFilm(m){
     await licensedStreamsReady;
     if(!m)return;
-    // Keep VidCore as the default movie player and offer CinePro as an additional source.
+    // Prefer a configured, rights-authorized direct stream when one exists; this lets Rapiflix attach subtitle tracks itself.
+    if(m.kind==='tmdb'&&m.mediaType!=='tv'&&!m.forceCineProPlayback){
+      const configuredSources=getAuthorizedSources(m);
+      if(configuredSources.some(source=>source&&source.mode!=='iframe')){m.authorizedSources=configuredSources;m.forceCineProPlayback=true;}
+    }
+    // Keep VidCore as the default movie player when no configured direct stream is available.
     if(m.kind==='tmdb'&&m.mediaType!=='tv'&&!m.forceCineProPlayback){
       $('#modalBackdrop').hidden=true;$('#playerBackdrop').hidden=false;document.body.classList.add('modal-open');
       $('#playerTitle').textContent=m.title;
@@ -470,8 +519,9 @@
       back.addEventListener('click',()=>playFilm({...m,forceCineProPlayback:false,authorizedSources:undefined}));
       controls.prepend(back);
     }
+    if(m.kind==='tmdb'&&m.forceCineProPlayback&&m.mediaType!=='tv')await attachEnglishSubtitleWhenMissing(m);
     const iframeSources=validatedLicensedSources(m.authorizedSources).filter(source=>source.mode==='iframe');
-    if(m.kind==='tmdb'&&iframeSources.length){
+    if(m.kind==='tmdb'&&iframeSources.length&&!m.forceCineProPlayback){
       controls.innerHTML=iframeSources.length>1?'<label>Authorized embed source <select id="iframeSource"></select></label>':'<p class="source-note">Playing through an authorized external player. Audio and subtitle options are controlled by that provider.</p>';
       frame.replaceChildren();
       const iframe=document.createElement('iframe');
@@ -533,7 +583,7 @@
         video.querySelectorAll('track').forEach(t=>t.remove());
         const subtitles=[...(candidate.subtitles||[])];
         if(metadata)(metadata.files||[]).filter(f=>/\.vtt$/i.test(f.name||'')&&!/(sample|preview|thumb)/i.test(f.name||'')).forEach(f=>subtitles.push({label:String(f.name).split('/').pop().replace(/\.vtt$/i,'').replace(/[_-]+/g,' '),language:'und',src:archive+'/download/'+encodeURIComponent(m.id)+'/'+String(f.name).split('/').map(encodeURIComponent).join('/')}));
-        subtitles.forEach((track,i)=>{if(!track||typeof track.src!=='string'||!/^https:\/\//i.test(track.src))return;const el=document.createElement('track');el.kind='subtitles';el.label=track.label||track.language||('Subtitle '+(i+1));el.srclang=track.language||'und';el.src=track.src;video.append(el);});
+        subtitles.forEach((track,i)=>{const validRemote=track&&typeof track.src==='string'&&/^https:\/\//i.test(track.src);const validLocal=track&&typeof track.src==='string'&&/^\/api\/subtitles\/file\/\d+$/.test(track.src);if(!validRemote&&!validLocal)return;const el=document.createElement('track');el.kind='subtitles';el.label=track.label||track.language||('Subtitle '+(i+1));el.srclang=track.language||'und';el.src=track.src;video.append(el);});
         trackList=[...video.querySelectorAll('track')];
         updateSubtitleOptions();
       }
