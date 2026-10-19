@@ -52,7 +52,7 @@ export function RapigentsHome() {
           <p>Meet the little tools that make the annoying tasks easier. Write, think, clean up data, explore ideas, and get on with your day.</p>
           <div className="rg-fun-actions">
             <Link href="/tools" className="rg-fun-primary">Get into the tools <ArrowUpRight size={18}/></Link>
-            <Link href="/about" className="rg-fun-secondary">How it works <ArrowRight size={16}/></Link>
+            <Link href="/about" className="rg-fun-secondary">How it works <ArrowRight size={16}/></Link><a href="https://rapiflix.online" target="_blank" rel="noopener noreferrer" style={{display:"inline-flex",alignItems:"center",justifyContent:"center",gap:"10px",padding:"14px 18px",border:"1px solid rgba(216,255,99,.55)",borderRadius:"999px",background:"rgba(216,255,99,.10)",color:"#e7ffad",fontWeight:700,fontSize:"14px",lineHeight:1.2,textDecoration:"none",position:"relative",zIndex:2}}><Film size={17}/> Watch free movies, without ads <ArrowUpRight size={16}/></a>
           </div>
           <div className="rg-fun-trust"><span><Check size={14}/> AI-powered helpers</span><span><Check size={14}/> Handy browser tools</span><span><Check size={14}/> No setup maze</span></div>
         </motion.div>
