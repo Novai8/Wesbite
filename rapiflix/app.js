@@ -173,7 +173,7 @@
   }
   function renderChips(){const host=$('#genreChips');host.innerHTML=genres.map(g=>`<button class="chip ${(activeGenre===g.toLowerCase())?'selected':''}" data-genre="${g.toLowerCase()}">${g==='All'?'✳ All titles':g}</button>`).join('');$('#genreFilter').innerHTML='<option value="all">All genres</option>'+genres.slice(1).map(g=>`<option value="${g.toLowerCase()}">${g}</option>`).join('');}
   function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>t.classList.remove('show'),2100);}
-  function toggleSave(id){if(saved.has(id)){saved.delete(id);toast('Removed from your list');}else{saved.add(id);toast('Saved to your list');}try{localStorage.setItem('rapiflix-saved',JSON.stringify([...saved]));}catch(_){}render();if(selected?.id===id)$('#modalSave').textContent=saved.has(id)?'♥ Saved to my list':'♡ Save to my list';}
+  function toggleSave(id){if(saved.has(id)){saved.delete(id);toast('Removed from your list');}else{saved.add(id);toast('Saved to your list');}try{localStorage.setItem('rapiflix-saved',JSON.stringify([...saved]));}catch(_){}render();if(selected?.id===id){$('#modalSave').textContent=saved.has(id)?'♥ Saved to my list':'♡ Save to my list';$('#titleSave').textContent=saved.has(id)?'♥ Saved to my list':'♡ Save to my list';}}
   function languageName(code){try{return new Intl.DisplayNames(['en'],{type:'language'}).of(code)||String(code||'').toUpperCase();}catch(_){return String(code||'').toUpperCase();}}
   function addSubtitleSearch(host,m){const link=document.createElement('a');link.href='https://www.opensubtitles.com/en/search-all/q-'+encodeURIComponent(m.title);link.target='_blank';link.rel='noreferrer';link.className='provider-source-link';link.textContent='Search subtitle listings for this title ↗';host.append(link);const note=document.createElement('p');note.className='source-note';note.textContent='Subtitle availability and permitted use depend on each listing. Rapiflix does not claim a subtitle or dubbed audio exists until the source confirms it.';host.append(note);}
   function titleSlug(value){
@@ -343,7 +343,7 @@
     await loadTitleRouteFromUrl(m);
   }
   async function loadLanguageInfo(m){
-    const host=$('#languageOptions');if(!host)return;
+    const host=$('body.title-page-active #titleLanguageOptions')||$('#languageOptions');if(!host)return;
     host.hidden=false;host.innerHTML='<div class="language-panel"><h3>LANGUAGE GUIDE</h3><p class="language-note">Checking language metadata…</p></div>';
     const media=m.mediaType==='tv'?'tv':'movie';let translations=[];
     try{const response=await tmdbRequest(media+'/'+encodeURIComponent(String(m.tmdbId))+'/translations',{});if(response.ok){const data=await response.json();translations=(data.translations||[]).map(t=>({code:t.iso_639_1,name:t.english_name||t.name||t.iso_639_1})).filter(t=>t.code);}}catch(_){}
@@ -354,7 +354,9 @@
     const link=document.createElement('a');link.href='https://www.opensubtitles.com/en/search-all/q-'+encodeURIComponent(m.title);link.target='_blank';link.rel='noreferrer';link.textContent='Search subtitle listings ↗';link.style.display='inline-block';link.style.marginTop='12px';host.append(link);
   }
   async function loadOfficialTrailer(m){
-    const box=$('#trailerPreview');
+    const titlePageActive=document.body.classList.contains('title-page-active');
+    const box=titlePageActive?$('#titleTrailerPreview'):$('#trailerPreview');
+    const section=titlePageActive?$('#titleTrailerSection'):null;
     box.hidden=true;
     box.replaceChildren();
     if(!m||m.kind!=='tmdb'||!m.tmdbId)return;
@@ -416,7 +418,8 @@
   const watchRegionKey='rapiflix-watch-region';
   function watchRegion(){return localStorage.getItem(watchRegionKey)||'PK';}
   async function loadWatchProviders(m){
-    const host=$('#providerOptions');
+    const host=$('body.title-page-active #titleProviderOptions')||$('#providerOptions');
+    if(!host)return;
     m.watchLink='';
     host.innerHTML='<p class="source-note">Checking licensed streaming, rental and purchase options for your region…</p>';
     const region=watchRegion();
@@ -493,7 +496,7 @@
     }
     return accepted;
   }
-  async function checkArchiveRights(m){const host=$('#providerOptions');if(!host)return;host.innerHTML='<p class="source-note">Checking source metadata and playable files…</p>';try{const d=await fetchArchiveMetadata(m.id);const md=d.metadata||{};const files=(d.files||[]).filter(f=>/\.(mp4|m4v|webm|ogv)$/i.test(f.name||'')&&!/(thumb|sample|trailer|preview|poster|torrent|storyboard)/i.test(f.name||''));const rights=md.licenseurl||md.rights||md.license||'';const explicit=hasExplicitStreamRights(md);host.innerHTML='<strong>Free-film source check</strong><p class="source-note">'+(files.length?'Compatible video file(s) found: '+files.length+'.':'No compatible video file was found in metadata.')+'</p><p class="source-note">'+(explicit?'Public-domain/Creative Commons wording is present in source metadata. Review its exact terms.':'No clear, non-conflicting public-domain or Creative Commons statement was found. Rapiflix will not play this item in-site.')+'</p>'+(rights?'<p class="source-note">Declared rights: '+escapeHtml(String(rights).slice(0,320))+'</p>':'')+'<a class="provider-source-link" href="'+escapeHtml(m.source||'https://archive.org/details/'+encodeURIComponent(m.id))+'" target="_blank" rel="noreferrer">Review original item and rights ↗</a>';addSubtitleSearch(host,m);}catch(e){host.innerHTML='<strong>Source check unavailable</strong><p class="source-note">Could not verify playable files or rights metadata. Open the original item page before relying on this source.</p>';}}
+  async async function checkArchiveRights(m){const titlePageActive=document.body.classList.contains('title-page-active');const host=titlePageActive?$('#titleSourceCheck'):$('#providerOptions');if(!host)return;if(titlePageActive)$('#titleSourceSection').hidden=false;host.innerHTML='<p class="source-note">Checking source metadata and playable files…</p>';try{const d=await fetchArchiveMetadata(m.id);const md=d.metadata||{};const files=(d.files||[]).filter(f=>/\.(mp4|m4v|webm|ogv)$/i.test(f.name||'')&&!/(thumb|sample|trailer|preview|poster|torrent|storyboard)/i.test(f.name||''));const rights=md.licenseurl||md.rights||md.license||'';const explicit=hasExplicitStreamRights(md);host.innerHTML='<strong>Free-film source check</strong><p class="source-note">'+(files.length?'Compatible video file(s) found: '+files.length+'.':'No compatible video file was found in metadata.')+'</p><p class="source-note">'+(explicit?'Public-domain/Creative Commons wording is present in source metadata. Review its exact terms.':'No clear, non-conflicting public-domain or Creative Commons statement was found. Rapiflix will not play this item in-site.')+'</p>'+(rights?'<p class="source-note">Declared rights: '+escapeHtml(String(rights).slice(0,320))+'</p>':'')+'<a class="provider-source-link" href="'+escapeHtml(m.source||'https://archive.org/details/'+encodeURIComponent(m.id))+'" target="_blank" rel="noreferrer">Review original item and rights ↗</a>';addSubtitleSearch(host,m);}catch(e){host.innerHTML='<strong>Source check unavailable</strong><p class="source-note">Could not verify playable files or rights metadata. Open the original item page before relying on this source.</p>';}}
   const progressKey='rapiflix-watch-progress';
   function readProgress(id){try{return Number((JSON.parse(localStorage.getItem(progressKey)||'{}'))[id]||0);}catch(_){return 0;}}
   function writeProgress(id,time,duration){try{const all=JSON.parse(localStorage.getItem(progressKey)||'{}');if(duration>0&&time/duration>.96)delete all[id];else if(time>5)all[id]=Math.floor(time);localStorage.setItem(progressKey,JSON.stringify(all));}catch(_){}}
