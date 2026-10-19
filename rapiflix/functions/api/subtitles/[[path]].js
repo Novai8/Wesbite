@@ -44,6 +44,42 @@ async function readJson(response) {
   try { return await response.json(); } catch (_) { return {}; }
 }
 
+let cachedAccountToken = "";
+let accountTokenExpiresAt = 0;
+let accountLoginInFlight = null;
+
+async function getAccountToken(context) {
+  const { env, request } = context;
+  if (!env.OPENSUBTITLES_USERNAME || !env.OPENSUBTITLES_PASSWORD) return "";
+  if (cachedAccountToken && Date.now() < accountTokenExpiresAt) return cachedAccountToken;
+  if (accountLoginInFlight) return accountLoginInFlight;
+  accountLoginInFlight = (async () => {
+    try {
+      const response = await fetch(API_BASE + "/login", {
+        method: "POST",
+        headers: {
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+          "Api-Key": env.OPENSUBTITLES_API_KEY,
+          "User-Agent": env.OPENSUBTITLES_USER_AGENT || APP_AGENT
+        },
+        body: JSON.stringify({ username: env.OPENSUBTITLES_USERNAME, password: env.OPENSUBTITLES_PASSWORD }),
+        signal: request.signal
+      });
+      const data = await readJson(response);
+      if (!response.ok || typeof data.token !== "string") return "";
+      cachedAccountToken = data.token;
+      accountTokenExpiresAt = Date.now() + 12 * 60 * 60 * 1000;
+      return cachedAccountToken;
+    } catch (_) {
+      return "";
+    } finally {
+      accountLoginInFlight = null;
+    }
+  })();
+  return accountLoginInFlight;
+}
+
 async function upstream(context, path, init = {}) {
   const { env, request } = context;
   if (!env.OPENSUBTITLES_API_KEY) {
@@ -55,6 +91,10 @@ async function upstream(context, path, init = {}) {
     "User-Agent": env.OPENSUBTITLES_USER_AGENT || APP_AGENT,
     ...(init.headers || {})
   };
+  if (path !== "/login") {
+    const token = await getAccountToken(context);
+    if (token) headers.Authorization = "Bearer " + token;
+  }
   const result = await fetch(API_BASE + path, { ...init, headers, signal: request.signal });
   return { response: result };
 }
