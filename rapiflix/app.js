@@ -242,13 +242,14 @@
   function closeTitlePage(){
     document.body.classList.remove('title-page-active');
     $('#titlePage').hidden=true;
+    const homeFeatured=byId(featuredIds[heroIndex]);if(homeFeatured)selected=homeFeatured;
     document.title='Rapiflix — The Film & Anime Edit';
     const desc=$('#pageDescription');if(desc)desc.content='Rapiflix — explore films, TV series and anime, save favourites, and find regional watch options.';
   }
   let titleRouteToken=0;
   async function renderTitlePage(m,token=titleRouteToken){
     if(token!==titleRouteToken||!m)return;
-    selected=m;
+    selected=m;$('#titlePlay').disabled=false;$('#titleSave').disabled=false;
     const page=$('#titlePage');page.hidden=false;
     document.body.classList.add('title-page-active');
     $('#titleLabel').textContent=titleTypeLabel(m);
@@ -995,5 +996,5 @@
   });
   verifyCuratedCatalog().catch(error=>console.error('Rapiflix preflight failed',error));
   // Gentle hero rotation, paused when the visitor is interacting with the hero or has reduced motion enabled.
-  if(!window.matchMedia('(prefers-reduced-motion: reduce)').matches){setInterval(()=>{if(featuredIds.length&&!document.hidden&&!document.body.classList.contains('modal-open')&&!$('#searchInput').value)updateHero((heroIndex+1)%featuredIds.length);},12000);}
+  if(!window.matchMedia('(prefers-reduced-motion: reduce)').matches){setInterval(()=>{if(featuredIds.length&&!document.hidden&&!document.body.classList.contains('modal-open')&&!document.body.classList.contains('title-page-active')&&!$('#searchInput').value)updateHero((heroIndex+1)%featuredIds.length);},12000);}
 })();
