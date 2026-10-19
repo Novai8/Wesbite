@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#100d10"><meta name="description" content="Rapiflix — explore films released from 2000 through 2026, save favourites, and find regional watch options.">
+  <meta name="theme-color" content="#100d10"><meta id="pageDescription" name="description" content="Rapiflix — explore films released from 2000 through 2026, save favourites, and find regional watch options.">
   <title>Rapiflix — The Film & Anime Edit</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -11,11 +11,59 @@
 <body>
   <div class="noise" aria-hidden="true"></div>
   <header class="topbar">
-    <a class="brand" href="#top" aria-label="Rapiflix home"><span class="brand-mark">R</span><span>rapi<span class="brand-accent">flix</span><i>.</i></span></a>
+    <a class="brand" href="./" aria-label="Rapiflix home"><span class="brand-mark">R</span><span>rapi<span class="brand-accent">flix</span><i>.</i></span></a>
     <nav class="nav-links" aria-label="Main navigation"><a class="active" href="#discover">Discover</a><a href="#library">Movies</a><a href="#about">About</a></nav>
     <div class="nav-actions"><button class="icon-button" id="savedToggle" aria-label="Show saved films" title="My list">♡ <span class="saved-count" id="savedCount">0</span></button><button class="menu-button" id="menuButton" aria-label="Open menu">☰</button></div>
   </header>
   <main id="top">
+    <section class="title-page" id="titlePage" hidden aria-labelledby="titleHeading">
+      <div class="title-backdrop" id="titleBackdrop" aria-hidden="true"></div>
+      <div class="title-intro">
+        <a class="title-back-link" id="titleBack" href="./">← Back to all titles</a>
+        <p class="section-kicker" id="titleLabel">FILM DETAILS</p>
+        <h1 id="titleHeading">Loading title…</h1>
+        <p class="title-tagline" id="titleTagline" hidden></p>
+        <div class="title-meta" id="titleMeta"></div>
+        <p class="title-overview" id="titleOverview">Loading synopsis and viewing information.</p>
+        <div class="title-actions">
+          <button class="primary-button" id="titlePlay" type="button">▶ Watch now</button>
+          <button class="secondary-button" id="titleSave" type="button">♡ Save to my list</button>
+          <a class="title-original-link" id="titleOriginalLink" href="https://www.themoviedb.org/" target="_blank" rel="noopener noreferrer">Title information ↗</a>
+        </div>
+        <p class="title-status" id="titleStatus" role="status" aria-live="polite"></p>
+      </div>
+      <div class="title-content">
+        <div class="title-content-main">
+          <section class="title-section" id="titleTrailerSection" hidden>
+            <p class="section-kicker">WATCH THE PREVIEW</p><h2>Official trailer</h2>
+            <div class="trailer-preview" id="titleTrailerPreview" hidden></div>
+          </section>
+          <section class="title-section">
+            <p class="section-kicker">VIEWING OPTIONS</p><h2>Where to watch</h2>
+            <p class="title-section-note">Availability depends on your region and may require a subscription, rental, or purchase.</p>
+            <div class="provider-options" id="titleProviderOptions" aria-live="polite"></div>
+          </section>
+          <section class="title-section">
+            <p class="section-kicker">LANGUAGES & SUBTITLES</p><h2>Language guide</h2>
+            <div id="titleLanguageOptions" aria-live="polite"></div>
+          </section>
+          <section class="title-section" id="titleSourceSection" hidden>
+            <p class="section-kicker">SOURCE & RIGHTS</p><h2>Source information</h2>
+            <div class="provider-options" id="titleSourceCheck" aria-live="polite"></div>
+          </section>
+        </div>
+        <aside class="title-aside">
+          <img id="titlePoster" alt="" loading="lazy">
+          <div class="title-facts">
+            <div><span>Release</span><strong id="titleYear">—</strong></div>
+            <div><span>Type</span><strong id="titleType">Film</strong></div>
+            <div><span>Original language</span><strong id="titleOriginalLanguage">—</strong></div>
+            <div><span>Rating</span><strong id="titleRating">—</strong></div>
+          </div>
+          <p class="title-attribution">Metadata and regional viewing information powered by TMDB. Rapiflix is not endorsed or certified by TMDB.</p>
+        </aside>
+      </div>
+    </section>
     <section class="hero" id="discover">
       <div class="hero-art" id="heroArt" role="img" aria-label="Featured current movie artwork"></div><div class="hero-vignette"></div>
       <div class="hero-content"><div class="eyebrow"><span class="live-dot"></span> YOUR NEXT FILM IS HERE <span class="eyebrow-line"></span></div>
@@ -41,7 +89,7 @@
     <section class="archive-banner"><div class="archive-orbit orbit-one"></div><div class="archive-orbit orbit-two"></div><div class="archive-copy"><p class="section-kicker">FREE FILM COLLECTIONS</p><h2>More films. Less<br><em>friction.</em></h2><p>Rapiflix prioritizes current movie discovery and adds free films when a playable source and rights status can be checked.</p><a href="https://archive.org/details/feature_films" target="_blank" rel="noreferrer">Explore free film collections <span>↗</span></a></div><div class="archive-stat"><span class="stat-symbol">✳</span><strong>FREE FILMS</strong><small>When a source is available</small><div class="stat-line"></div><span class="stat-caption">A LITTLE LESS SCROLLING.<br>A LITTLE MORE CINEMA.</span></div></section>
     <section class="about-section" id="about"><div><p class="section-kicker">A NOTE FROM RAPIFLIX</p><h2>Made for the<br><em>movie curious.</em></h2></div><div class="about-text"><p>Rapiflix is an independent film discovery and playback project. The free library resolves compatible video files from Internet Archive items and plays them inside Rapiflix, with saved progress so you can continue where you left off.</p><p>Rapiflix does not insert player ad breaks. Source availability and rights still depend on the underlying item; dynamically discovered Archive uploads are only played in-site when their metadata declares a public-domain or Creative Commons status. This check is cautious, not a legal guarantee.</p><div class="tmdb-credit"><a class="tmdb-credit-logo" href="https://www.themoviedb.org/" target="_blank" rel="noreferrer" aria-label="The Movie Database"><img src="https://www.themoviedb.org/assets/2/v4/logos/v2/blue_short-8e7b30f73a4020692ccca9c88bafe5dcb6f8a62a4c6bc55cd9ba82bb2cd95f6c.svg" alt="TMDB logo"></a><p><strong>Movie data and availability</strong><br>Movie metadata from TMDB. Regional watch availability is powered by JustWatch.<br>This website uses TMDB and the TMDB APIs but is not endorsed, certified, or otherwise approved by TMDB.</p></div></div></section>
   </main>
-  <footer><a class="brand footer-brand" href="#top"><span class="brand-mark">R</span><span>rapi<span class="brand-accent">flix</span><i>.</i></span></a><span>AN INDEPENDENT FILM DISCOVERY PROJECT</span><a href="https://archive.org" target="_blank" rel="noreferrer">CONTENT SOURCE: INTERNET ARCHIVE ↗</a></footer>
+  <footer><a class="brand footer-brand" href="./"><span class="brand-mark">R</span><span>rapi<span class="brand-accent">flix</span><i>.</i></span></a><span>AN INDEPENDENT FILM DISCOVERY PROJECT</span><a href="https://archive.org" target="_blank" rel="noreferrer">CONTENT SOURCE: INTERNET ARCHIVE ↗</a></footer>
   <div class="modal-backdrop" id="modalBackdrop" hidden><section class="film-modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><button class="modal-close" id="modalClose" aria-label="Close details">×</button><div class="modal-poster" id="modalPoster"></div><div class="modal-body"><p class="section-kicker" id="modalKicker">RAPIFLIX SELECTION</p><h2 id="modalTitle">Film title</h2><div class="modal-meta" id="modalMeta"></div><p id="modalDescription"></p><div class="modal-actions"><button class="primary-button" id="modalPlay">▶ Watch now</button><button class="secondary-button" id="modalSave">♡ Save to my list</button></div><p class="source-note" id="sourceNote">Playback and language options depend on the selected source.</p><div class="language-panel" id="languageOptions" hidden aria-live="polite"></div><div class="trailer-preview" id="trailerPreview" hidden></div><div class="provider-options" id="providerOptions" aria-live="polite"></div></div></section></div>
   <div class="player-backdrop" id="playerBackdrop" hidden><section class="player-dialog" role="dialog" aria-modal="true" aria-label="Film player"><div class="player-top"><div><span class="brand-mark small-mark">R</span><strong id="playerTitle">Now playing</strong></div><button class="modal-close" id="playerClose" aria-label="Close player">×</button></div><div class="player-frame" id="playerFrame"></div><div class="player-controls" id="playerControls" aria-label="Playback options"></div><div class="player-foot"><span>EXTERNAL PLAYER · CONTROLS VARY BY SOURCE</span><span>Audio, subtitles and advertising depend on the external provider.</span></div></section></div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
