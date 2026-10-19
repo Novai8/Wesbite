@@ -528,7 +528,7 @@
       const sourceSelect=$('#playerSource'),qualitySelect=$('#playerQuality'),subtitleSelect=$('#playerSubtitles'),audioSelect=$('#playerAudio');
       const heightLabel=h=>h?({2160:'2160p / 4K',1440:'1440p',1080:'1080p',720:'720p',576:'576p',480:'480p',360:'360p'}[h]||h+'p'):'Auto / source default';
       function setSourceOptions(){sourceSelect.innerHTML=candidates.map((c,i)=>'<option value="'+i+'">'+escapeHtml((c.provider||'Authorized source')+' · '+(c.name||'Video file'))+'</option>').join('');sourceSelect.disabled=candidates.length<2;}
-      let hlsEngine=null;
+      let hlsEngine=null,subtitlePreferenceApplied=false;
       function attachSubtitles(candidate){
         video.querySelectorAll('track').forEach(t=>t.remove());
         const subtitles=[...(candidate.subtitles||[])];
@@ -543,7 +543,15 @@
         if(hlsEngine)(hlsEngine.subtitleTracks||[]).forEach((track,i)=>items.push({value:'hls-sub-'+i,label:track.name||track.lang||track.language||('Stream subtitle '+(i+1))}));
         const previous=subtitleSelect.value;
         subtitleSelect.innerHTML=items.map(item=>'<option value="'+escapeHtml(item.value)+'">'+escapeHtml(item.label)+'</option>').join('');
-        subtitleSelect.value=items.some(item=>item.value===previous)?previous:'off';
+        if(!subtitlePreferenceApplied){
+          const englishFile=trackList.findIndex(track=>/^(en|eng)([-_]|$)/i.test(track.srclang||'')||/\benglish\b|\beng\b/i.test((track.label||'')+' '+(track.src||'')));
+          const hlsTracks=hlsEngine?(hlsEngine.subtitleTracks||[]):[];
+          const englishHls=hlsTracks.findIndex(track=>/^(en|eng)([-_]|$)/i.test(track.lang||track.language||'')||/\benglish\b|\beng\b/i.test(track.name||''));
+          if(englishFile>=0)subtitleSelect.value='file-'+englishFile;
+          else if(englishHls>=0)subtitleSelect.value='hls-sub-'+englishHls;
+          else subtitleSelect.value=items.some(item=>item.value===previous)?previous:'off';
+          subtitlePreferenceApplied=true;
+        }else subtitleSelect.value=items.some(item=>item.value===previous)?previous:'off';
         subtitleSelect.disabled=items.length<=1;
         trackList.forEach((track,i)=>{track.track.mode=subtitleSelect.value==='file-'+i?'showing':'disabled';});
         if(hlsEngine&&subtitleSelect.value.startsWith('hls-sub-'))hlsEngine.subtitleTrack=Number(subtitleSelect.value.slice(8));
@@ -577,6 +585,7 @@
         stopExternalAudio();
         if(hlsEngine){try{hlsEngine.destroy();}catch(_){}hlsEngine=null;}
         sourceIndex=Math.max(0,Math.min(index,candidates.length-1));
+        subtitlePreferenceApplied=false;
         const candidate=candidates[sourceIndex];
         sourceSelect.value=String(sourceIndex);
         video.pause();
