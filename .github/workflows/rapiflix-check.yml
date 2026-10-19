@@ -1,0 +1,28 @@
+name: Rapiflix syntax checks
+
+on:
+  push:
+    branches:
+      - rapiflix/site
+    paths:
+      - "rapiflix/**"
+      - ".github/workflows/rapiflix-check.yml"
+  pull_request:
+    paths:
+      - "rapiflix/**"
+      - ".github/workflows/rapiflix-check.yml"
+
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Check browser JavaScript syntax
+        run: node --check rapiflix/app.js
+      - name: Check Cloudflare Pages Function syntax
+        run: node --input-type=module --check < 'rapiflix/functions/api/tmdb/[[path]].js'
+      - name: Validate Cloudflare Pages routes JSON
+        run: python -m json.tool rapiflix/_routes.json > /dev/null
