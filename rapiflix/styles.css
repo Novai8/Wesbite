@@ -376,3 +376,6 @@ body.title-page-active .nav-links{display:none!important}
 @media(prefers-reduced-motion:reduce){
   .title-page *,.tmdb-actions button,.hero-actions button{scroll-behavior:auto!important;transition:none!important;animation:none!important}
 }
+
+@media(max-width:1000px){body.title-page-active .nav-actions{display:none!important}}
+@media(min-width:1001px){body.title-page-active .nav-actions{display:none!important}}
