@@ -79,7 +79,8 @@ Use a Git-integrated Cloudflare Pages project configured as follows:
 3. Use no build command and serve the current directory as the static output.
 4. In **Settings → Variables and Secrets**, add a **Secret** named `TMDB_API_KEY` with a new, unexposed TMDB v3 key.
 5. Add `OPENSUBTITLES_API_KEY` as a Cloudflare Pages secret. Create an API consumer key from OpenSubtitles and keep it server-side; do not put it in `app.js` or `streams.json`.
-6. Trigger a new deployment.
+6. To use a free OpenSubtitles account's download quota, also add `OPENSUBTITLES_USERNAME` and `OPENSUBTITLES_PASSWORD` as Cloudflare Pages secrets. Rapiflix obtains and caches the login token server-side; neither the credentials nor token are sent to the browser. Without account credentials, the API's anonymous download quota applies.
+7. Trigger a new deployment.
 
 The Pages Function at `functions/api/tmdb/[[path]].js` proxies only approved, read-only catalogue, watch-provider, and official trailer-metadata endpoints. It keeps the API key on the server and limits which API paths can be requested. `_routes.json` restricts Function handling to `/api/tmdb/*`. If the secret is missing, the site's Archive search/player still work, but TMDB catalogue and watch-provider calls show an error. The Pages Function at `functions/api/subtitles/[[path]].js` keeps the OpenSubtitles API key on the server, searches English tracks on demand, and converts downloaded SRT data to WebVTT for direct in-page playback. It uses the provider's usage quotas and does not bulk-copy user-contributed subtitle files into Git.
 
