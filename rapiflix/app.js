@@ -513,7 +513,7 @@
     $('#playerTitle').textContent=m.title;
     const frame=$('#playerFrame'), controls=$('#playerControls');
     frame.innerHTML='<div class="player-placeholder"><div class="live-dot"></div><strong>Preparing your film…</strong><p>Checking source rights, video files, and playback tracks.</p></div>';
-    controls.innerHTML='<label>Source <select id="playerSource" disabled><option>Finding authorized sources…</option></select></label><label>Quality <select id="playerQuality" disabled><option>Auto</option></select></label><label>Subtitles <select id="playerSubtitles" disabled><option value="off">Off</option></select></label><label>Audio <select id="playerAudio" disabled><option value="default">Source default</option></select></label>';
+    controls.innerHTML='<label>Source <select id="playerSource" disabled><option>Finding authorized sources…</option></select></label><label>Quality <select id="playerQuality" disabled><option>Auto</option></select></label><label hidden aria-hidden="true">Subtitles <select id="playerSubtitles" disabled><option value="off">Off</option></select></label><label>Audio <select id="playerAudio" disabled><option value="default">Source default</option></select></label>';
     if(m.kind==='tmdb'&&m.forceCineProPlayback){
       const back=document.createElement('button');back.type='button';back.className='secondary-button';back.textContent='Back to VidCore';
       back.addEventListener('click',()=>playFilm({...m,forceCineProPlayback:false,authorizedSources:undefined}));
