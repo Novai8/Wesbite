@@ -379,3 +379,23 @@ body.title-page-active .nav-links{display:none!important}
 
 @media(max-width:1000px){body.title-page-active .nav-actions{display:none!important}}
 @media(min-width:1001px){body.title-page-active .nav-actions{display:none!important}}
+
+/* Player controls also reflow rather than colliding on narrow screens. */
+.player-dialog{width:min(1120px,100%);max-width:100%;max-height:calc(100dvh - 32px);overflow:auto;min-width:0}
+.player-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;min-width:0;padding:13px 16px}
+.player-top>div{display:flex;align-items:center;gap:10px;min-width:0;max-width:100%}
+#playerTitle{min-width:0;overflow-wrap:anywhere;line-height:1.45}
+.player-frame{width:100%;min-width:0;min-height:0;aspect-ratio:16/9}
+.player-controls{grid-template-columns:repeat(auto-fit,minmax(min(100%,175px),1fr));min-width:0}
+.player-controls label{display:flex;flex-direction:column;align-items:stretch;gap:6px;min-width:0}
+.player-controls select{width:100%;max-width:100%;min-width:0!important;box-sizing:border-box}
+.player-foot{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:9px 18px;padding:12px 16px;line-height:1.6}
+.player-foot span{min-width:0;max-width:100%;overflow-wrap:anywhere}
+@media(max-width:520px){
+  .player-backdrop{padding:8px}
+  .player-dialog{max-height:calc(100dvh - 16px)}
+  .player-top{padding:10px}
+  .player-controls{grid-template-columns:minmax(0,1fr)}
+  .player-frame{min-height:210px}
+  .player-foot{padding:10px;font-size:9px}
+}
