@@ -402,3 +402,6 @@ body.title-page-active .nav-links{display:none!important}
 
 .player-top{height:auto;min-height:55px}
 @media(max-width:520px){.player-top{height:auto;min-height:48px}}
+
+.card-title-link{display:block;max-width:100%;min-width:0;color:inherit;text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card-title-link:hover{color:#b94c37;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px}
