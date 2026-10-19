@@ -16,7 +16,8 @@ const ALLOWED = [
   /^movie\/[1-9][0-9]*\/videos$/,
   /^tv\/[1-9][0-9]*\/videos$/,
   /^movie\/[1-9][0-9]*\/translations$/,
-  /^tv\/[1-9][0-9]*\/translations$/
+  /^tv\/[1-9][0-9]*\/translations$/,
+  /^tv\/[1-9][0-9]*\/season\/[0-9]{1,2}$/
 ];
 
 const errorResponse = (message, status) => new Response(JSON.stringify({ error: message }), {
