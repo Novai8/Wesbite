@@ -47,7 +47,7 @@ Edit streams.json and use the numeric TMDB movie ID as the key under movies. Exa
 - **New-release discovery:** trending, now-playing, upcoming and popular movie metadata can load from TMDB. A release-period filter supports latest (last two release years), 2020s, 2010s, 2000s, and pre-2000 titles. TMDB is a catalogue, not a source of video streams.
 - **Regional watch options:** TMDB reports streaming, rental and purchase availability by country using JustWatch data. Rapiflix opens the region-specific official availability page, and adds official Apple TV, Prime Video and Netflix search links when present provider data is missing or incomplete. The Spider-Man: Brand New Day details panel also links to Sony Pictures' official film page. These are service hand-offs, not free streams supplied by Rapiflix; availability and payment depend on the provider and country. Original-language metadata is displayed when available.
 - **Official trailer preview:** when TMDB supplies a YouTube trailer, the film details panel embeds that preview through YouTube's privacy-enhanced embed domain. A trailer preview is not the full movie stream.
-- **Subtitle discovery:** film details include a search link to OpenSubtitles. This opens their listing/search site; it does not guarantee subtitles exist, download them automatically, or add dubbed audio to the player. In-player subtitle and audio choices still depend on tracks supplied by the authorized video source.
+- **Automatic English subtitles:** for movies played through Rapiflix's direct HTML5 player, Rapiflix searches OpenSubtitles by title and release year, chooses the best plausible English match, converts the returned SRT to WebVTT, caches the converted file at the edge, and enables the track automatically where the browser supports it. Subtitle availability and synchronization depend on the supplied release match; exact file hashes cannot be used when Rapiflix does not possess the underlying video file.
 - **No Rapiflix-inserted ad breaks:** the built-in player plays the source file directly. Rapiflix does not insert ads or require an account for the local library. That does not make every third-party upload lawful, nor can it control ads or restrictions on external commercial services.
 - **Saved titles and playback resume:** the saved list and progress are stored in the visitor's browser.
 
@@ -78,9 +78,10 @@ Use a Git-integrated Cloudflare Pages project configured as follows:
 2. Set **Root directory** to `rapiflix`.
 3. Use no build command and serve the current directory as the static output.
 4. In **Settings → Variables and Secrets**, add a **Secret** named `TMDB_API_KEY` with a new, unexposed TMDB v3 key.
-5. Trigger a new deployment.
+5. Add `OPENSUBTITLES_API_KEY` as a Cloudflare Pages secret. Create an API consumer key from OpenSubtitles and keep it server-side; do not put it in `app.js` or `streams.json`.
+6. Trigger a new deployment.
 
-The Pages Function at `functions/api/tmdb/[[path]].js` proxies only approved, read-only catalogue, watch-provider, and official trailer-metadata endpoints. It keeps the API key on the server and limits which API paths can be requested. `_routes.json` restricts Function handling to `/api/tmdb/*`. If the secret is missing, the site's Archive search/player still work, but TMDB catalogue and watch-provider calls show an error.
+The Pages Function at `functions/api/tmdb/[[path]].js` proxies only approved, read-only catalogue, watch-provider, and official trailer-metadata endpoints. It keeps the API key on the server and limits which API paths can be requested. `_routes.json` restricts Function handling to `/api/tmdb/*`. If the secret is missing, the site's Archive search/player still work, but TMDB catalogue and watch-provider calls show an error. The Pages Function at `functions/api/subtitles/[[path]].js` keeps the OpenSubtitles API key on the server, searches English tracks on demand, and converts downloaded SRT data to WebVTT for direct in-page playback. It uses the provider's usage quotas and does not bulk-copy user-contributed subtitle files into Git.
 
 ## Optional CinePro source provider
 
