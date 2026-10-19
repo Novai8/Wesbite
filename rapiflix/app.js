@@ -176,7 +176,172 @@
   function toggleSave(id){if(saved.has(id)){saved.delete(id);toast('Removed from your list');}else{saved.add(id);toast('Saved to your list');}try{localStorage.setItem('rapiflix-saved',JSON.stringify([...saved]));}catch(_){}render();if(selected?.id===id)$('#modalSave').textContent=saved.has(id)?'♥ Saved to my list':'♡ Save to my list';}
   function languageName(code){try{return new Intl.DisplayNames(['en'],{type:'language'}).of(code)||String(code||'').toUpperCase();}catch(_){return String(code||'').toUpperCase();}}
   function addSubtitleSearch(host,m){const link=document.createElement('a');link.href='https://www.opensubtitles.com/en/search-all/q-'+encodeURIComponent(m.title);link.target='_blank';link.rel='noreferrer';link.className='provider-source-link';link.textContent='Search subtitle listings for this title ↗';host.append(link);const note=document.createElement('p');note.className='source-note';note.textContent='Subtitle availability and permitted use depend on each listing. Rapiflix does not claim a subtitle or dubbed audio exists until the source confirms it.';host.append(note);}
-  async function openDetails(id){await licensedStreamsReady;const m=byId(id)||catalog.find(x=>x.id===id);if(!m)return;selected=m;$('#providerOptions').innerHTML='';if(m.kind==='tmdb'){loadWatchProviders(m);loadOfficialTrailer(m);loadLanguageInfo(m);}else{$('#languageOptions').hidden=true;$('#languageOptions').replaceChildren();$('#trailerPreview').hidden=true;$('#trailerPreview').replaceChildren();checkArchiveRights(m);}$('#modalPoster').style.backgroundImage=`url("${imageUrl(m)}")`;$('#modalTitle').textContent=m.title;$('#modalKicker').textContent=m.tag||'RAPIFLIX SELECTION';const lang=m.originalLanguage?languageName(m.originalLanguage):'';$('#modalMeta').innerHTML=`<span>${m.year||'Year unknown'}</span><span>•</span><span>${escapeHtml(m.runtime||'Runtime varies')}</span><span>•</span><span>${escapeHtml(m.genres.join(' · '))}</span>${lang?`<span>•</span><span>Original language: ${escapeHtml(lang)}</span>`:''}`;$('#modalDescription').textContent=m.desc||'Explore this film from its original collection.';$('#modalSave').textContent=saved.has(m.id)?'♥ Saved to my list':'♡ Save to my list';$('#sourceNote').textContent=m.kind==='tmdb'?(m.mediaType==='tv'?'TV series information from TMDB. Audio tracks and subtitles depend on the embedded player and source.':'Movie information from TMDB. Audio tracks and subtitles depend on the embedded player and source.'):`Source: ${m.sourceName||'Internet Archive'}. Verify rights and availability for your intended use.`;$('#modalPlay').innerHTML=m.kind==='tmdb'?(m.mediaType==='tv'?'▶ Watch episode':'▶ Watch now'):'▶ Play free film';$('#modalBackdrop').hidden=false;document.body.classList.add('modal-open');$('#modalClose').focus();}
+  function titleSlug(value){
+    return String(value||'title').normalize('NFKD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,90)||'title';
+  }
+  function isAnimeTitle(m){
+    return !!m&&(String(m.collection||'').toLowerCase()==='anime'||/\\banime\\b/i.test(String(m.tag||''))||(m.originalLanguage==='ja'&&Array.isArray(m.genres)&&m.genres.some(g=>String(g).toLowerCase()==='animation')&&String(m.tag||'').toLowerCase().includes('anime')));
+  }
+  function titleTypeLabel(m){
+    if(m.kind!=='tmdb')return 'FREE FILM';
+    if(isAnimeTitle(m))return 'ANIME';
+    return m.mediaType==='tv'?'TV SERIES':'FILM';
+  }
+  function titleRouteUrl(m){
+    const params=new URLSearchParams();
+    params.set('title',titleSlug(m.title));
+    if(m.kind==='tmdb'){
+      params.set('tmdb',String(m.tmdbId));
+      params.set('media',m.mediaType==='tv'?'tv':'movie');
+      if(isAnimeTitle(m))params.set('collection','anime');
+    }else params.set('archive',String(m.id));
+    return location.pathname+'?'+params.toString();
+  }
+  function parseTitleRoute(){
+    const params=new URLSearchParams(location.search);
+    const tmdbId=params.get('tmdb')||'';
+    const archiveId=params.get('archive')||'';
+    if(/^\\d{1,20}$/.test(tmdbId))return {kind:'tmdb',tmdbId,mediaType:params.get('media')==='tv'?'tv':'movie',collection:params.get('collection')==='anime'?'anime':'',slug:params.get('title')||''};
+    if(archiveId&&/^[A-Za-z0-9._-]{1,180}$/.test(archiveId))return {kind:'archive',id:archiveId,slug:params.get('title')||''};
+    return null;
+  }
+  function mapTmdbDetail(data,mediaType,collection=''){
+    const isTv=mediaType==='tv';
+    const releaseDate=isTv?(data.first_air_date||''):(data.release_date||'');
+    const input={
+      id:data.id,
+      title:data.title,
+      original_title:data.original_title,
+      name:data.name,
+      original_name:data.original_name,
+      release_date:data.release_date,
+      first_air_date:data.first_air_date,
+      overview:data.overview,
+      poster_path:data.poster_path,
+      backdrop_path:data.backdrop_path,
+      original_language:data.original_language,
+      genre_ids:(data.genres||[]).map(g=>g.id).filter(Boolean)
+    };
+    const m=mapTmdbMovie(input,collection==='anime'?'ANIME':(isTv?'TV SERIES':'FILM'),mediaType);
+    m.title=(isTv?(data.name||data.original_name):(data.title||data.original_title))||'Untitled';
+    m.year=Number(releaseDate.slice(0,4))||0;
+    m.genres=(data.genres||[]).map(g=>g.name).filter(Boolean);
+    m.desc=data.overview||'No synopsis is available for this title yet.';
+    m.poster=data.poster_path?'https://image.tmdb.org/t/p/w780'+data.poster_path:'';
+    m.backdrop=data.backdrop_path?'https://image.tmdb.org/t/p/w1280'+data.backdrop_path:'';
+    m.runtime=isTv?((Number(data.number_of_seasons)||0)+' season'+(Number(data.number_of_seasons)===1?'':'s')+(data.number_of_episodes?' · '+data.number_of_episodes+' episodes':'')):(data.runtime?data.runtime+' min':'Runtime unavailable');
+    m.tag=collection==='anime'?'ANIME':(isTv?'TV SERIES':'FILM');
+    m.mediaType=mediaType;
+    m.originalLanguage=data.original_language||'';
+    m.voteAverage=Number(data.vote_average)||0;
+    m.tagline=String(data.tagline||'').slice(0,300);
+    m.status=String(data.status||'');
+    m.collection=collection;
+    return m;
+  }
+  function closeTitlePage(){
+    document.body.classList.remove('title-page-active');
+    $('#titlePage').hidden=true;
+    document.title='Rapiflix — The Film & Anime Edit';
+    const desc=$('#pageDescription');if(desc)desc.content='Rapiflix — explore films, TV series and anime, save favourites, and find regional watch options.';
+  }
+  let titleRouteToken=0;
+  async function renderTitlePage(m,token=titleRouteToken){
+    if(token!==titleRouteToken||!m)return;
+    selected=m;
+    const page=$('#titlePage');page.hidden=false;
+    document.body.classList.add('title-page-active');
+    $('#titleLabel').textContent=titleTypeLabel(m);
+    $('#titleHeading').textContent=m.title||'Untitled';
+    const tagline=$('#titleTagline');tagline.textContent=m.tagline||'';tagline.hidden=!m.tagline;
+    const lang=m.originalLanguage?languageName(m.originalLanguage):'Not listed';
+    $('#titleMeta').innerHTML='<span>'+escapeHtml(String(m.year||'Release year unavailable'))+'</span><span>•</span><span>'+escapeHtml(String(m.runtime||'Runtime varies'))+'</span><span>•</span><span>'+escapeHtml((m.genres||[]).slice(0,4).join(' · ')||titleTypeLabel(m))+'</span>'+(m.voteAverage?' <span>•</span><span>★ '+escapeHtml(m.voteAverage.toFixed(1))+'/10</span>':'');
+    $('#titleOverview').textContent=m.desc||'No synopsis is available for this title yet.';
+    $('#titleYear').textContent=m.year||'Unknown';
+    $('#titleType').textContent=titleTypeLabel(m);
+    $('#titleOriginalLanguage').textContent=lang;
+    $('#titleRating').textContent=m.voteAverage?m.voteAverage.toFixed(1)+'/10':'Not rated';
+    const poster=$('#titlePoster');
+    poster.alt='Poster for '+m.title;
+    poster.src=imageUrl(m)||'';
+    poster.hidden=!poster.src;
+    const backdrop=$('#titleBackdrop');
+    const image=m.backdrop||imageUrl(m);
+    backdrop.style.backgroundImage=image?'linear-gradient(90deg,#100d10 0%,#100d10e8 38%,#100d1090 68%,#100d10bb 100%),linear-gradient(0deg,#100d10 0%,transparent 55%),url("'+String(image).replace(/["\\\\]/g,'')+'")':'linear-gradient(120deg,#2b1b22,#100d10 75%)';
+    const original=$('#titleOriginalLink');
+    original.href=m.source||('https://www.themoviedb.org/'+(m.mediaType==='tv'?'tv/':'movie/')+encodeURIComponent(String(m.tmdbId||'')));
+    original.textContent=m.kind==='tmdb'?'TMDB title page ↗':'Open original Archive item ↗';
+    $('#titlePlay').textContent=m.kind==='tmdb'?(m.mediaType==='tv'?'▶ Open player':'▶ Watch now'):'▶ Play free film';
+    $('#titleSave').textContent=saved.has(m.id)?'♥ Saved to my list':'♡ Save to my list';
+    $('#titleStatus').textContent=m.kind==='tmdb'?'Loading viewing options and title information…':'Checking original source information…';
+    $('#titleProviderOptions').replaceChildren();
+    $('#titleLanguageOptions').replaceChildren();
+    $('#titleTrailerPreview').replaceChildren();
+    $('#titleTrailerPreview').hidden=true;
+    $('#titleTrailerSection').hidden=true;
+    $('#titleSourceSection').hidden=m.kind==='tmdb';
+    $('#titleSourceCheck').replaceChildren();
+    document.title=(m.title||'Title')+' ('+(m.year||'Details')+') | Rapiflix';
+    const description=$('#pageDescription');if(description)description.content=String(m.desc||('Explore '+m.title+' on Rapiflix.')).slice(0,300);
+    if(m.kind==='tmdb'){
+      Promise.allSettled([loadWatchProviders(m),loadOfficialTrailer(m),loadLanguageInfo(m)]).then(()=>{if(token===titleRouteToken)$('#titleStatus').textContent='Viewing information loaded where available. Player access depends on the source.';});
+    }else{
+      await checkArchiveRights(m);
+      if(token===titleRouteToken)$('#titleStatus').textContent='Source information checked. Playback requires a compatible file and clear rights metadata.';
+    }
+    window.scrollTo({top:0,behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
+  }
+  async function loadTitleRouteFromUrl(modelHint=null){
+    const route=parseTitleRoute();
+    if(!route){titleRouteToken++;closeTitlePage();return;}
+    const token=++titleRouteToken;
+    document.body.classList.add('title-page-active');
+    $('#titlePage').hidden=false;
+    $('#titleHeading').textContent=modelHint?.title||route.slug.replace(/-/g,' ')||'Loading title…';
+    $('#titleStatus').textContent='Loading title details…';
+    try{
+      let m=null;
+      if(route.kind==='archive'){
+        m=modelHint||catalog.find(item=>item.id===route.id);
+        if(!m){
+          const data=await fetchArchiveMetadata(route.id);
+          const md=data.metadata||{};
+          const rawDescription=Array.isArray(md.description)?md.description.join(' '):String(md.description||'');
+          m={id:route.id,title:String(Array.isArray(md.title)?md.title[0]:(md.title||route.id)).slice(0,180),year:Number(Array.isArray(md.year)?md.year[0]:md.year)||0,runtime:'Runtime varies',genres:['Archive'],desc:rawDescription.replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').slice(0,1200),poster:archive+'/services/img/'+encodeURIComponent(route.id),source:archive+'/details/'+encodeURIComponent(route.id),sourceName:'Internet Archive',kind:'archive',tag:'FREE FILM'};
+        }
+      }else{
+        const response=await tmdbRequest(route.mediaType+'/'+encodeURIComponent(route.tmdbId),{language:'en-US'});
+        const data=await response.json();
+        if(response.ok&&data&&data.id)m=mapTmdbDetail(data,route.mediaType,route.collection);
+        else if(modelHint)m=modelHint;
+        else throw new Error(data.status_message||data.error||'Title details are not available.');
+        if(m){m.collection=route.collection||m.collection||'';if(route.collection==='anime')m.tag='ANIME';}
+      }
+      if(token!==titleRouteToken)return;
+      if(!m)throw new Error('This title could not be loaded.');
+      if(!catalog.some(item=>item.id===m.id))catalog.unshift(m);
+      await renderTitlePage(m,token);
+    }catch(error){
+      if(token!==titleRouteToken)return;
+      if(modelHint){await renderTitlePage(modelHint,token);$('#titleStatus').textContent='Some details could not be refreshed. Showing the catalogue information instead.';}
+      else{
+        document.title='Title unavailable | Rapiflix';
+        $('#titleLabel').textContent=route.kind==='tmdb'?(route.collection==='anime'?'ANIME':route.mediaType==='tv'?'TV SERIES':'FILM'):'FREE FILM';
+        $('#titleHeading').textContent=route.slug.replace(/-/g,' ')||'Title unavailable';
+        $('#titleOverview').textContent='Rapiflix could not load this title. The catalogue service may be unavailable or not configured.';
+        $('#titleStatus').textContent=error.message||'Title details could not be loaded.';
+        $('#titlePlay').disabled=true;
+        $('#titleSave').disabled=true;
+      }
+    }
+  }
+  async function openDetails(id){
+    const m=byId(id)||catalog.find(item=>item.id===id);
+    if(!m)return;
+    history.pushState({rapiflixTitle:true},'',titleRouteUrl(m));
+    $('#titlePlay').disabled=false;$('#titleSave').disabled=false;
+    await loadTitleRouteFromUrl(m);
+  }
   async function loadLanguageInfo(m){
     const host=$('#languageOptions');if(!host)return;
     host.hidden=false;host.innerHTML='<div class="language-panel"><h3>LANGUAGE GUIDE</h3><p class="language-note">Checking language metadata…</p></div>';
