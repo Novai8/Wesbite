@@ -297,6 +297,7 @@
     const token=++titleRouteToken;
     document.body.classList.add('title-page-active');
     $('#titlePage').hidden=false;
+    $('#titlePlay').disabled=true;$('#titleSave').disabled=true;
     $('#titleHeading').textContent=modelHint?.title||route.slug.replace(/-/g,' ')||'Loading title…';
     $('#titleStatus').textContent='Loading title details…';
     try{
@@ -328,10 +329,16 @@
         document.title='Title unavailable | Rapiflix';
         $('#titleLabel').textContent=route.kind==='tmdb'?(route.collection==='anime'?'ANIME':route.mediaType==='tv'?'TV SERIES':'FILM'):'FREE FILM';
         $('#titleHeading').textContent=route.slug.replace(/-/g,' ')||'Title unavailable';
+        $('#titleTagline').hidden=true;$('#titleMeta').replaceChildren();
         $('#titleOverview').textContent='Rapiflix could not load this title. The catalogue service may be unavailable or not configured.';
+        $('#titlePoster').hidden=true;$('#titlePoster').removeAttribute('src');
+        $('#titleYear').textContent='—';$('#titleType').textContent=route.kind==='tmdb'?(route.mediaType==='tv'?'TV SERIES':'FILM'):'FREE FILM';
+        $('#titleOriginalLanguage').textContent='—';$('#titleRating').textContent='—';
+        $('#titleProviderOptions').replaceChildren();$('#titleLanguageOptions').replaceChildren();
+        $('#titleTrailerPreview').replaceChildren();$('#titleTrailerSection').hidden=true;
+        $('#titleSourceCheck').replaceChildren();$('#titleSourceSection').hidden=true;
         $('#titleStatus').textContent=error.message||'Title details could not be loaded.';
-        $('#titlePlay').disabled=true;
-        $('#titleSave').disabled=true;
+        $('#titlePlay').disabled=true;$('#titleSave').disabled=true;
       }
     }
   }
@@ -339,7 +346,7 @@
     const m=byId(id)||catalog.find(item=>item.id===id);
     if(!m)return;
     history.pushState({rapiflixTitle:true},'',titleRouteUrl(m));
-    $('#titlePlay').disabled=false;$('#titleSave').disabled=false;
+    selected=m;$('#titlePlay').disabled=true;$('#titleSave').disabled=true;
     await loadTitleRouteFromUrl(m);
   }
   async function loadLanguageInfo(m){
