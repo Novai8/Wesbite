@@ -399,3 +399,6 @@ body.title-page-active .nav-links{display:none!important}
   .player-frame{min-height:210px}
   .player-foot{padding:10px;font-size:9px}
 }
+
+.player-top{height:auto;min-height:55px}
+@media(max-width:520px){.player-top{height:auto;min-height:48px}}
