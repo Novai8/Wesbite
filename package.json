@@ -8,8 +8,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "preview": "npx --yes @opennextjs/cloudflare@1.20.12 build && npx --yes @opennextjs/cloudflare@1.20.12 preview",
-    "deploy": "npx --yes @opennextjs/cloudflare@1.20.12 build && npx --yes @opennextjs/cloudflare@1.20.12 deploy -- --keep-vars"
+    "preview": "npx --yes @opennextjs/cloudflare@1.20.11 build && npx --yes @opennextjs/cloudflare@1.20.11 preview",
+    "deploy": "npx --yes @opennextjs/cloudflare@1.20.11 build && npx --yes @opennextjs/cloudflare@1.20.11 deploy -- --keep-vars"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.23",
