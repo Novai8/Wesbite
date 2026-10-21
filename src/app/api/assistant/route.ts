@@ -89,7 +89,9 @@ export async function POST(request: Request) {
 
   let body: unknown;
   try {
-    body = await request.json();
+    const rawBody = await request.text();
+    if (rawBody.length > 100_000) return NextResponse.json({ error: "This chat request is too large." }, { status: 413 });
+    body = JSON.parse(rawBody);
   } catch {
     return NextResponse.json({ error: "Please send a valid chat message." }, { status: 400 });
   }
