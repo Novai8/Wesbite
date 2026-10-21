@@ -337,19 +337,25 @@ export function ToolsLab() {
 
         <div className="tools-results-meta"><span>{filtered.length} TOOLS MATCH YOUR FILTERS</span><span><span className="tools-live-dot" /> LIVE WORKSPACE</span></div>
 
-        <div className="tools-card-grid">
-          {filtered.slice(0, showAll ? filtered.length : 24).map((tool, index) => (
-            <motion.button type="button" key={tool.id} className={"tool-card rg-interactive-card tool-card-layout-" + (index % 9) + " " + (selected?.id === tool.id ? "is-selected" : "")} onClick={() => openToolPage(tool)} onPointerMove={(event) => { if (event.pointerType !== "mouse" || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return; const rect = event.currentTarget.getBoundingClientRect(); const x = (event.clientX - rect.left) / rect.width - 0.5; const y = (event.clientY - rect.top) / rect.height - 0.5; event.currentTarget.style.setProperty("--pointer-x", ((x + 0.5) * 100).toFixed(1) + "%"); event.currentTarget.style.setProperty("--pointer-y", ((y + 0.5) * 100).toFixed(1) + "%"); event.currentTarget.style.setProperty("--rg-card-tilt-x", (y * -4.5).toFixed(2) + "deg"); event.currentTarget.style.setProperty("--rg-card-tilt-y", (x * 5.5).toFixed(2) + "deg"); event.currentTarget.style.setProperty("--rg-card-glow-x", ((x + 0.5) * 100).toFixed(1) + "%"); event.currentTarget.style.setProperty("--rg-card-glow-y", ((y + 0.5) * 100).toFixed(1) + "%"); }} onPointerLeave={(event) => { event.currentTarget.style.setProperty("--pointer-x", "50%"); event.currentTarget.style.setProperty("--pointer-y", "50%"); event.currentTarget.style.setProperty("--rg-card-tilt-x", "0deg"); event.currentTarget.style.setProperty("--rg-card-tilt-y", "0deg"); event.currentTarget.style.setProperty("--rg-card-glow-x", "50%"); event.currentTarget.style.setProperty("--rg-card-glow-y", "50%"); }} initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.12 }} transition={{ duration: 0.45, delay: Math.min(index % 6, 5) * 0.035 }} whileHover={{ y: -5, transition: { duration: 0.2 } }}>
-              <div className="tool-card-top"><span className="tool-card-icon">{tool.kind === "browser" ? <Code2 size={17}/> : <Sparkles size={17}/>}</span><span className={tool.kind === "browser" ? "tool-type-tag local" : "tool-type-tag"}>{tool.kind === "browser" ? "LOCAL" : "AI POWERED"}</span></div>
-              <ToolCardArtwork tool={tool} />
-              <span className="tool-card-category">{tool.category}</span>
-              <strong>{tool.name}</strong>
-              <p>{tool.description}</p>
-              <span className="tool-card-open">OPEN TOOL <ArrowUpRight size={14}/></span>
-            </motion.button>
-          ))}
+        <div className="tools-catalog-sections">
+          {Array.from(new Set(filtered.map((tool) => tool.category))).map((groupName, groupIndex) => {
+            const groupTools = filtered.filter((tool) => tool.category === groupName);
+            return <section className="tools-catalog-group" key={groupName} aria-labelledby={"tools-group-" + groupIndex}>
+              <div className="tools-catalog-group-head">
+                <div><span className="tools-catalog-index">{String(groupIndex + 1).padStart(2, "0")} / CATEGORY</span><h3 id={"tools-group-" + groupIndex}>{groupName}</h3></div>
+                <span className="tools-catalog-count">{String(groupTools.length).padStart(2, "0")} {groupTools.length === 1 ? "TOOL" : "TOOLS"}</span>
+              </div>
+              <div className="tools-catalog-list">
+                {groupTools.map((tool, index) => <motion.button type="button" key={tool.id} className={"tools-catalog-item " + (selected?.id === tool.id ? "is-selected" : "")} onClick={() => openToolPage(tool)} initial={{ opacity: 0, x: -8 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true, amount: 0.1 }} transition={{ duration: 0.28, delay: Math.min(index, 5) * 0.025 }}>
+                  <span className="tools-catalog-item-icon">{tool.kind === "browser" ? <Code2 size={18}/> : <Sparkles size={18}/>}</span>
+                  <span className="tools-catalog-item-copy"><strong>{tool.name}</strong><small>{tool.description}</small></span>
+                  <span className={tool.kind === "browser" ? "tools-catalog-type local" : "tools-catalog-type"}>{tool.kind === "browser" ? "LOCAL UTILITY" : "AI TOOL"}</span>
+                  <span className="tools-catalog-open"><ArrowUpRight size={17}/></span>
+                </motion.button>)}
+              </div>
+            </section>;
+          })}
         </div>
-        {filtered.length > 24 && <button type="button" className="tools-load-more" onClick={() => setShowAll(!showAll)}>{showAll ? "Show fewer tools" : "Explore all " + filtered.length + " matching tools"} <ChevronDown size={15} className={showAll ? "rotate-180" : ""}/></button>}
         {filtered.length === 0 && <div className="tools-empty"><CircleHelp size={26}/><strong>No tools found</strong><span>Try another search or clear the category filter.</span><button type="button" onClick={() => { setQuery(""); setCategory("All tools"); setKind("all"); }}>Reset filters</button></div>}
       </section>
 
