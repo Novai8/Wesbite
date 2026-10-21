@@ -52,14 +52,7 @@ export function RapigentsAssistant() {
       if (!response.ok) throw new Error(payload.error || "The assistant couldn't answer right now.");
       const reply = typeof payload.message === "string" ? payload.message : "I couldn't prepare a response. Please try again.";
       setMessages((current) => [...current, { role: "assistant", content: reply }].slice(-12));
-      const ids: string[] = Array.isArray(payload.toolIds) ? payload.toolIds : [];
-      if (ids.length) {
-        const toolsResponse = await fetch("/api/assistant/tools?ids=" + encodeURIComponent(ids.join(",")));
-        if (toolsResponse.ok) {
-          const toolPayload = await toolsResponse.json();
-          setRecommendations(Array.isArray(toolPayload.tools) ? toolPayload.tools : []);
-        }
-      }
+      setRecommendations(Array.isArray(payload.tools) ? payload.tools : []);
       setSuggestedPrompts(Array.isArray(payload.suggestedPrompts) && payload.suggestedPrompts.length ? payload.suggestedPrompts : starters);
     } catch (err) {
       setError(err instanceof Error ? err.message : "The assistant couldn't answer right now.");
