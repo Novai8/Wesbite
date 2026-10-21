@@ -185,8 +185,7 @@ export function RapigentsAssistant() {
             <div className="rg-assistant-head-copy">
               <strong>Rapigents Assistant</strong>
               <span>
-                <span className="rg-assistant-online" /> AI guide · GPT-6
-                Astra
+                <span className="rg-assistant-online" /> AI guide · Rapigents Bot
               </span>
             </div>
 
