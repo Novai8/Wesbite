@@ -1,12 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const router = useRouter();
   const [status, setStatus] = useState<"checking" | "signed-in" | "signed-out" | "setup-needed">("checking");
 
@@ -26,7 +25,8 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
       if (data.session) setStatus("signed-in");
       else {
         setStatus("signed-out");
-        const next = pathname + (searchParams.size ? "?" + searchParams.toString() : "");
+        const currentSearch = typeof window !== "undefined" ? window.location.search : "";
+        const next = pathname + currentSearch;
         router.replace("/login?next=" + encodeURIComponent(next));
       }
     });
@@ -39,7 +39,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
       }
     });
     return () => { alive = false; subscription.unsubscribe(); };
-  }, [pathname, router, searchParams]);
+  }, [pathname, router]);
 
   if (pathname === "/login" || pathname === "/auth/callback") return <>{children}</>;
   if (status === "signed-in") return <>{children}</>;
