@@ -10,6 +10,7 @@ import {
 import Link from "next/link";
 import { AssistantMessageContent } from "@/components/assistant-message-content";
 import { getMcpSession, getMcpToolCatalog } from "@/lib/mcp-session";
+import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import {
   ArrowRight,
   Bot,
@@ -99,10 +100,14 @@ export function RapigentsAssistant() {
     setPendingMcpAction(null);
 
     try {
+      const supabase = getSupabaseBrowserClient();
+      const { data: sessionData } = supabase ? await supabase.auth.getSession() : { data: { session: null } };
+      if (!sessionData.session) throw new Error("Your sign-in session expired. Sign in again to use the assistant.");
       const response = await fetch("/api/assistant", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: "Bearer " + sessionData.session.access_token,
         },
         body: JSON.stringify({ messages: next, mcpTools: getMcpToolCatalog() }),
       });
@@ -161,9 +166,12 @@ export function RapigentsAssistant() {
     setBusy(true);
     setError("");
     try {
+      const supabase = getSupabaseBrowserClient();
+      const { data: sessionData } = supabase ? await supabase.auth.getSession() : { data: { session: null } };
+      if (!sessionData.session) throw new Error("Your sign-in session expired. Sign in again before running this action.");
       const response = await fetch("/api/integrations/mcp", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: "Bearer " + sessionData.session.access_token },
         body: JSON.stringify({
           action: "call",
           endpoint: session.endpoint,
