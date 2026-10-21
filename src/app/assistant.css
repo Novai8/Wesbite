@@ -21,7 +21,7 @@
 @media(prefers-reduced-motion:reduce){.rg-assistant-panel{animation:none}.rg-assistant-thinking>span{animation:none}.rg-assistant-spin{animation:none}}
 
 /* Discoverability: open the same floating assistant from the primary navigation. */
-.rg-header-ask{display:inline-flex;align-items:center;gap:7px;cursor:pointer;font:inherit}
+.rg-header-ask{display:inline-flex;align-items:center;gap:7px;cursor:pointer;border:1px solid rgba(216,255,99,.34);background:rgba(216,255,99,.08);color:var(--rg-ink,#f0efe9);font-family:inherit;font-size:12px;font-weight:700;line-height:1.3}
 .rg-header-ask svg{color:var(--rg-acid,#d8ff63)}
 .rg-mobile-ask{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;font:inherit;cursor:pointer}
 .rg-mobile-ask svg{color:var(--rg-acid,#d8ff63)}
