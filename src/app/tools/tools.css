@@ -597,3 +597,30 @@ html[data-theme="light"] .tools-page .tool-output{background:#f7f6fc;border-colo
 html[data-theme="light"] .tools-page .tool-output pre{color:#373150}
 html[data-theme="light"] .tools-page .tool-run-button{background:#6554d8;border-color:#6554d8;color:#fff}
 @media(prefers-reduced-motion:reduce){.tools-page .tools-ambient-orb{animation:none!important}}
+
+
+/* Rich, readable tool output: typography and tables instead of a wall of monospace text. */
+.tools-page .tool-output-markdown{max-height:min(56vh,620px);overflow:auto;padding:18px 20px;color:var(--lab-ink);overscroll-behavior:contain}
+.tools-page .tool-output-markdown .rg-assistant-markdown{color:var(--lab-ink);font-size:13px;line-height:1.78}
+.tools-page .tool-output-markdown .rg-assistant-markdown h3,.tools-page .tool-output-markdown .rg-assistant-markdown h4,.tools-page .tool-output-markdown .rg-assistant-markdown h5,.tools-page .tool-output-markdown .rg-assistant-markdown h6{color:var(--lab-ink)}
+.tools-page .tool-output-markdown .rg-assistant-markdown h3{font-size:21px;letter-spacing:-.04em;margin:4px 0 13px}
+.tools-page .tool-output-markdown .rg-assistant-markdown h4{font-size:16px;margin:23px 0 10px}
+.tools-page .tool-output-markdown .rg-assistant-markdown h5{font-size:14px;margin:18px 0 8px}
+.tools-page .tool-output-markdown .rg-assistant-markdown p{color:var(--lab-ink);margin:9px 0 12px}
+.tools-page .tool-output-markdown .rg-assistant-markdown strong{color:var(--lab-ink);font-weight:750}
+.tools-page .tool-output-markdown .rg-assistant-markdown em{color:color-mix(in srgb,var(--lab-accent) 75%,var(--lab-ink))}
+.tools-page .tool-output-markdown .rg-assistant-markdown a{color:var(--lab-accent)}
+.tools-page .tool-output-markdown .rg-assistant-markdown ul,.tools-page .tool-output-markdown .rg-assistant-markdown ol{gap:7px;margin:10px 0 15px;padding-left:23px;color:var(--lab-ink)}
+.tools-page .tool-output-markdown .rg-assistant-markdown li::marker{color:var(--lab-accent)}
+.tools-page .tool-output-markdown .rg-assistant-markdown blockquote{border-color:var(--lab-accent);background:color-mix(in srgb,var(--lab-accent) 8%,transparent);color:var(--lab-muted)}
+.tools-page .tool-output-markdown .rg-assistant-markdown hr{background:linear-gradient(90deg,color-mix(in srgb,var(--lab-accent) 40%,transparent),transparent)}
+.tools-page .tool-output-markdown .rg-assistant-markdown .rg-md-inline-code{color:var(--lab-ink);background:color-mix(in srgb,var(--lab-accent) 10%,var(--lab-bg));border-color:color-mix(in srgb,var(--lab-accent) 25%,transparent)}
+.tools-page .tool-output-markdown .rg-md-code-block{background:var(--lab-bg);border-color:var(--lab-line)}
+.tools-page .tool-output-markdown .rg-md-code-label{color:var(--lab-muted);border-color:var(--lab-line)}
+.tools-page .tool-output-markdown .rg-md-code-block pre{padding:11px 13px;color:var(--lab-ink);font-size:11px;line-height:1.7}
+.tools-page .tool-output-markdown .rg-md-table-wrap{border-color:var(--lab-line);background:color-mix(in srgb,var(--lab-bg) 55%,transparent)}
+.tools-page .tool-output-markdown .rg-md-table{font-size:12px;line-height:1.55}
+.tools-page .tool-output-markdown .rg-md-table th{background:color-mix(in srgb,var(--lab-accent) 14%,var(--lab-panel));color:var(--lab-ink);padding:10px 12px}
+.tools-page .tool-output-markdown .rg-md-table td{min-width:120px;padding:10px 12px;color:var(--lab-ink);border-color:var(--lab-line)}
+.tools-page .tool-output-markdown .rg-md-table tr:nth-child(even) td{background:color-mix(in srgb,var(--lab-accent) 3%,transparent)}
+@media(max-width:680px){.tools-page .tool-output-markdown{padding:14px 12px}.tools-page .tool-output-markdown .rg-assistant-markdown{font-size:12px}.tools-page .tool-output-markdown .rg-assistant-markdown h3{font-size:19px}.tools-page .tool-output-markdown .rg-md-table{font-size:10px}.tools-page .tool-output-markdown .rg-md-table th,.tools-page .tool-output-markdown .rg-md-table td{padding:8px 9px;min-width:100px}}
