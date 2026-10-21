@@ -26,6 +26,12 @@ export function RapigentsAssistant() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
+    const openAssistant = () => setOpen(true);
+    window.addEventListener("rapigents:open-assistant", openAssistant);
+    return () => window.removeEventListener("rapigents:open-assistant", openAssistant);
+  }, []);
+
+  useEffect(() => {
     if (open) {
       endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
       window.setTimeout(() => inputRef.current?.focus(), 80);
