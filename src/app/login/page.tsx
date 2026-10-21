@@ -101,7 +101,7 @@ function LoginContent() {
         <p className="rg-login-terms">Signing in lets Rapigents remember your account session. Connected-app permissions are separate and must be granted by you.</p>
       </section>
     </div>
-    <footer className="rg-login-footer"><Link href="/privacy">Privacy</Link><span>© {new Date().getFullYear()} Rapigents</span><span>Access you control</span></footer>
+    <footer className="rg-login-footer"><span>Privacy &amp; security</span><span>© {new Date().getFullYear()} Rapigents</span><span>Access you control</span></footer>
   </main>;
 }
 
