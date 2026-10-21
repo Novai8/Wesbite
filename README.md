@@ -60,6 +60,16 @@ Direct `https://` video files also work. YouTube links (`youtube.com/watch?v=` o
 - **Sound: Off** by default. The navbar toggle turns on a quiet Web Audio click. The choice is stored in `localStorage` (`rapigents-sound`).
 - The pointer is a CSS cursor, not an overlay, so links and buttons stay clickable.
 
+## Deploy to Cloudflare Pages
+
+The `arena/01a0d281-wesbite` branch uses the OpenNext Cloudflare adapter. In Cloudflare Pages, keep the production branch set to `arena/01a0d281-wesbite` and use this build command:
+
+```bash
+npm install --no-save --package-lock=false @opennextjs/cloudflare@1.20.12 && npx opennextjs-cloudflare build
+```
+
+Keep this adapter version aligned with the repository's `preview` and `deploy` scripts. A commit pushed to the configured production branch should trigger a new Pages deployment automatically.
+
 ## Deploy to Vercel
 
 1. Push this repository to GitHub.
