@@ -8,7 +8,7 @@ const WINDOW_MS = 60_000;
 const MAX_REQUESTS = 10;
 const MAX_MESSAGES = 12;
 const MAX_MESSAGE_LENGTH = 4_000;
-const PROVIDER_TIMEOUT_MS = 10_000;
+const PROVIDER_TIMEOUT_MS = 8_000;
 const windows = new Map<string, { count: number; resetAt: number }>();
 
 function allowed(request: Request) {
@@ -41,14 +41,7 @@ function getCandidates(): ProviderCandidate[] {
   const requestedModel = process.env.OPENROUTER_CHAT_MODEL || "openrouter/free";
 
   if (openRouterKey) {
-    if (requestedModel !== "openrouter/free") {
-      candidates.push({
-        provider: "openrouter",
-        model: requestedModel,
-        url: "https://openrouter.ai/api/v1/chat/completions",
-        key: openRouterKey,
-      });
-    }
+    // Prefer zero-token-cost inference. Paid models are never attempted unless explicitly enabled.
     candidates.push({
       provider: "openrouter",
       model: "openrouter/free",
@@ -72,6 +65,15 @@ function getCandidates(): ProviderCandidate[] {
       model: process.env.GEMINI_CHAT_MODEL || "gemini-3.8-flash",
       url: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
       key: process.env.GEMINI_API_KEY,
+    });
+  }
+
+  if (openRouterKey && process.env.OPENROUTER_ALLOW_PAID === "true" && requestedModel !== "openrouter/free") {
+    candidates.push({
+      provider: "openrouter",
+      model: requestedModel,
+      url: "https://openrouter.ai/api/v1/chat/completions",
+      key: openRouterKey,
     });
   }
 
