@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { ArrowRight, CheckCircle2, CircleHelp, PlugZap, Search, ShieldCheck, Unplug, Workflow, XCircle } from "lucide-react";
+import { setMcpSession } from "@/lib/mcp-session";
 
 type McpTool = { name: string; description: string; inputSchema: Record<string, unknown> };
 type AppItem = { name: string; group: string; kind: string; description: string; note: string };
@@ -77,6 +78,7 @@ export function IntegrationsHub() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Could not connect to the MCP server.");
       setTools(data.tools || []); setServerName(data.serverName || "MCP server"); setConnected(true);
+      setMcpSession({ endpoint: endpoint.trim(), token, serverName: data.serverName || "MCP server", tools: data.tools || [] });
       setStatus("Connected for this browser session. Credentials are not saved by Rapigents.");
       setSelectedTool(data.tools?.[0]?.name || "");
     } catch (e) { setConnected(false); setTools([]); setError(e instanceof Error ? e.message : "Connection failed."); }
@@ -84,6 +86,7 @@ export function IntegrationsHub() {
   }
 
   function disconnect() {
+    setMcpSession(null);
     setConnected(false); setTools([]); setToken(""); setEndpoint(""); setServerName(""); setSelectedTool("");
     setArgumentsText("{}"); setToolResult(""); setStatus("Disconnected. The token was cleared from this page's memory.");
     setError(""); setConfirmCall(false);
