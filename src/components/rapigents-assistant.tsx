@@ -8,6 +8,7 @@ import {
   useState,
 } from "react";
 import Link from "next/link";
+import { AssistantMessageContent } from "@/components/assistant-message-content";
 import {
   ArrowRight,
   Bot,
@@ -251,7 +252,11 @@ export function RapigentsAssistant() {
                 )}
 
                 <div className="rg-assistant-bubble">
-                  {message.content}
+                  {message.role === "assistant" ? (
+                    <AssistantMessageContent content={message.content} />
+                  ) : (
+                    message.content
+                  )}
                 </div>
               </div>
             ))}
