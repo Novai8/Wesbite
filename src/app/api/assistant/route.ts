@@ -114,7 +114,7 @@ export async function POST(request: Request) {
 
     let parsed: { message?: unknown; toolIds?: unknown; suggestedPrompts?: unknown };
     try { parsed = JSON.parse(content); } catch {
-      return NextResponse.json({ message: content, toolIds: [], suggestedPrompts: [], model });
+      return NextResponse.json({ message: content, toolIds: [], tools: [], suggestedPrompts: [], model });
     }
     const validIds = new Set(toolCatalog.map((tool) => tool.id));
     const toolIds = Array.isArray(parsed.toolIds)
@@ -126,7 +126,8 @@ export async function POST(request: Request) {
     const message = typeof parsed.message === "string" && parsed.message.trim()
       ? parsed.message.trim()
       : "I can help with that. Tell me a little more about the result you want.";
-    return NextResponse.json({ message, toolIds, suggestedPrompts, model });
+    const tools = toolCatalog.filter((tool) => toolIds.includes(tool.id)).map((tool) => ({ id: tool.id, name: tool.name, category: tool.category, description: tool.description }));
+    return NextResponse.json({ message, toolIds, tools, suggestedPrompts, model });
   } catch (error) {
     const timedOut = error instanceof Error && error.name === "TimeoutError";
     return NextResponse.json({ error: timedOut ? "The request took too long. Try a shorter message." : "We couldn't reach the assistant right now. Please try again." }, { status: 502 });
