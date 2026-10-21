@@ -60,6 +60,23 @@ Direct `https://` video files also work. YouTube links (`youtube.com/watch?v=` o
 - **Sound: Off** by default. The navbar toggle turns on a quiet Web Audio click. The choice is stored in `localStorage` (`rapigents-sound`).
 - The pointer is a CSS cursor, not an overlay, so links and buttons stay clickable.
 
+## AI assistant: free provider fallback
+
+The server-side route `src/app/api/assistant/route.ts` can try a configured OpenRouter model, then OpenRouter's `openrouter/free` model router, followed by Groq and Gemini if their API keys are configured. Keys are read from server environment variables and must never be placed in client-side code.
+
+Configure these in Cloudflare Pages **Settings → Variables and Secrets**:
+
+- `OPENROUTER_API_KEY` — required for OpenRouter. The default `OPENROUTER_CHAT_MODEL=openrouter/free` selects an eligible free model. If you configure a paid model first, the route falls back to the free router when that request fails.
+- `GROQ_API_KEY` — optional independent fallback. Default model: `openai/gpt-oss-120b`.
+- `GEMINI_API_KEY` — optional independent fallback. Default model: `gemini-3.8-flash`.
+- `NEXT_PUBLIC_SITE_URL` — optional site URL sent as OpenRouter request metadata.
+
+Get keys from the official provider consoles: [OpenRouter](https://openrouter.ai/settings/keys), [Groq](https://console.groq.com/keys), and [Google AI Studio](https://aistudio.google.com/apikey). The provider must enable the requested model for your account. Free tiers have usage caps, models can change, and the fallback chain cannot guarantee unlimited or uninterrupted access.
+
+The open-source [free-llm-proxy-router](https://github.com/kaiser-data/free-llm-proxy-router) and [free-llm-api](https://github.com/nabinkhadka/free-llm-api) projects are useful references for provider rotation and failover. They do not grant free access to paid proprietary models; their provider integrations still require valid credentials.
+
+Review each provider's data-use policy before sending visitor prompts. Free-tier policies may differ from paid services. Do not submit passwords, private keys, confidential business material, or other sensitive data to the public assistant.
+
 ## Deploy to Cloudflare Pages
 
 The `arena/01a0d281-wesbite` branch uses the OpenNext Cloudflare adapter. In Cloudflare Pages, keep the production branch set to `arena/01a0d281-wesbite` and use this build command:
@@ -76,7 +93,7 @@ Keep this adapter version aligned with the repository's `preview` and `deploy` s
 2. In [Vercel](https://vercel.com), import `Novai8/Wesbite`.
 3. Framework preset: **Next.js**. Install command `npm install`. Build command `npm run build`. Output is handled by Next.js — do not set a static export directory.
 4. Add `NEXT_PUBLIC_SITE_URL` with the production URL (for example `https://rapigents.com`) so Open Graph and the sitemap use the right host.
-5. Deploy. No database, no email provider, and no secret keys are required.
+5. Deploy. No database or email provider is required. Configure the AI secrets above if you want the assistant enabled.
 
 `public/brand/logo.png` is the favicon source (also copied to `src/app/icon.png`) and `public/brand/og.png` is the social preview.
 
