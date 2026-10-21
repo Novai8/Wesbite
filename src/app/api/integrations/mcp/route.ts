@@ -5,6 +5,9 @@ export const dynamic = "force-dynamic";
 
 const MAX_BODY_BYTES = 1_000_000;
 const MCP_VERSION = "2025-03-26";
+const RATE_WINDOW_MS = 60_000;
+const RATE_LIMIT = 24;
+const requestWindows = new Map<string, { count: number; resetAt: number }>();
 
 function validateEndpoint(value: unknown): URL {
   if (typeof value !== "string" || value.length > 2048) throw new Error("Enter a valid MCP server URL.");
@@ -81,6 +84,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Send a valid JSON request." }, { status: 400 });
   }
   if (!body || typeof body !== "object") return NextResponse.json({ error: "Invalid request." }, { status: 400 });
+  const clientKey = request.headers.get("cf-connecting-ip") || request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  const now = Date.now();
+  let bucket = requestWindows.get(clientKey);
+  if (!bucket || bucket.resetAt <= now) {
+    bucket = { count: 0, resetAt: now + RATE_WINDOW_MS };
+    requestWindows.set(clientKey, bucket);
+  }
+  if (bucket.count >= RATE_LIMIT) return NextResponse.json({ error: "Too many integration requests. Wait a minute and try again." }, { status: 429 });
+  bucket.count += 1;
+  if (requestWindows.size > 1000) {
+    for (const [key, value] of requestWindows) if (value.resetAt <= now) requestWindows.delete(key);
+  }
+
   const origin = request.headers.get("origin");
   const host = request.headers.get("host");
   if (origin && host) {
