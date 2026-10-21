@@ -136,7 +136,11 @@ export async function POST(request: Request) {
       const args = body.arguments && typeof body.arguments === "object" && !Array.isArray(body.arguments) ? body.arguments : {};
       const result = await rpc(endpoint, token, "tools/call", { name: body.name, arguments: args }, sessionId);
       if (result.payload?.error) throw new Error(String(result.payload.error.message || "MCP tool call failed."));
-      return NextResponse.json({ result: result.payload?.result ?? null }, { headers: { "Cache-Control": "no-store" } });
+      const toolResult = result.payload?.result ?? null;
+      if (toolResult && typeof toolResult === "object" && toolResult.isError === true) {
+        return NextResponse.json({ error: "The MCP tool reported an error.", result: toolResult }, { status: 422, headers: { "Cache-Control": "no-store" } });
+      }
+      return NextResponse.json({ result: toolResult }, { headers: { "Cache-Control": "no-store" } });
     }
     return NextResponse.json({ error: "Unknown action. Use connect, list, or call." }, { status: 400 });
   } catch (error) {
