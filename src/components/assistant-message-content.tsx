@@ -21,7 +21,7 @@ function isListLine(line: string) {
 function isBlockStart(lines: string[], index: number) {
   const line = lines[index] ?? "";
   return (
-    /^#{1,4}\s+/.test(line) ||
+    /^#{1,6}\s+/.test(line) ||
     /^\s*([-*_])(?:\s*\1){2,}\s*$/.test(line) ||
     /^\s*>\s?/.test(line) ||
     /^\s*`{3,}/.test(line) ||
@@ -104,7 +104,7 @@ function renderBlocks(lines: string[], keyPrefix: string): ReactNode[] {
       continue;
     }
 
-    const heading = line.match(/^(#{1,4})\s+(.+)$/);
+    const heading = line.match(/^(#{1,6})\s+(.+)$/);
     if (heading) {
       const level = heading[1].length;
       const content = parseInline(heading[2].trim(), key);
