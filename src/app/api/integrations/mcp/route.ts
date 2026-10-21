@@ -1,3 +1,4 @@
+import { requireSupabaseUser, isAuthError } from "@/lib/server-auth";
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
@@ -75,6 +76,9 @@ async function initialize(endpoint: URL, token: string) {
 }
 
 export async function POST(request: Request) {
+  const authenticatedUser = await requireSupabaseUser(request);
+  if (isAuthError(authenticatedUser)) return authenticatedUser;
+
   let body: any;
   try {
     const raw = await request.text();
