@@ -96,6 +96,7 @@ function LoginContent() {
           <button type="button" onClick={() => void oauth("google")} disabled={busy} className="rg-oauth-button"><GoogleMark/> {busy && activeProvider === "google" ? "Connecting to Google…" : "Continue with Google"}</button>
           <button type="button" onClick={() => void oauth("azure")} disabled={busy} className="rg-oauth-button"><MicrosoftMark/> {busy && activeProvider === "azure" ? "Connecting to Microsoft…" : "Continue with Microsoft / Outlook"}</button>
         </div>
+        <p className="rg-login-provider-note"><ShieldCheck size={13}/> Google sign-in requests only your basic profile and email. It does not grant Rapigents access to Gmail, Drive, or Calendar.</p>
         <div className="rg-login-divider"><span/> <small>OR USE EMAIL</small> <span/></div>
         <form className="rg-login-form" onSubmit={submit}>
           <label htmlFor="login-email">Email address</label>
