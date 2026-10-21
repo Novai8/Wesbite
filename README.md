@@ -62,11 +62,13 @@ Direct `https://` video files also work. YouTube links (`youtube.com/watch?v=` o
 
 ## AI assistant: free provider fallback
 
-The server-side route `src/app/api/assistant/route.ts` can try a configured OpenRouter model, then OpenRouter's `openrouter/free` model router, followed by Groq and Gemini if their API keys are configured. Keys are read from server environment variables and must never be placed in client-side code.
+The server-side route `src/app/api/assistant/route.ts` tries OpenRouter's `openrouter/free` router first, then Groq and Gemini if their API keys are configured. A configured paid OpenRouter model is attempted only as a last resort when `OPENROUTER_ALLOW_PAID=true`. Keys are read from server environment variables and must never be placed in client-side code.
 
 Configure these in Cloudflare Pages **Settings → Variables and Secrets**:
 
-- `OPENROUTER_API_KEY` — required for OpenRouter. The default `OPENROUTER_CHAT_MODEL=openrouter/free` selects an eligible free model. If you configure a paid model first, the route falls back to the free router when that request fails.
+- `OPENROUTER_API_KEY` — OpenRouter key. The free-model router is attempted first and selects an eligible free model.
+- `OPENROUTER_CHAT_MODEL` — defaults to `openrouter/free`. You can set this to a specific model slug, but it is not used unless paid-model access is enabled.
+- `OPENROUTER_ALLOW_PAID` — keep `false` for a zero-budget setup. Set to `true` only if you intentionally want the configured model attempted after free fallbacks.
 - `GROQ_API_KEY` — optional independent fallback. Default model: `openai/gpt-oss-120b`.
 - `GEMINI_API_KEY` — optional independent fallback. Default model: `gemini-3.8-flash`.
 - `NEXT_PUBLIC_SITE_URL` — optional site URL sent as OpenRouter request metadata.
