@@ -4,10 +4,7 @@ import { GeistSans } from "geist/font/sans";
 import localFont from "next/font/local";
 import { Providers } from "@/components/providers";
 import { AuthGate } from "@/components/auth-gate";
-import { SiteFooter } from "@/components/site-footer";
-import { SiteHeader } from "@/components/site-header";
-import { InteractionLayer } from "@/components/interaction-layer";
-import { RapigentsAssistant } from "@/components/rapigents-assistant";
+import { SiteShell } from "@/components/site-shell";
 import { site } from "@/lib/site";
 import "./globals.css";
 import "./experience.css";
@@ -20,4 +17,4 @@ export const metadata:Metadata={metadataBase:new URL(site.url),title:{default:si
 export const viewport:Viewport={themeColor:"#080a0b",colorScheme:"light dark",width:"device-width",initialScale:1};
 
 const themeBoot='try{const t=localStorage.getItem("rapigents-theme");document.documentElement.dataset.theme=t==="light"?"light":"dark"}catch(e){document.documentElement.dataset.theme="dark"}';
-export default function RootLayout({children}:{children:React.ReactNode}){return <html lang="en" suppressHydrationWarning className={`${GeistSans.variable} ${GeistMono.variable} ${instrument.variable} h-full antialiased`}><head><script dangerouslySetInnerHTML={{__html:themeBoot}}/></head><body><Providers><AuthGate><InteractionLayer/><div className="sunline-progress" aria-hidden="true"/><a href="#content" className="skip-link">Skip to content</a><SiteHeader/>{children}<SiteFooter/><RapigentsAssistant/></AuthGate></Providers></body></html>;}
+export default function RootLayout({children}:{children:React.ReactNode}){return <html lang="en" suppressHydrationWarning className={`${GeistSans.variable} ${GeistMono.variable} ${instrument.variable} h-full antialiased`}><head><script dangerouslySetInnerHTML={{__html:themeBoot}}/></head><body><Providers><AuthGate><SiteShell>{children}</SiteShell></AuthGate></Providers></body></html>;}
