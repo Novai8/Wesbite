@@ -84,12 +84,13 @@ function getCandidates(): ProviderCandidate[] {
 }
 
 export async function POST(request: Request) {
-  const authenticatedUser = await requireSupabaseUser(request);
-  if (isAuthError(authenticatedUser)) return authenticatedUser;
-
   if (!allowed(request)) {
     return NextResponse.json({ error: "Too many messages in a short time. Please wait a minute and try again." }, { status: 429 });
   }
+
+  const authenticatedUser = await requireSupabaseUser(request);
+  if (isAuthError(authenticatedUser)) return authenticatedUser;
+
 
   let body: unknown;
   try {
