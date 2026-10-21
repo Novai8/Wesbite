@@ -319,7 +319,7 @@ export function ToolsLab() {
       <section className="tools-workspace tools-shell" id="explore">
         <div className="tools-section-heading">
           <div><span className="tools-section-kicker">THE TOOLKIT / 001—{String(toolCatalog.length).padStart(3, "0")}</span><h2>Find your next <em>unfair advantage.</em></h2></div>
-          <p>Small, focused tools. Clear inputs. Useful outputs. No mysterious buttons that do absolutely nothing.</p>
+          <p>Small, focused tools. Clear inputs. Useful outputs. No mysterious buttons that do absolutely nothing.</p><button type="button" className="tools-ask-assistant" onClick={() => window.dispatchEvent(new Event("rapigents:open-assistant"))}><Sparkles size={15}/> Ask the AI assistant to find a tool <ArrowUpRight size={14}/></button>
         </div>
 
         <div className="tools-controls">
