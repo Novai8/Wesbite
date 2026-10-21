@@ -6,10 +6,12 @@ import { Providers } from "@/components/providers";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { InteractionLayer } from "@/components/interaction-layer";
+import { RapigentsAssistant } from "@/components/rapigents-assistant";
 import { site } from "@/lib/site";
 import "./globals.css";
 import "./experience.css";
 import "./polish.css";
+import "./assistant.css";
 
 const instrument=localFont({src:[{path:"../fonts/InstrumentSerif-Regular.ttf",weight:"400"},{path:"../fonts/InstrumentSerif-Italic.ttf",weight:"400",style:"italic"}],variable:"--font-instrument",display:"swap"});
 
@@ -17,4 +19,4 @@ export const metadata:Metadata={metadataBase:new URL(site.url),title:{default:si
 export const viewport:Viewport={themeColor:"#080a0b",colorScheme:"light dark",width:"device-width",initialScale:1};
 
 const themeBoot='try{const t=localStorage.getItem("rapigents-theme");document.documentElement.dataset.theme=t==="light"?"light":"dark"}catch(e){document.documentElement.dataset.theme="dark"}';
-export default function RootLayout({children}:{children:React.ReactNode}){return <html lang="en" suppressHydrationWarning className={`${GeistSans.variable} ${GeistMono.variable} ${instrument.variable} h-full antialiased`}><head><script dangerouslySetInnerHTML={{__html:themeBoot}}/></head><body><Providers><InteractionLayer/><div className="sunline-progress" aria-hidden="true"/><a href="#content" className="skip-link">Skip to content</a><SiteHeader/>{children}<SiteFooter/></Providers></body></html>;}
+export default function RootLayout({children}:{children:React.ReactNode}){return <html lang="en" suppressHydrationWarning className={`${GeistSans.variable} ${GeistMono.variable} ${instrument.variable} h-full antialiased`}><head><script dangerouslySetInnerHTML={{__html:themeBoot}}/></head><body><Providers><InteractionLayer/><div className="sunline-progress" aria-hidden="true"/><a href="#content" className="skip-link">Skip to content</a><SiteHeader/>{children}<SiteFooter/><RapigentsAssistant/></Providers></body></html>;}
