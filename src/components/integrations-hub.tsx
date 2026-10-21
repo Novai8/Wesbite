@@ -123,6 +123,7 @@ export function IntegrationsHub() {
         <h1>Your tools.<br/><em>Your permission.</em></h1>
         <p className="int-lede">Connect services through MCP so an AI workflow can discover the tools you authorize, inspect their capabilities, and run approved actions. Your accounts stay yours.</p>
         <div className="int-hero-stats"><span><strong>35+</strong> service profiles</span><span><strong>MCP</strong> standard protocol</span><span><strong>0</strong> stored tokens</span></div>
+        <div className="int-hero-actions"><a href="#connect" className="int-primary">Connect an app <ArrowRight size={14}/></a><button type="button" className="int-secondary" onClick={() => window.dispatchEvent(new Event("rapigents:open-assistant"))}>Ask AI to help me connect <Sparkles size={14}/></button></div>
       </div>
     </section>
 
