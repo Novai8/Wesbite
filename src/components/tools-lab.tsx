@@ -11,6 +11,7 @@ import {
 import { browserToolIds, toolCatalog, type ToolItem } from "@/data/tool-catalog";
 import { localTransform } from "@/lib/local-tool-transform";
 import { ToolLaunchVisual } from "@/components/tool-motion-visual";
+import { AssistantMessageContent } from "@/components/assistant-message-content";
 
 const categories = ["All tools", ...Array.from(new Set(toolCatalog.map((tool) => tool.category)))];
 
@@ -392,7 +393,7 @@ export function ToolsLab() {
             </div>}
             {error && <div className="tool-error" role="alert">{error}</div>}
             <div className="tool-modal-actions"><button type="button" className="tool-run-button" onClick={runTool} disabled={loading || (!input.trim() && attachments.length === 0)}>{loading ? <><LoaderCircle size={16} className="animate-spin"/> Working on it…</> : <>Run tool <ArrowRight size={16}/></>}</button><button type="button" className="tool-clear-button" onClick={() => { setInput(""); setAttachments([]); setResult(""); setError(""); }}>Clear input</button><span className="tool-privacy-note"><CircleHelp size={13}/> Don’t include passwords or sensitive personal details.</span></div>
-            {result && <motion.div className="tool-output" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}><div className="tool-output-head"><div><span className="tools-section-kicker">RESULT / READY</span><strong>Generated output</strong></div><button type="button" onClick={copyResult} className="tool-copy-button">{copied ? <Check size={14}/> : <Copy size={14}/>} {copied ? "Copied" : "Copy result"}</button></div><pre>{result}</pre><div className="tool-output-foot"><span><Check size={12}/> Result ready for review</span><button type="button" onClick={() => { setInput(result); setResult(""); setError(""); }}>Use as new input <ArrowDownRight size={13}/></button></div></motion.div>}
+            {result && <motion.div className="tool-output" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}><div className="tool-output-head"><div><span className="tools-section-kicker">RESULT / READY</span><strong>Generated output</strong></div><button type="button" onClick={copyResult} className="tool-copy-button">{copied ? <Check size={14}/> : <Copy size={14}/>} {copied ? "Copied" : "Copy result"}</button></div><div className="tool-output-markdown"><AssistantMessageContent content={result} /></div><div className="tool-output-foot"><span><Check size={12}/> Result ready for review</span><button type="button" onClick={() => { setInput(result); setResult(""); setError(""); }}>Use as new input <ArrowDownRight size={13}/></button></div></motion.div>}
             <div className="tool-modal-bottom"><span><AudioLines size={13}/> AI REQUEST</span><span><Clock3 size={13}/> RESULTS ARE NOT SAVED HERE</span></div>
           </motion.section>
         </motion.div>}
