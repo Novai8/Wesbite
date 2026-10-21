@@ -2,10 +2,9 @@
 
 import { FormEvent, KeyboardEvent, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Bot, Check, CornerDownLeft, LoaderCircle, MessageCircle, RotateCcw, Send, Sparkles, X } from "lucide-react";
+import { ArrowRight, Bot, Check, CornerDownLeft, LoaderCircle, RotateCcw, Send, Sparkles, X } from "lucide-react";
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
-type Reply = { message: string; toolIds?: string[]; suggestedPrompts?: string[] };
 type Tool = { id: string; name: string; category: string; description: string };
 
 const starters = [
