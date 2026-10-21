@@ -148,8 +148,10 @@ export async function POST(request: Request) {
 
   const tried: string[] = [];
   let lastStatus: number | null = null;
+  const disabledProviders = new Set<string>();
 
   for (const candidate of candidates) {
+    if (disabledProviders.has(candidate.provider)) continue;
     tried.push(candidate.provider + "/" + candidate.model);
     try {
       const upstream = await fetch(candidate.url, {
@@ -188,11 +190,7 @@ export async function POST(request: Request) {
         });
 
         // A rejected credential cannot be repaired by retrying the same provider's second model.
-        if (upstream.status === 401) {
-          for (let i = candidates.length - 1; i >= 0; i -= 1) {
-            if (candidates[i].provider === candidate.provider) candidates.splice(i, 1);
-          }
-        }
+        if (upstream.status === 401) disabledProviders.add(candidate.provider);
         continue;
       }
 
