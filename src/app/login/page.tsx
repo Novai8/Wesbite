@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, Suspense, useState } from "react";
+import { FormEvent, Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, Eye, EyeOff, Mail, ShieldCheck, Sparkles } from "lucide-react";
@@ -79,6 +79,7 @@ function LoginContent() {
   }
 
   return <main className="rg-login-page">
+    <LoginCursor />
     <div className="rg-login-top"><Link href="/" className="rg-login-brand"><span>R.</span> RAPIGENTS</Link><span className="rg-login-secure"><ShieldCheck size={14}/> PRIVATE BY DESIGN</span></div>
     <div className="rg-login-layout">
       <section className="rg-login-story">
@@ -119,6 +120,72 @@ function LoginContent() {
 
 export default function LoginPage() {
   return <Suspense fallback={<main className="rg-auth-gate-loading"><div className="rg-auth-mark">R.</div><p>Loading secure sign-in…</p></main>}><LoginContent /></Suspense>;
+}
+
+function LoginCursor() {
+  const ringRef = useRef<HTMLDivElement>(null);
+  const dotRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const page = document.querySelector<HTMLElement>(".rg-login-page");
+    if (!page || window.matchMedia("(pointer: coarse)").matches || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    page.classList.add("has-custom-cursor");
+    const ring = ringRef.current;
+    const dot = dotRef.current;
+    let raf = 0;
+    let x = -100;
+    let y = -100;
+    let targetX = -100;
+    let targetY = -100;
+    const card = page.querySelector<HTMLElement>(".rg-login-card");
+
+    const move = (event: PointerEvent) => {
+      if (event.pointerType !== "mouse") return;
+      targetX = event.clientX;
+      targetY = event.clientY;
+      const target = event.target instanceof Element ? event.target : null;
+      const interactive = target?.closest("a,button,input,textarea,select,label,[role=button]");
+      ring?.classList.toggle("is-interactive", Boolean(interactive));
+      dot?.classList.toggle("is-interactive", Boolean(interactive));
+
+      if (card) {
+        const rect = card.getBoundingClientRect();
+        card.style.setProperty("--spot-x", `${event.clientX - rect.left}px`);
+        card.style.setProperty("--spot-y", `${event.clientY - rect.top}px`);
+        card.classList.toggle("is-pointer-near", event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom);
+      }
+      ring?.classList.add("is-visible");
+      dot?.classList.add("is-visible");
+    };
+
+    const animate = () => {
+      x += (targetX - x) * 0.32;
+      y += (targetY - y) * 0.32;
+      if (ring) ring.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%)`;
+      if (dot) dot.style.transform = `translate3d(${targetX}px, ${targetY}px, 0) translate(-50%, -50%)`;
+      raf = window.requestAnimationFrame(animate);
+    };
+    const leave = () => {
+      ring?.classList.remove("is-visible", "is-interactive");
+      dot?.classList.remove("is-visible", "is-interactive");
+      card?.classList.remove("is-pointer-near");
+    };
+    window.addEventListener("pointermove", move, { passive: true });
+    page.addEventListener("pointerleave", leave);
+    raf = window.requestAnimationFrame(animate);
+    return () => {
+      window.removeEventListener("pointermove", move);
+      page.removeEventListener("pointerleave", leave);
+      window.cancelAnimationFrame(raf);
+      page.classList.remove("has-custom-cursor");
+    };
+  }, []);
+
+  return <>
+    <div ref={ringRef} className="rg-login-cursor-ring" aria-hidden="true"><span>✳</span></div>
+    <div ref={dotRef} className="rg-login-cursor-dot" aria-hidden="true" />
+  </>;
 }
 
 function GoogleMark() {
