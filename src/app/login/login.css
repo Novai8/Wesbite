@@ -49,3 +49,9 @@ html[data-theme="light"] .rg-login-orbit .rg-orbit-ring { border-color: rgba(47,
   .rg-login-card, .rg-login-story > * { animation: none !important; }
   .rg-oauth-button, .rg-login-submit { transition: none; }
 }
+
+.rg-login-provider-note{display:flex;align-items:flex-start;gap:7px;margin:12px 0 0;color:#8f9a8f;font-size:10px;line-height:1.6}
+.rg-login-provider-note svg{flex:none;margin-top:2px;color:#d8ff63}
+html[data-theme="light"] .rg-login-provider-note{color:#586761}
+html[data-theme="light"] .rg-login-provider-note svg{color:#2f7470}
+.rg-login-card h2,.rg-login-subtitle,.rg-login-provider-note{overflow-wrap:anywhere}
