@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Menu, Moon, Sun, X, Sparkles } from "lucide-react";
+import { Menu, Moon, Sun, X, Sparkles, LogOut } from "lucide-react";
 import Link from "next/link";
 import { usePrefs } from "@/components/providers";
+import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 const links = [{ href: "/tools", label: "AI Tools" }, { href: "/integrations", label: "Integrations" }, { href: "/clip-ai", label: "Clip AI" }, { href: "/about", label: "How it works" }, { href: "/contact", label: "Contact" }];
 
@@ -11,6 +12,19 @@ export function SiteHeader() {
   const { theme, toggleTheme } = usePrefs();
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [accountEmail, setAccountEmail] = useState("");
+  useEffect(() => {
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase) return;
+    supabase.auth.getUser().then(({ data }) => setAccountEmail(data.user?.email || ""));
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => setAccountEmail(session?.user.email || ""));
+    return () => subscription.unsubscribe();
+  }, []);
+  async function signOut() {
+    const supabase = getSupabaseBrowserClient();
+    if (supabase) await supabase.auth.signOut();
+    window.location.href = "/login";
+  }
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
     const raf = requestAnimationFrame(onScroll);
@@ -29,10 +43,10 @@ export function SiteHeader() {
       <nav className="desktop-nav" aria-label="Primary">{links.map(link => <Link key={link.href} href={link.href}>{link.label}</Link>)}</nav>
       <div className="header-actions">
         <button type="button" className="sound-button" onClick={toggleTheme} aria-label="Switch color theme">{theme === "dark" ? <Moon aria-hidden/> : <Sun aria-hidden/>}<span>{theme === "dark" ? "DARK" : "LIGHT"}</span></button>
-        <button type="button" className="header-cta rg-header-ask" onClick={() => window.dispatchEvent(new Event("rapigents:open-assistant"))}><Sparkles size={14}/> Ask AI</button><Link href="/tools" className="header-cta">Explore tools <span aria-hidden="true">↗</span></Link>
+        <button type="button" className="header-cta rg-header-ask" onClick={() => window.dispatchEvent(new Event("rapigents:open-assistant"))}><Sparkles size={14}/> Ask AI</button><Link href="/tools" className="header-cta">Explore tools <span aria-hidden="true">↗</span></Link>{accountEmail && <button type="button" className="rg-account-signout" title={"Signed in as " + accountEmail} aria-label="Sign out" onClick={() => void signOut()}><LogOut size={14}/><span>Sign out</span></button>}
         <button type="button" className="mobile-menu-button" onClick={() => setOpen(!open)} aria-expanded={open} aria-label={open ? "Close menu" : "Open menu"}>{open ? <X aria-hidden/> : <Menu aria-hidden/>}</button>
       </div>
     </div>
-    {open && <div className="mobile-menu"><nav aria-label="Mobile">{links.map(link => <Link key={link.href} href={link.href} onClick={() => setOpen(false)}>{link.label}</Link>)}<button type="button" className="mobile-menu-row" onClick={toggleTheme}>Switch theme: {theme === "dark" ? "Dark" : "Light"}</button><button type="button" className="mobile-menu-cta rg-mobile-ask" onClick={() => { setOpen(false); window.dispatchEvent(new Event("rapigents:open-assistant")); }}><Sparkles size={15}/> Ask the AI assistant</button><Link href="/tools" onClick={() => setOpen(false)} className="mobile-menu-cta">Explore AI tools ↗</Link></nav></div>}
+    {open && <div className="mobile-menu"><nav aria-label="Mobile">{links.map(link => <Link key={link.href} href={link.href} onClick={() => setOpen(false)}>{link.label}</Link>)}<button type="button" className="mobile-menu-row" onClick={toggleTheme}>Switch theme: {theme === "dark" ? "Dark" : "Light"}</button>{accountEmail && <button type="button" className="mobile-menu-row" onClick={() => void signOut()}><LogOut size={14}/> Sign out</button>}<button type="button" className="mobile-menu-cta rg-mobile-ask" onClick={() => { setOpen(false); window.dispatchEvent(new Event("rapigents:open-assistant")); }}><Sparkles size={15}/> Ask the AI assistant</button><Link href="/tools" onClick={() => setOpen(false)} className="mobile-menu-cta">Explore AI tools ↗</Link></nav></div>}
   </header>;
 }
