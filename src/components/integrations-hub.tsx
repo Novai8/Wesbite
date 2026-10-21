@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ArrowRight, CheckCircle2, CircleHelp, PlugZap, Search, ShieldCheck, Unplug, Workflow, XCircle } from "lucide-react";
+import { ArrowRight, CheckCircle2, CircleHelp, PlugZap, Search, ShieldCheck, Sparkles, Unplug, Workflow, XCircle } from "lucide-react";
 import { setMcpSession } from "@/lib/mcp-session";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
