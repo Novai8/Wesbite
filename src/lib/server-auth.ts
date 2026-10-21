@@ -3,8 +3,8 @@ import { NextResponse } from "next/server";
 export type VerifiedUser = { id: string; email?: string };
 
 export async function requireSupabaseUser(request: Request): Promise<VerifiedUser | NextResponse> {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://klrmkgfpvicqhfptodcm.supabase.co";
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "sb_publishable_gU2sT7gFIu9H09_F52VSqA_Cvr_ktuj";
   const authorization = request.headers.get("authorization") || "";
   const match = authorization.match(/^Bearer\s+(.+)$/i);
   if (!url || !anonKey) {
