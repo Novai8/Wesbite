@@ -1,7 +1,7 @@
 "use client";
 
-import { Suspense, useEffect, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
@@ -11,14 +11,9 @@ function safeNext(value: string | null) {
 
 function AuthCallbackContent() {
   const router = useRouter();
-  const params = useSearchParams();
-  const started = useRef(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    // React Strict Mode can mount effects twice in development. Never exchange one OAuth code twice.
-    if (started.current) return;
-    started.current = true;
     let active = true;
     let subscription: { unsubscribe: () => void } | undefined;
 
@@ -39,6 +34,10 @@ function AuthCallbackContent() {
       // Read the actual browser URL rather than relying only on Next's search-param snapshot.
       const code = url.searchParams.get("code");
       if (code) {
+        // Remove the one-time code from the visible URL synchronously. This also prevents a
+        // Strict Mode effect replay from attempting to exchange the same PKCE code a second time.
+        const nextUrl = url.searchParams.get("next");
+        window.history.replaceState(null, "", url.pathname + (nextUrl ? "?next=" + encodeURIComponent(nextUrl) : "") + url.hash);
         const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
         if (exchangeError) {
           setError("We received the sign-in response but couldn't create your session. Please try again. (" + exchangeError.message + ")");
@@ -64,7 +63,7 @@ function AuthCallbackContent() {
         return;
       }
       if (initial.session) {
-        if (active) router.replace(safeNext(url.searchParams.get("next") || params.get("next")));
+        if (active) router.replace(safeNext(url.searchParams.get("next")));
         return;
       }
 
@@ -91,7 +90,7 @@ function AuthCallbackContent() {
       });
 
       if (active && session) {
-        router.replace(safeNext(url.searchParams.get("next") || params.get("next")));
+        router.replace(safeNext(url.searchParams.get("next")));
         return;
       }
       if (active) {
@@ -106,7 +105,7 @@ function AuthCallbackContent() {
       active = false;
       subscription?.unsubscribe();
     };
-  }, [params, router]);
+  }, [router]);
 
   return <main className="rg-auth-callback"><div className="rg-login-card"><span className="rg-login-card-icon">R.</span><h1>{error ? "Sign-in needs attention" : "Securing your session"}</h1><p>{error || "Completing your sign-in and returning you to Rapigents…"}</p>{error && <Link href="/login" className="rg-login-submit">Back to sign in</Link>}</div></main>;
 }
