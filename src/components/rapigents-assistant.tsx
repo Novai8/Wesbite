@@ -9,6 +9,7 @@ import {
 } from "react";
 import Link from "next/link";
 import { AssistantMessageContent } from "@/components/assistant-message-content";
+import { getMcpSession, getMcpToolCatalog } from "@/lib/mcp-session";
 import {
   ArrowRight,
   Bot,
@@ -33,6 +34,8 @@ type Tool = {
   description: string;
 };
 
+type PendingMcpAction = { name: string; arguments: Record<string, unknown>; rationale: string };
+
 const starters = [
   "Help me write a professional email",
   "Find the right tool for my resume",
@@ -49,6 +52,7 @@ export function RapigentsAssistant() {
   const [recommendations, setRecommendations] = useState<Tool[]>([]);
   const [suggestedPrompts, setSuggestedPrompts] =
     useState<string[]>(starters);
+  const [pendingMcpAction, setPendingMcpAction] = useState<PendingMcpAction | null>(null);
 
   const endRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -92,6 +96,7 @@ export function RapigentsAssistant() {
     setBusy(true);
     setError("");
     setRecommendations([]);
+    setPendingMcpAction(null);
 
     try {
       const response = await fetch("/api/assistant", {
@@ -99,7 +104,7 @@ export function RapigentsAssistant() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ messages: next }),
+        body: JSON.stringify({ messages: next, mcpTools: getMcpToolCatalog() }),
       });
 
       const payload = await response.json();
@@ -125,6 +130,9 @@ export function RapigentsAssistant() {
       setRecommendations(
         Array.isArray(payload.tools) ? payload.tools : []
       );
+      if (payload.pendingAction && typeof payload.pendingAction.name === "string" && payload.pendingAction.arguments && typeof payload.pendingAction.arguments === "object" && !Array.isArray(payload.pendingAction.arguments)) {
+        setPendingMcpAction({ name: payload.pendingAction.name, arguments: payload.pendingAction.arguments, rationale: typeof payload.pendingAction.rationale === "string" ? payload.pendingAction.rationale : "Review this action before running it." });
+      }
 
       setSuggestedPrompts(
         Array.isArray(payload.suggestedPrompts) &&
@@ -138,6 +146,42 @@ export function RapigentsAssistant() {
           ? err.message
           : "The assistant couldn't answer right now."
       );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function confirmMcpAction() {
+    const session = getMcpSession();
+    if (!session || !pendingMcpAction) {
+      setError("Your MCP connection is no longer available. Reconnect it from Integrations.");
+      setPendingMcpAction(null);
+      return;
+    }
+    setBusy(true);
+    setError("");
+    try {
+      const response = await fetch("/api/integrations/mcp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "call",
+          endpoint: session.endpoint,
+          token: session.token,
+          name: pendingMcpAction.name,
+          arguments: pendingMcpAction.arguments,
+        }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || "The MCP action failed.");
+      const resultText = JSON.stringify(payload.result, null, 2).slice(0, 6000);
+      setMessages((current) => [...current, {
+        role: "assistant" as const,
+        content: "Action completed: `" + pendingMcpAction.name + "`\n\nResult:\n```json\n" + resultText + "\n```",
+      }].slice(-12));
+      setPendingMcpAction(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "The MCP action failed.");
     } finally {
       setBusy(false);
     }
@@ -165,6 +209,7 @@ export function RapigentsAssistant() {
     setInput("");
     setError("");
     setRecommendations([]);
+    setPendingMcpAction(null);
     setSuggestedPrompts(starters);
   }
 
@@ -260,6 +305,20 @@ export function RapigentsAssistant() {
                 </div>
               </div>
             ))}
+
+            {pendingMcpAction && (
+              <div className="rg-assistant-mcp-approval">
+                <span className="rg-assistant-mcp-kicker">EXTERNAL ACTION / REVIEW REQUIRED</span>
+                <strong>{pendingMcpAction.name}</strong>
+                <p>{pendingMcpAction.rationale}</p>
+                <pre>{JSON.stringify(pendingMcpAction.arguments, null, 2)}</pre>
+                <div>
+                  <button type="button" onClick={() => setPendingMcpAction(null)} disabled={busy}>Reject</button>
+                  <button type="button" onClick={() => void confirmMcpAction()} disabled={busy}><Check size={13}/> Confirm and run</button>
+                </div>
+                <small>This will send the arguments to your connected MCP server. Review them carefully before approving.</small>
+              </div>
+            )}
 
             {busy && (
               <div className="rg-assistant-thinking">
