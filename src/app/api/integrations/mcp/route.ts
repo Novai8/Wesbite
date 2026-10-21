@@ -76,9 +76,6 @@ async function initialize(endpoint: URL, token: string) {
 }
 
 export async function POST(request: Request) {
-  const authenticatedUser = await requireSupabaseUser(request);
-  if (isAuthError(authenticatedUser)) return authenticatedUser;
-
   let body: any;
   try {
     const raw = await request.text();
@@ -100,6 +97,10 @@ export async function POST(request: Request) {
   if (requestWindows.size > 1000) {
     for (const [key, value] of requestWindows) if (value.resetAt <= now) requestWindows.delete(key);
   }
+
+  const authenticatedUser = await requireSupabaseUser(request);
+  if (isAuthError(authenticatedUser)) return authenticatedUser;
+
 
   const origin = request.headers.get("origin");
   const host = request.headers.get("host");
