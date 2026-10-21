@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, CheckCircle2, Eye, EyeOff, Github, Mail, ShieldCheck, Sparkles } from "lucide-react";
@@ -11,7 +11,7 @@ function safeNext(value: string | null) {
   return value && value.startsWith("/") && !value.startsWith("//") && !value.startsWith("/\\") ? value : "/";
 }
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [mode, setMode] = useState<"signin" | "signup" | "magic">("signin");
@@ -103,6 +103,10 @@ export default function LoginPage() {
     </div>
     <footer className="rg-login-footer"><Link href="/privacy">Privacy</Link><span>© {new Date().getFullYear()} Rapigents</span><span>Access you control</span></footer>
   </main>;
+}
+
+export default function LoginPage() {
+  return <Suspense fallback={<main className="rg-auth-gate-loading"><div className="rg-auth-mark">R.</div><p>Loading secure sign-in…</p></main>}><LoginContent /></Suspense>;
 }
 
 function GoogleMark() {
