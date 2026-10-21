@@ -5,7 +5,7 @@ import { Menu, Moon, Sun, X, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { usePrefs } from "@/components/providers";
 
-const links = [{ href: "/tools", label: "AI Tools" }, { href: "/clip-ai", label: "Clip AI" }, { href: "/about", label: "How it works" }, { href: "/contact", label: "Contact" }];
+const links = [{ href: "/tools", label: "AI Tools" }, { href: "/integrations", label: "Integrations" }, { href: "/clip-ai", label: "Clip AI" }, { href: "/about", label: "How it works" }, { href: "/contact", label: "Contact" }];
 
 export function SiteHeader() {
   const { theme, toggleTheme } = usePrefs();
