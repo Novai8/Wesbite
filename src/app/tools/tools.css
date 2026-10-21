@@ -624,3 +624,84 @@ html[data-theme="light"] .tools-page .tool-run-button{background:#6554d8;border-
 .tools-page .tool-output-markdown .rg-md-table td{min-width:120px;padding:10px 12px;color:var(--lab-ink);border-color:var(--lab-line)}
 .tools-page .tool-output-markdown .rg-md-table tr:nth-child(even) td{background:color-mix(in srgb,var(--lab-accent) 3%,transparent)}
 @media(max-width:680px){.tools-page .tool-output-markdown{padding:14px 12px}.tools-page .tool-output-markdown .rg-assistant-markdown{font-size:12px}.tools-page .tool-output-markdown .rg-assistant-markdown h3{font-size:19px}.tools-page .tool-output-markdown .rg-md-table{font-size:10px}.tools-page .tool-output-markdown .rg-md-table th,.tools-page .tool-output-markdown .rg-md-table td{padding:8px 9px;min-width:100px}}
+
+
+/* Light-theme contrast fixes for controls and panels that previously kept dark-only colors. */
+html[data-theme="light"] .tools-page .tools-note-band {
+  background: rgba(255,255,255,.72);
+  color: #27243f;
+  border-color: rgba(52,46,94,.16);
+}
+html[data-theme="light"] .tools-page .tools-note-band p,
+html[data-theme="light"] .tools-page .tool-input-foot,
+html[data-theme="light"] .tools-page .tool-privacy-note,
+html[data-theme="light"] .tools-page .tool-modal-index,
+html[data-theme="light"] .tools-page .tool-modal-brand {
+  color: #625d7c;
+}
+html[data-theme="light"] .tools-page .tool-modal-close,
+html[data-theme="light"] .tools-page .tool-copy-button,
+html[data-theme="light"] .tools-page .tool-clear-button {
+  background: #fff;
+  color: #302b4c;
+  border-color: rgba(52,46,94,.22);
+}
+html[data-theme="light"] .tools-page .tool-modal-close:hover,
+html[data-theme="light"] .tools-page .tool-copy-button:hover,
+html[data-theme="light"] .tools-page .tool-clear-button:hover {
+  background: #f0edff;
+  border-color: #6554d8;
+  color: #4434aa;
+}
+html[data-theme="light"] .tools-page .tool-input-label {
+  color: #554b91;
+}
+html[data-theme="light"] .tools-page .tool-modal textarea {
+  background: #fff;
+  color: #27243f;
+  border-color: rgba(52,46,94,.22);
+}
+html[data-theme="light"] .tools-page .tool-modal textarea::placeholder {
+  color: #85809e;
+}
+html[data-theme="light"] .tools-page .tool-run-button {
+  background: #5542c7;
+  border-color: #5542c7;
+  color: #fff;
+}
+html[data-theme="light"] .tools-page .tool-run-button:disabled {
+  background: #d8d3ed;
+  border-color: #d8d3ed;
+  color: #6b6680;
+  opacity: 1;
+}
+html[data-theme="light"] .tools-page .tool-output-head,
+html[data-theme="light"] .tools-page .tool-output-foot {
+  color: #514b6c;
+  border-color: rgba(52,46,94,.16);
+}
+html[data-theme="light"] .tools-page .tool-output-foot button {
+  color: #5542c7;
+}
+html[data-theme="light"] .tools-page .tool-error {
+  background: #fff0ee;
+  color: #a52c25;
+  border-color: #e7aaa5;
+}
+html[data-theme="light"] .tools-page .tools-empty {
+  color: #686580;
+}
+html[data-theme="light"] .tools-page .tools-load-more {
+  background: rgba(255,255,255,.78);
+  color: #5542c7;
+  border-color: rgba(52,46,94,.2);
+}
+html[data-theme="light"] .tools-page .tools-filter-toggle button:focus-visible,
+html[data-theme="light"] .tools-page .tools-category-row button:focus-visible,
+html[data-theme="light"] .tools-page .tool-modal button:focus-visible {
+  outline-color: #5542c7;
+}
+html[data-theme="light"] .tools-page .artwork-detail-panel,
+html[data-theme="light"] .tools-page .tool-card-artwork .artwork-detail-panel {
+  color: #27243f;
+}
