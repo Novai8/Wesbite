@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { ArrowRight, CheckCircle2, CircleHelp, PlugZap, Search, ShieldCheck, Unplug, Workflow, XCircle } from "lucide-react";
 import { setMcpSession } from "@/lib/mcp-session";
+import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 type McpTool = { name: string; description: string; inputSchema: Record<string, unknown> };
 type AppItem = { name: string; group: string; kind: string; description: string; note: string };
@@ -71,8 +72,11 @@ export function IntegrationsHub() {
   async function connect() {
     setBusy(true); setError(""); setStatus(""); setToolResult("");
     try {
+      const supabase = getSupabaseBrowserClient();
+      const { data: sessionData } = supabase ? await supabase.auth.getSession() : { data: { session: null } };
+      if (!sessionData.session) throw new Error("Your sign-in session expired. Sign in again.");
       const response = await fetch("/api/integrations/mcp", {
-        method: "POST", headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + sessionData.session.access_token },
         body: JSON.stringify({ action: "connect", endpoint: endpoint.trim(), token }),
       });
       const data = await response.json();
@@ -98,8 +102,11 @@ export function IntegrationsHub() {
     if (!args || typeof args !== "object" || Array.isArray(args)) { setError("Tool arguments must be a JSON object."); return; }
     setBusy(true); setError(""); setToolResult(""); setConfirmCall(false);
     try {
+      const supabase = getSupabaseBrowserClient();
+      const { data: sessionData } = supabase ? await supabase.auth.getSession() : { data: { session: null } };
+      if (!sessionData.session) throw new Error("Your sign-in session expired. Sign in again.");
       const response = await fetch("/api/integrations/mcp", {
-        method: "POST", headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + sessionData.session.access_token },
         body: JSON.stringify({ action: "call", endpoint: endpoint.trim(), token, name: selectedTool, arguments: args }),
       });
       const data = await response.json();
