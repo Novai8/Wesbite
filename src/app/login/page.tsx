@@ -19,23 +19,34 @@ function LoginContent() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [activeProvider, setActiveProvider] = useState<"google" | "azure" | null>(null);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [setupMissing, setSetupMissing] = useState(false);
   const next = safeNext(searchParams.get("next"));
 
   async function oauth(provider: "google" | "azure") {
-    setBusy(true); setError(""); setNotice("");
+    setBusy(true); setActiveProvider(provider); setError(""); setNotice("");
     const supabase = getSupabaseBrowserClient();
-    if (!supabase) { setSetupMissing(true); setBusy(false); return; }
-    const { error: authError } = await supabase.auth.signInWithOAuth({
-      provider,
-      options: {
-        redirectTo: window.location.origin + "/auth/callback?next=" + encodeURIComponent(next),
-        ...(provider === "azure" ? { scopes: "openid email profile" } : {}),
-      },
-    });
-    if (authError) { setError(authError.message); setBusy(false); }
+    if (!supabase) { setSetupMissing(true); setBusy(false); setActiveProvider(null); return; }
+    try {
+      const { error: authError } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: window.location.origin + "/auth/callback?next=" + encodeURIComponent(next),
+          ...(provider === "google" ? { scopes: "openid email profile" } : { scopes: "openid email profile" }),
+        },
+      });
+      if (authError) setError(authError.message);
+    } catch {
+      setError("We couldn't start secure sign-in. Check your connection and try again.");
+    } finally {
+      // On success the browser navigates to the provider; clear the pending state only if we remain here.
+      if (window.location.pathname === "/login") {
+        setBusy(false);
+        setActiveProvider(null);
+      }
+    }
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -82,8 +93,8 @@ function LoginContent() {
         <h2>{mode === "signup" ? "Create your account" : mode === "magic" ? "Sign in by email" : "Welcome back"}</h2>
         <p className="rg-login-subtitle">{mode === "signup" ? "Start with your email, Google or Microsoft account." : "Sign in to continue to Rapigents."}</p>
         <div className="rg-oauth-buttons">
-          <button type="button" onClick={() => void oauth("google")} disabled={busy} className="rg-oauth-button"><GoogleMark/> Continue with Google</button>
-          <button type="button" onClick={() => void oauth("azure")} disabled={busy} className="rg-oauth-button"><MicrosoftMark/> Continue with Microsoft / Outlook</button>
+          <button type="button" onClick={() => void oauth("google")} disabled={busy} className="rg-oauth-button"><GoogleMark/> {busy && activeProvider === "google" ? "Connecting to Google…" : "Continue with Google"}</button>
+          <button type="button" onClick={() => void oauth("azure")} disabled={busy} className="rg-oauth-button"><MicrosoftMark/> {busy && activeProvider === "azure" ? "Connecting to Microsoft…" : "Continue with Microsoft / Outlook"}</button>
         </div>
         <div className="rg-login-divider"><span/> <small>OR USE EMAIL</small> <span/></div>
         <form className="rg-login-form" onSubmit={submit}>
