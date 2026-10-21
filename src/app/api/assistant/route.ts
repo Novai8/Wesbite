@@ -100,12 +100,22 @@ export async function POST(request: Request) {
     });
     const payload = await upstream.json().catch(() => null);
     if (!upstream.ok) {
-      const status = upstream.status === 429 ? 429 : 502;
-      return NextResponse.json({
-        error: upstream.status === 429
-          ? "The AI service is busy or its usage limit was reached. Please try again shortly."
-          : "The assistant could not reach its AI model. Check the OpenRouter model access and account balance in the deployment settings.",
-      }, { status });
+      const providerMessage = typeof payload?.error?.message === "string" ? payload.error.message : "";
+      console.error("[Rapigents assistant] OpenRouter request failed", {
+        status: upstream.status,
+        code: payload?.error?.code ?? null,
+        message: providerMessage.slice(0, 300),
+        model,
+      });
+
+      let errorMessage = "OpenRouter rejected the request. Check the model ID and model access in deployment settings.";
+      if (upstream.status === 401) errorMessage = "OpenRouter rejected the API key. Replace OPENROUTER_API_KEY in Cloudflare Pages settings with a valid OpenRouter key.";
+      else if (upstream.status === 402) errorMessage = "The OpenRouter account has insufficient credits. Add credits or enable an available payment method, then try again.";
+      else if (upstream.status === 403) errorMessage = "OpenRouter denied access to this model or API key. Check model permissions and provider settings.";
+      else if (upstream.status === 404) errorMessage = "OpenRouter could not find the configured model. Set OPENROUTER_CHAT_MODEL to openai/gpt-6-astra or another model ID listed in OpenRouter.";
+      else if (upstream.status === 429) errorMessage = "The OpenRouter service is rate-limiting requests or a usage limit was reached. Check your account limits and try again shortly.";
+      else if (upstream.status === 400) errorMessage = "OpenRouter rejected the request format or model parameters. Check the deployment model setting and review the latest deployment logs.";
+      return NextResponse.json({ error: errorMessage }, { status: upstream.status === 429 ? 429 : 502 });
     }
 
     const raw = payload?.choices?.[0]?.message?.content;
@@ -130,6 +140,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ message, toolIds, tools, suggestedPrompts, model });
   } catch (error) {
     const timedOut = error instanceof Error && error.name === "TimeoutError";
-    return NextResponse.json({ error: timedOut ? "The request took too long. Try a shorter message." : "We couldn't reach the assistant right now. Please try again." }, { status: 502 });
+    console.error("[Rapigents assistant] Network request failed", {
+      timeout: timedOut,
+      message: error instanceof Error ? error.message.slice(0, 200) : "Unknown error",
+    });
+    return NextResponse.json({ error: timedOut ? "The request took too long. Try a shorter message." : "We couldn't reach the assistant right now. Check the deployment logs and try again." }, { status: 502 });
   }
 }
