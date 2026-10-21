@@ -19,3 +19,9 @@
 .rg-assistant-disclaimer{display:flex;align-items:center;justify-content:center;gap:5px;padding:10px 8px;color:#747c75;font-size:9px}
 @media(max-width:520px){.rg-assistant-root{right:12px;bottom:12px}.rg-assistant-panel{position:fixed;right:8px;bottom:72px;width:calc(100vw - 16px);height:min(720px,calc(100dvh - 92px));border-radius:21px}.rg-assistant-launcher{min-height:50px;padding-right:14px}.rg-assistant-launcher-icon{width:36px;height:36px}.rg-assistant-launcher-label{font-size:12px}.rg-assistant-launcher.is-open{width:46px;height:46px;min-height:46px}.rg-assistant-welcome h3{font-size:25px}}
 @media(prefers-reduced-motion:reduce){.rg-assistant-panel{animation:none}.rg-assistant-thinking>span{animation:none}.rg-assistant-spin{animation:none}}
+
+/* Discoverability: open the same floating assistant from the primary navigation. */
+.rg-header-ask{display:inline-flex;align-items:center;gap:7px;cursor:pointer;font:inherit}
+.rg-header-ask svg{color:var(--rg-acid,#d8ff63)}
+.rg-mobile-ask{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;font:inherit;cursor:pointer}
+.rg-mobile-ask svg{color:var(--rg-acid,#d8ff63)}
