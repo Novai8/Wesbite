@@ -83,7 +83,7 @@ export function RapigentsAssistant() {
 
     const next: ChatMessage[] = [
       ...messages,
-      { role: "user", content: trimmed },
+      { role: "user" as const, content: trimmed },
     ].slice(-12);
 
     setMessages(next);
