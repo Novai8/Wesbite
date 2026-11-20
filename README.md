@@ -1,8 +1,32 @@
-# Rapigents
+# Fyndra
 
-Portfolio site for **Hussnain Tariq** / **Rapigents**. Twelve niche-specific n8n workflow demos, with human review, audit notes, and fictional data. Purple and white, minimal, with page transitions and optional click sound.
+**Search by problem, not by product.**
 
-This is an independent portfolio prototype. Time-saved figures are illustrative assumptions. Actual results vary.
+Fyndra is an AI-powered shopping discovery engine. People describe what
+they're trying to solve, set a budget, and get products selected around
+their actual requirements — with a transparent score and plain-English
+reasoning behind every recommendation.
+
+> People search for solutions. The platform finds the products.
+
+## How it works
+
+1. Describe the problem — "my back hurts at my desk all day", not "office chair".
+2. Set budget, currency and preferences.
+3. The deterministic scoring engine ranks the curated catalogue across six
+   axes: relevance, budget fit, features, data quality, price freshness and
+   category fit.
+4. Every recommendation shows its score breakdown and reasoning. AI may
+   rewrite the *explanation* only — it can never invent prices, specs,
+   availability or reviews, and never changes scores.
+5. Buy from the merchant. Links marked Affiliate earn us a commission; that
+   never changes what we recommend. Outbound links are validated against the
+   approved affiliate programme domain before they open.
+
+Runs fully without credentials: explanations are generated deterministically
+and the seed catalogue backs every page. See
+[docs/ENVIRONMENT-VARIABLES.md](docs/ENVIRONMENT-VARIABLES.md) to enable
+Groq explanations and the Supabase catalogue layer.
 
 ## Install and run
 
@@ -11,69 +35,47 @@ npm install
 npm run dev
 ```
 
-Production check:
+Production checks:
 
 ```bash
 npm run lint
+npx tsc --noEmit
 npm run build
-npm run start
+npx opennextjs-cloudflare build
 ```
 
 The dev server runs at [http://localhost:3000](http://localhost:3000).
 
-Optional site URL, used for metadata, sitemap, and Open Graph:
-
-```bash
-NEXT_PUBLIC_SITE_URL=https://your-domain.example
-```
-
 ## Pages
 
-- `/` home
-- `/demos` searchable library
-- `/demos/[slug]` workflow detail
-- `/about`
-- `/contact` — opens the visitor’s email app. Nothing is stored, and no mail API key is required.
+- `/` — what Fyndra is, how it works, featured catalogue
+- `/assistant` — 4-step wizard: describe → budget → preferences → scored results
+- `/setup-builder` — one total budget, allocated across categories with a visible breakdown
+- `/problem-solver` — describe an annoying daily problem, get the fix
+- `/discover` — the full catalogue: search, filters, sort, pagination
+- `/products/[slug]` — product detail with verified specs and labelled affiliate link
+- `/compare` — up to three products side by side
+- `/guides` — how scoring works, briefing the assistant, reading a recommendation
+- `/about`, `/contact`, `/privacy`, `/terms`, `/affiliate-disclosure`
+- `/admin` — protected dashboard (products, approvals, imports, stats)
 
-Contact: [hussnain@rapigents.online](mailto:hussnain@rapigents.online)  
-GitHub: [https://github.com/Novai8](https://github.com/Novai8)
+## Documentation
 
-## Add a video or thumbnail later
+| Doc | Contents |
+| --- | --- |
+| [DESIGN.md](DESIGN.md) | design system: tokens, type, motion rules |
+| [docs/BRAND-GUIDELINES.md](docs/BRAND-GUIDELINES.md) | Fyndra brand: voice, colour usage, logo |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | layered design, AI boundary, data flow |
+| [docs/DATABASE-SCHEMA.md](docs/DATABASE-SCHEMA.md) | Supabase tables, RLS, additive migrations |
+| [docs/AFFILIATE-DATA-POLICY.md](docs/AFFILIATE-DATA-POLICY.md) | the no-fabrication contract |
+| [docs/N8N-INTEGRATION.md](docs/N8N-INTEGRATION.md) | six workflow contracts, auth, payloads |
+| [docs/ENVIRONMENT-VARIABLES.md](docs/ENVIRONMENT-VARIABLES.md) | optional credentials, what each unlocks |
+| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Cloudflare Workers via OpenNext |
+| [docs/TESTING.md](docs/TESTING.md) | checks run and browser test plan |
+| [docs/INSTALLED-DESIGN-RESOURCES.md](docs/INSTALLED-DESIGN-RESOURCES.md) | skills and UI libraries, licences |
 
-Demo content lives in one file: `src/data/demos.ts`.
+## Deployment
 
-Each demo has `videoUrl`, `thumbnailUrl`, and `youtubeUrl`. The twelve demos already point at their YouTube walkthroughs. `videoUrl` is an embed URL (`https://www.youtube.com/embed/VIDEO_ID`). Detail pages and the preview modal render that as a responsive iframe. Cards show a Watch demo poster and open the video. Leave `videoUrl` empty to keep the blank frame. A local file still works:
-
-1. Put the file in `public/videos/` (for example `public/videos/lead-qualification.mp4`).
-2. Optionally add a poster image in `public/videos/` or `public/thumbs/`.
-3. Set the fields on that demo:
-
-```ts
-videoUrl: "/videos/lead-qualification.mp4",
-thumbnailUrl: "/thumbs/lead-qualification.jpg",
-```
-
-Direct `https://` video files also work. YouTube links (`youtube.com/watch?v=` or `youtu.be/`) render as an embed. Do not autoplay. The detail page embeds `videoUrl`. Cards use the poster and open that same video.
-
-## Sound
-
-- **Sound: Off** by default. The navbar toggle turns on a quiet Web Audio click. The choice is stored in `localStorage` (`rapigents-sound`).
-- The pointer is a CSS cursor, not an overlay, so links and buttons stay clickable.
-
-## Deploy to Vercel
-
-1. Push this repository to GitHub.
-2. In [Vercel](https://vercel.com), import `Novai8/Wesbite`.
-3. Framework preset: **Next.js**. Install command `npm install`. Build command `npm run build`. Output is handled by Next.js — do not set a static export directory.
-4. Add `NEXT_PUBLIC_SITE_URL` with the production URL (for example `https://rapigents.online`) so Open Graph and the sitemap use the right host.
-5. Deploy. No database, no email provider, and no secret keys are required.
-
-`public/brand/logo.png` is the favicon source (also copied to `src/app/icon.png`) and `public/brand/og.png` is the social preview.
-
-## Brand files
-
-- `public/brand/logo.svg` — crisp RA mark
-- `public/brand/logo.png` — raster of the same mark
-- `public/brand/og.png` — Open Graph image
-
-No logo file was attached to the repository when this site was built, so the mark is an original RA monogram in the brand purple (`#7C3AED`). Replace those three files to swap the logo. The navbar uses the same paths, inlined in `src/components/logo.tsx` — update that path data if the SVG letterforms change.
+Cloudflare Workers via `@opennextjs/cloudflare`, configuration preserved
+from the original repo (`wrangler.jsonc`, `open-next.config.ts`). See
+[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).

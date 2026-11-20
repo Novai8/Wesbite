@@ -1,92 +1,71 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Reveal } from "@/components/reveal";
-import { Button } from "@/components/ui/button";
 import { site } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "About",
   description:
-    "Hussnain Tariq and Rapigents. A portfolio prototype of n8n workflows with human review, audit logs, and fictional data.",
+    "Why Fyndra exists: shopping search is built around product names, but people have problems. An AI discovery engine that shows its reasoning.",
 };
 
 const principles = [
   {
-    title: "Safety",
-    body: "Automation prepares the work. It does not send, book, or write a customer record unless a person has approved that step. High-impact actions stay manual.",
+    title: "Problems first, products second",
+    body: "Nobody wakes up wanting a gas-spring monitor arm. They wake up with a sore neck. Fyndra starts where you start.",
   },
   {
-    title: "Audit logs",
-    body: "A run should be reconstructable: what came in, what the model returned, what was held, and who reviewed it. Silent success is not a feature.",
+    title: "Transparent reasoning, always",
+    body: "Every recommendation shows its score, its breakdown, and why it beat the alternatives. No black box, no paid placement.",
   },
   {
-    title: "Human review",
-    body: "Confidence is not permission. Low-confidence and high-impact steps wait. The review is part of the workflow, not a footnote.",
+    title: "Verified data over generated data",
+    body: "Prices, specs and availability come from curated records. AI never invents a product fact — it can only explain what's already verified.",
   },
   {
-    title: "Fictional data",
-    body: "Names, companies, volumes, and minutes on this site are invented. These pages are not client case studies and are not connected to anyone’s inbox.",
-  },
-  {
-    title: "No inflated claims",
-    body: "Time-saved figures are arithmetic on stated assumptions. They are not measured production results. Actual results vary.",
+    title: "Honest about the commission",
+    body: "Some links are affiliate links and earn us a commission. That's disclosed on every page, and it never changes what we recommend.",
   },
 ];
 
 export default function AboutPage() {
   return (
-    <main className="container-page py-14 sm:py-20">
-      <Reveal>
-        <p className="text-xs font-medium tracking-[0.18em] text-accent-ink uppercase">
-          About
-        </p>
-        <h1 className="mt-3 max-w-3xl text-[clamp(2.4rem,5vw,4.4rem)] leading-[0.98] font-medium tracking-[-0.04em] text-balance">
-          {site.owner}, {site.name}
+    <div className="container-page py-12 md:py-16">
+      <div className="max-w-2xl">
+        <p className="eyebrow">About</p>
+        <h1 className="mt-3 text-[clamp(2rem,4.5vw,3rem)]">
+          Shopping search is broken at the front end
         </h1>
-        <p className="mt-5 max-w-2xl text-lg leading-relaxed text-muted text-pretty">
-          I build n8n workflows that show a before state, an after state, and the
-          controls that keep automation honest. This site is an independent
-          portfolio prototype. It is not a client roster and it is not a promise
-          of hours saved.
+        <p className="mt-4 text-lg leading-relaxed text-muted">
+          {site.name} exists because search boxes want product names, and
+          people have problems. Describe the problem — get scored, explained,
+          honest product recommendations.
         </p>
-      </Reveal>
+      </div>
 
-      <Reveal className="mt-12" delay={0.05}>
-        <div className="grid gap-4 md:grid-cols-2">
-          {principles.map((item, index) => (
-            <article key={item.title} className="surface min-w-0 p-5 sm:p-6">
-              <p className="font-mono text-xs text-slate-400">
-                {String(index + 1).padStart(2, "0")}
-              </p>
-              <h2 className="mt-3 text-xl font-medium tracking-tight">{item.title}</h2>
-              <p className="mt-2 text-sm leading-relaxed text-muted">{item.body}</p>
-            </article>
-          ))}
-        </div>
-      </Reveal>
+      <div className="mt-12 grid gap-5 sm:grid-cols-2">
+        {principles.map((p) => (
+          <section key={p.title} className="panel">
+            <h2 className="font-display text-xl">{p.title}</h2>
+            <p className="mt-2 text-sm leading-relaxed text-muted">{p.body}</p>
+          </section>
+        ))}
+      </div>
 
-      <Reveal className="mt-8" delay={0.08}>
-        <div className="surface flex flex-col gap-5 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
-          <div className="min-w-0">
-            <h2 className="text-xl font-medium tracking-tight">What this is not</h2>
-            <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted">
-              Not an official system for any employer or client. Not live customer
-              data. Not a claim that a model should own a mailbox, a calendar, or
-              a CRM. If a workflow cannot show its evidence, it does not ship here.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Button asChild>
-              <Link href="/demos">
-                View demos
-              </Link>
-            </Button>
-            <Button asChild variant="secondary">
-              <Link href="/contact">Contact</Link>
-            </Button>
-          </div>
-        </div>
-      </Reveal>
-    </main>
+      <div className="panel-warm mt-12">
+        <h2 className="text-xl">How the catalogue works</h2>
+        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">
+          Products enter the catalogue through curation and evaluation
+          workflows, then wait for approval before they can ever be
+          recommended. Every record carries its own data source, verification
+          timestamp and affiliate programme. Products that fail validation are
+          never shown and their links are never opened.
+        </p>
+        <p className="mt-4 text-sm">
+          <Link href="/affiliate-disclosure" className="font-medium text-cobalt-deep hover:underline">
+            Read the full affiliate disclosure →
+          </Link>
+        </p>
+      </div>
+    </div>
   );
 }
