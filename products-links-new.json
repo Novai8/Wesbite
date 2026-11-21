@@ -1,0 +1,37 @@
+[
+ {
+  "product_id": "1005009760662550",
+  "link": null,
+  "blocked": true
+ },
+ {
+  "product_id": "1005012579678856",
+  "link": "https://s.click.aliexpress.com/e/_c3RfTrZF",
+  "blocked": false
+ },
+ {
+  "product_id": "1005012084438391",
+  "link": "https://s.click.aliexpress.com/e/_c3X4LWCz",
+  "blocked": false
+ },
+ {
+  "product_id": "1005012525193613",
+  "link": "https://s.click.aliexpress.com/e/_c3SWSphx",
+  "blocked": false
+ },
+ {
+  "product_id": "1005012130693393",
+  "link": "https://s.click.aliexpress.com/e/_c3v2vZml",
+  "blocked": false
+ },
+ {
+  "product_id": "1005012791432998",
+  "link": "https://s.click.aliexpress.com/e/_c3GmGdeV",
+  "blocked": false
+ },
+ {
+  "product_id": "1005007640318873",
+  "link": "https://s.click.aliexpress.com/e/_c2uBHdFB",
+  "blocked": false
+ }
+]
