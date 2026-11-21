@@ -1,30 +1,40 @@
 import type { Metadata } from "next";
-import { ContactForm } from "@/components/contact-form";
-import { Disclaimer } from "@/components/disclaimer";
 import { site } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Contact",
-  description: `Contact ${site.owner} at ${site.email} about an n8n workflow demo.`,
+  description: `Contact the ${site.name} team at ${site.email}.`,
 };
 
 export default function ContactPage() {
   return (
-    <main className="container-page py-14 sm:py-20">
-      <p className="text-xs font-medium tracking-[0.18em] text-accent-ink uppercase">
-        Contact
-      </p>
-      <h1 className="mt-3 max-w-3xl text-[clamp(2.4rem,5vw,4.4rem)] leading-[0.98] font-medium tracking-[-0.04em] text-balance">
-        Request a workflow, or just write.
-      </h1>
-      <p className="mt-4 max-w-2xl text-lg leading-relaxed text-muted">
-        {site.owner} reads {site.email}. Tell me the niche, the step that should
-        stay manual, and what a person needs to see before anything is sent.
-      </p>
-      <div className="mt-10">
-        <ContactForm />
+    <div className="container-page py-12 md:py-16">
+      <div className="max-w-2xl">
+        <p className="eyebrow">Contact</p>
+        <h1 className="mt-3 text-[clamp(2rem,4.5vw,3rem)]">Get in touch</h1>
+        <p className="mt-4 text-lg leading-relaxed text-muted">
+          Questions about a recommendation, a correction to product data, a
+          partnership or a press enquiry — email us and we&apos;ll get back to you.
+        </p>
       </div>
-      <Disclaimer className="mt-8" />
-    </main>
+
+      <div className="panel mt-10 max-w-xl">
+        <p className="field-label">Email</p>
+        <a
+          href={site.contactMailto}
+          className="font-display text-2xl font-semibold text-cobalt-deep break-anywhere hover:underline"
+        >
+          {site.email}
+        </a>
+
+        <hr className="rule my-6" />
+
+        <p className="text-sm leading-relaxed text-muted">
+          Found a price or spec that doesn&apos;t match the merchant page? Send us
+          the product link and a screenshot if you have one — data corrections
+          get priority.
+        </p>
+      </div>
+    </div>
   );
 }

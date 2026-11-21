@@ -1,84 +1,84 @@
 import Link from "next/link";
-import { GithubIcon } from "@/components/github-icon";
-import { Logo } from "@/components/logo";
-import { Disclaimer } from "@/components/disclaimer";
-import { site } from "@/lib/site";
+import { affiliateDisclosure, site } from "@/lib/site";
+
+const exploreLinks = [
+  { href: "/assistant", label: "Assistant" },
+  { href: "/setup-builder", label: "Setup builder" },
+  { href: "/problem-solver", label: "Problem solver" },
+  { href: "/discover", label: "Discover" },
+  { href: "/compare", label: "Compare" },
+  { href: "/guides", label: "Guides" },
+];
+
+const companyLinks = [
+  { href: "/about", label: "About" },
+  { href: "/contact", label: "Contact" },
+];
+
+const legalLinks = [
+  { href: "/privacy", label: "Privacy" },
+  { href: "/terms", label: "Terms" },
+  { href: "/affiliate-disclosure", label: "Affiliate disclosure" },
+];
 
 export function SiteFooter() {
   return (
-    <footer className="mt-8 border-t border-line bg-white">
-      <div className="container-page grid gap-10 py-14 sm:py-16 lg:grid-cols-[1.4fr_1fr]">
+    <footer className="mt-16 border-t border-line bg-surface">
+      <div className="container-page grid gap-12 py-14 md:grid-cols-[1.3fr_1fr_1fr_1fr]">
         <div className="min-w-0">
-          <Link href="/" className="inline-flex items-center gap-2.5" aria-label="Rapigents home">
-            <Logo />
-            <span className="font-medium tracking-tight">Rapigents</span>
-          </Link>
-          <p className="mt-4 max-w-md text-sm leading-relaxed text-muted">
-            AI workflow automation demos for agencies, search firms, and small
-            service businesses. Built to be reviewed, not to run unsupervised.
+          <p className="font-display text-xl font-bold tracking-tight">{site.name}</p>
+          <p className="mt-2 text-sm font-medium text-cobalt-deep">{site.tagline}</p>
+          <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted">
+            {site.name} searches a curated catalogue of real products and shows
+            you the reasoning behind every recommendation.
           </p>
-          <a
-            href={`mailto:${site.email}`}
-            className="mt-6 block max-w-full text-[clamp(1.35rem,3.4vw,2.4rem)] leading-tight font-medium tracking-tight break-anywhere"
-          >
-            {site.email}
-          </a>
         </div>
-        <div className="grid grid-cols-2 gap-8 text-sm">
-          <div>
-            <p className="text-xs font-medium tracking-[0.16em] text-slate-500 uppercase">
-              Pages
-            </p>
-            <ul className="mt-3 space-y-2">
-              <li>
-                <Link href="/">Home</Link>
+
+        <nav aria-label="Explore">
+          <p className="eyebrow">Explore</p>
+          <ul className="mt-3 list-none space-y-2 p-0">
+            {exploreLinks.map((l) => (
+              <li key={l.href}>
+                <Link href={l.href} className="text-sm text-muted no-underline hover:text-ink">
+                  {l.label}
+                </Link>
               </li>
-              <li>
-                <Link href="/demos">Demos</Link>
+            ))}
+          </ul>
+        </nav>
+
+        <nav aria-label="Company">
+          <p className="eyebrow">Company</p>
+          <ul className="mt-3 list-none space-y-2 p-0">
+            {companyLinks.map((l) => (
+              <li key={l.href}>
+                <Link href={l.href} className="text-sm text-muted no-underline hover:text-ink">
+                  {l.label}
+                </Link>
               </li>
-              <li>
-                <Link href="/about">About</Link>
+            ))}
+          </ul>
+        </nav>
+
+        <nav aria-label="Legal">
+          <p className="eyebrow">Legal</p>
+          <ul className="mt-3 list-none space-y-2 p-0">
+            {legalLinks.map((l) => (
+              <li key={l.href}>
+                <Link href={l.href} className="text-sm text-muted no-underline hover:text-ink">
+                  {l.label}
+                </Link>
               </li>
-              <li>
-                <Link href="/contact">Contact</Link>
-              </li>
-            </ul>
-          </div>
-          <div>
-            <p className="text-xs font-medium tracking-[0.16em] text-slate-500 uppercase">
-              Elsewhere
-            </p>
-            <ul className="mt-3 space-y-2">
-              <li>
-                <a
-                  href={site.github}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5"
-                >
-                  <GithubIcon className="h-4 w-4" />
-                  GitHub
-                  <span className="sr-only"> (opens in a new tab)</span>
-                </a>
-              </li>
-              <li>
-                <a href={`mailto:${site.email}`}>Email Hussnain</a>
-              </li>
-              <li>
-                <a href="https://n8n.io" target="_blank" rel="noopener noreferrer">
-                  n8n
-                  <span className="sr-only"> (opens in a new tab)</span>
-                </a>
-              </li>
-            </ul>
-          </div>
-        </div>
+            ))}
+          </ul>
+        </nav>
       </div>
+
       <div className="border-t border-line">
-        <div className="container-page flex flex-col gap-2 py-5 sm:flex-row sm:items-center sm:justify-between">
-          <Disclaimer />
-          <p className="text-xs text-slate-500">
-            {site.owner} · {site.name}
+        <div className="container-page flex flex-col gap-3 py-6 sm:flex-row sm:items-center sm:justify-between">
+          <p className="max-w-2xl text-xs leading-relaxed text-faint">{affiliateDisclosure.short}</p>
+          <p className="text-xs text-faint">
+            © {new Date().getFullYear()} {site.owner}
           </p>
         </div>
       </div>

@@ -2,7 +2,6 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 
 export default function Error({
   error,
@@ -12,23 +11,21 @@ export default function Error({
   reset: () => void;
 }) {
   useEffect(() => {
-    void error;
+    console.error(error);
   }, [error]);
 
   return (
-    <main className="container-page py-24">
-      <h1 className="text-4xl font-medium tracking-tight">Something went wrong.</h1>
+    <div className="container-page py-24">
+      <h1 className="text-4xl">Something went wrong.</h1>
       <p className="mt-3 max-w-md text-muted">
         The page failed to render. You can try again, or go back to a working page.
       </p>
       <div className="mt-6 flex flex-wrap gap-3">
-        <Button type="button" onClick={() => reset()}>
+        <button type="button" className="btn btn-primary" onClick={() => reset()}>
           Try again
-        </Button>
-        <Button asChild variant="secondary">
-          <Link href="/">Back home</Link>
-        </Button>
+        </button>
+        <Link href="/" className="btn btn-secondary">Back home</Link>
       </div>
-    </main>
+    </div>
   );
 }

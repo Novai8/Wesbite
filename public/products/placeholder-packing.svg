@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-label="Packing cubes (product image pending)">
+  <rect width="800" height="600" fill="#F3F1EC"/>
+  <rect x="1" y="1" width="798" height="598" fill="none" stroke="#E5E1D8" stroke-width="2"/>
+  <g fill="none" stroke="#A8A29E" stroke-width="10" stroke-linecap="round">
+    <circle cx="330" cy="270" r="105"/>
+    <line x1="410" y1="350" x2="500" y2="440"/>
+  </g>
+  <circle cx="330" cy="270" r="34" fill="#A8A29E"/>
+  <text x="400" y="520" text-anchor="middle" font-family="sans-serif" font-size="30" fill="#A8A29E">Packing cubes — image pending</text>
+</svg>

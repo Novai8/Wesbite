@@ -1,25 +1,25 @@
 import { cn } from "@/lib/utils";
 
+export type BadgeTone = "verified" | "ai" | "neutral";
+
+const tones: Record<BadgeTone, string> = {
+  verified: "badge-verified",
+  ai: "badge-ai",
+  neutral: "badge-neutral",
+};
+
 export function Badge({
   children,
   tone = "neutral",
   className,
 }: {
   children: React.ReactNode;
-  tone?: "neutral" | "accent";
+  tone?: BadgeTone;
   className?: string;
 }) {
   return (
-    <span
-      className={cn(
-        "inline-flex max-w-full items-center rounded-full border px-2.5 py-1 text-[11px] font-medium leading-none tracking-wide",
-        tone === "accent"
-          ? "border-accent-line bg-accent-soft text-accent-ink"
-          : "border-line bg-white text-slate-600",
-        className,
-      )}
-    >
-      <span className="truncate">{children}</span>
+    <span className={cn("badge", tones[tone], className)}>
+      {children}
     </span>
   );
 }
