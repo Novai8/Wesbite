@@ -32,6 +32,9 @@ via `@opennextjs/cloudflare`.
 - All catalogue reads go through `src/lib/catalogue.ts` — the seed/Supabase
   swap point.
 - Server components by default; `"use client"` only where interaction
-  requires it. No WebGL/3D; animations are transform/opacity only.
+  requires it. CSS animations are transform/opacity only.
+- 3D is confined to the homepage hero: one hosted Spline scene, loaded
+  client-side, mounted once, paused under `prefers-reduced-motion`. Its
+  published URL lives only in `src/lib/discovery-scene.ts`.
 - Docs live in `DESIGN.md` and `docs/`. Keep them current when behaviour
   changes.
