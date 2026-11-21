@@ -5,9 +5,10 @@
   "description": "Rapigents portfolio — AI workflow automation demos built in n8n.",
   "scripts": {
     "dev": "next dev",
-    "build": "next build && opennextjs-cloudflare build --skipNextBuild",
+    "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "worker": "next build && opennextjs-cloudflare build --skipNextBuild"
   },
   "dependencies": {
     "clsx": "^2.1.1",
