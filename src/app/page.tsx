@@ -1,8 +1,9 @@
 import Link from "next/link";
+import { LandingHero } from "@/components/landing/landing-hero";
 import { ProductCard } from "@/components/product-card";
+import { ScrollReveal } from "@/components/scroll-reveal";
 import { Badge } from "@/components/ui/badge";
 import { getCategories, getNewestProducts, getPopularProducts } from "@/lib/catalogue";
-import { site } from "@/lib/site";
 
 const howItWorks = [
   {
@@ -34,136 +35,150 @@ export default function HomePage() {
 
   return (
     <>
-      {/* Hero */}
-      <section className="border-b border-line">
-        <div className="container-page py-16 md:py-24">
-          <div className="max-w-3xl">
-            <p className="eyebrow">AI shopping discovery</p>
-            <h1 className="mt-4 text-[clamp(2.5rem,6vw,4.25rem)] leading-[1.05]">
-              People search for solutions.
-              <br />
-              <span className="text-cobalt">The platform finds the products.</span>
-            </h1>
-            <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted">
-              {site.description}
-            </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="/assistant" className="btn btn-primary">
-                Describe what you need
-              </Link>
-              <Link href="/discover" className="btn btn-secondary">
-                Browse the catalogue
-              </Link>
+      <LandingHero />
+
+      <section id="how-it-works" className="section-band section-band-warm" aria-labelledby="how-it-works-title">
+        <div className="container-page">
+          <ScrollReveal>
+            <div className="section-head">
+              <p className="eyebrow">The method</p>
+              <h2 id="how-it-works-title" className="section-title">
+                Four steps from a vague problem to a well-chosen thing.
+              </h2>
             </div>
-          </div>
+          </ScrollReveal>
+
+          <ol className="steps">
+            {howItWorks.map((step, index) => (
+              <li key={step.step} className="step">
+                <ScrollReveal className={`step-inner delay-${index}`}>
+                  <span className="step-number" aria-hidden="true">
+                    {step.step}
+                  </span>
+                  <h3 className="step-title">{step.title}</h3>
+                  <p className="step-body">{step.body}</p>
+                </ScrollReveal>
+              </li>
+            ))}
+          </ol>
         </div>
       </section>
 
-      {/* How it works */}
-      <section className="border-b border-line bg-surface-warm" aria-labelledby="how-it-works">
-        <div className="container-page py-16">
-          <h2 id="how-it-works" className="text-3xl">How it works</h2>
-          <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {howItWorks.map((s) => (
-              <div key={s.step} className="panel bg-paper">
-                <p className="font-display text-sm font-bold text-cobalt">{s.step}</p>
-                <h3 className="mt-2 text-lg">{s.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-muted">{s.body}</p>
+      <section className="section-band" aria-labelledby="categories-title">
+        <div className="container-page">
+          <ScrollReveal>
+            <div className="section-head section-head-split">
+              <div>
+                <p className="eyebrow">Where to start</p>
+                <h2 id="categories-title" className="section-title">
+                  Shop by problem area
+                </h2>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Categories */}
-      <section className="border-b border-line" aria-labelledby="categories">
-        <div className="container-page py-16">
-          <div className="flex flex-wrap items-end justify-between gap-4">
-            <h2 id="categories" className="text-3xl">Shop by problem area</h2>
-            <Link href="/discover" className="text-sm font-medium text-cobalt-deep no-underline hover:underline">
-              View everything →
-            </Link>
-          </div>
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {categories.map((c) => (
-              <Link
-                key={c.slug}
-                href={`/discover?category=${c.slug}`}
-                className="panel group no-underline hover:border-line-strong"
-              >
-                <h3 className="font-display text-lg group-hover:text-cobalt-deep">{c.name}</h3>
-                <p className="mt-1.5 text-sm leading-relaxed text-muted">{c.description}</p>
+              <Link href="/discover" className="quiet-link">
+                View everything
               </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Featured */}
-      <section className="border-b border-line" aria-labelledby="featured">
-        <div className="container-page py-16">
-          <div className="flex flex-wrap items-end justify-between gap-4">
-            <h2 id="featured" className="text-3xl">Frequently recommended</h2>
-            <Link href="/discover" className="text-sm font-medium text-cobalt-deep no-underline hover:underline">
-              More picks →
-            </Link>
-          </div>
-          <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {featured.map((p, i) => (
-              <ProductCard key={p.id} product={p} priority={i < 2} />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Assistant preview band */}
-      <section className="border-b border-line bg-ink text-paper" aria-labelledby="assistant-preview">
-        <div className="container-page grid gap-10 py-16 md:grid-cols-[1.1fr_1fr] md:items-center">
-          <div>
-            <h2 id="assistant-preview" className="text-3xl text-paper">
-              An answer, not a search results page
-            </h2>
-            <p className="mt-4 max-w-lg text-base leading-relaxed text-stone-200">
-              Fyndra scores real catalogue data on six axes — relevance, budget
-              fit, features, data quality, price freshness and category fit —
-              then explains its pick in plain English. Prices and specs always
-              come from verified records, never from a language model.
-            </p>
-            <div className="mt-6 flex flex-wrap gap-2">
-              <Badge tone="verified">Verified data</Badge>
-              <Badge tone="ai">AI explains, never invents</Badge>
             </div>
-            <Link href="/assistant" className="btn btn-primary mt-8">
-              Try the assistant
-            </Link>
-          </div>
-          <div className="rounded-[1.1rem] border border-stone-700 bg-stone-900 p-6 text-paper">
-            <p className="font-mono text-xs uppercase tracking-widest text-stone-200">Example</p>
-            <p className="mt-3 font-display text-lg leading-snug">
-              “I get neck pain working at my laptop in a small apartment.”
-            </p>
-            <hr className="my-4 border-stone-700" />
-            <p className="text-sm leading-relaxed text-stone-200">
-              Fyndra pairs a laptop stand with a gas-spring monitor arm: the
-              stand lifts the screen immediately for under $15, and the arm
-              frees desk depth in tight spaces. Both fit a $50 budget together.
-            </p>
+          </ScrollReveal>
+
+          <ul className="category-list">
+            {categories.map((category) => (
+              <li key={category.slug}>
+                <ScrollReveal>
+                  <Link href={`/discover?category=${category.slug}`} className="category-row group">
+                    <span className="category-name">{category.name}</span>
+                    <span className="category-desc">{category.description}</span>
+                    <span className="category-arrow" aria-hidden="true">
+                      <svg viewBox="0 0 16 16" width="14" height="14" fill="none">
+                        <path d="M3 8h9.4M8.7 3.9 12.9 8l-4.2 4.1" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </span>
+                  </Link>
+                </ScrollReveal>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      <section className="section-band section-band-warm" aria-labelledby="featured-title">
+        <div className="container-page">
+          <ScrollReveal>
+            <div className="section-head section-head-split">
+              <div>
+                <p className="eyebrow">Chosen often</p>
+                <h2 id="featured-title" className="section-title">
+                  Frequently recommended
+                </h2>
+              </div>
+              <Link href="/discover" className="quiet-link">
+                More picks
+              </Link>
+            </div>
+          </ScrollReveal>
+          <div className="product-grid">
+            {featured.map((product, index) => (
+              <ProductCard key={product.id} product={product} priority={index < 2} />
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Recent */}
-      <section aria-labelledby="recent">
-        <div className="container-page py-16">
-          <div className="flex flex-wrap items-end justify-between gap-4">
-            <h2 id="recent" className="text-3xl">Recently added</h2>
-            <Link href="/guides" className="text-sm font-medium text-cobalt-deep no-underline hover:underline">
-              Read the guides →
-            </Link>
-          </div>
-          <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {recent.map((p) => (
-              <ProductCard key={p.id} product={p} />
+      <section className="assistant-band" aria-labelledby="assistant-title">
+        <div className="container-page assistant-grid">
+          <ScrollReveal>
+            <div>
+              <p className="eyebrow eyebrow-invert">How we think</p>
+              <h2 id="assistant-title" className="section-title section-title-invert">
+                An answer, not a search results page.
+              </h2>
+              <p className="assistant-body">
+                Fyndra scores real catalogue data on six axes — relevance, budget
+                fit, features, data quality, price freshness and category fit —
+                then explains its pick in plain English. Prices and specs always
+                come from verified records, never from a language model.
+              </p>
+              <div className="mt-6 flex flex-wrap gap-2">
+                <Badge tone="verified">Verified data</Badge>
+                <Badge tone="ai">AI explains, never invents</Badge>
+              </div>
+            </div>
+          </ScrollReveal>
+
+          <ScrollReveal>
+            <figure className="assistant-card">
+              <figcaption className="assistant-card-label">Example</figcaption>
+              <blockquote className="assistant-card-quote">
+                “I get neck pain working at my laptop in a small apartment.”
+              </blockquote>
+              <hr className="assistant-card-rule" />
+              <p className="assistant-card-body">
+                Fyndra pairs a laptop stand with a gas-spring monitor arm: the
+                stand lifts the screen immediately for under $15, and the arm
+                frees desk depth in tight spaces. Both fit a $50 budget together.
+              </p>
+            </figure>
+          </ScrollReveal>
+        </div>
+      </section>
+
+      <section className="section-band" aria-labelledby="recent-title">
+        <div className="container-page">
+          <ScrollReveal>
+            <div className="section-head section-head-split">
+              <div>
+                <p className="eyebrow">Fresh in the catalogue</p>
+                <h2 id="recent-title" className="section-title">
+                  Recently added
+                </h2>
+              </div>
+              <Link href="/guides" className="quiet-link">
+                Read the guides
+              </Link>
+            </div>
+          </ScrollReveal>
+          <div className="product-grid">
+            {recent.map((product) => (
+              <ProductCard key={product.id} product={product} />
             ))}
           </div>
         </div>
