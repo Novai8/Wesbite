@@ -8,7 +8,7 @@ Fyndra is the working brand for this platform (centralised in `src/lib/site.ts`,
 - **Color.** Warm off-white paper `#FAF9F6`, deep charcoal ink `#1C1917`, restrained electric cobalt `#2941E8`, controlled lime `#A3D418` (value/verified highlights only), soft warm surface `#F3F1EC`, hairline `#E5E1D8`.
 - **Type.** Bricolage Grotesque (display: heroes, section titles — opinionated, slightly compressed at large sizes) + Inter Tight (body and UI — tight, legible, modern). No serif body, no monospace labels.
 - **Layout.** Left-aligned editorial grid, 12-column with intentional asymmetry (7/5 splits), max-width 1200px, wide gutters. Product cards are quiet; photography is large.
-- **Principles.** 1) The recommendation reasoning is the product — always visible, never hidden in tooltips. 2) One bold thing per page (usually the hero statement). 3) Verified data gets the lime tick; AI explanations are visually distinct from verified specs. 4) Motion answers actions: press states, expand/collapse, step transitions — not ambient floating.
+- **Principles.** 1) The recommendation reasoning is the product — always visible, never hidden in tooltips. 2) One bold thing per page (usually the hero statement). 3) Verified data gets the lime tick; AI explanations are visually distinct from verified specs. 4) Motion answers actions: press states, expand/collapse, step transitions — not ambient floating. 5) Exception: the homepage hero is the one scroll-driven ambient stage (3D cart scene) — everything else stays quiet.
 
 ## Tokens
 
@@ -56,7 +56,7 @@ Scale: 12 (caption) / 14 (small) / 16 (body) / 18 (lead) / 24 (h3) / 32 (h2) / 4
 - Durations: 120ms press feedback, 200ms hover, 300ms panel/step transitions.
 - Easing: `--ease-out` (cubic-bezier(0.22, 1, 0.36, 1)) for entrances; `--ease-in` for exits.
 - Only `transform` and `opacity` animate. `prefers-reduced-motion` disables non-essential motion globally.
-- Buttons compress `scale(0.97)` on `:active`. No floating ambient loops.
+- Buttons compress `scale(0.97)` on `:active`. No floating ambient loops — with one exception: the homepage hero runs a scroll-linked 3D cart scene (`src/components/landing/hero-scene.tsx`, plain three.js, cobalt comet trail; hidden under `prefers-reduced-motion`).
 
 ## Component conventions
 

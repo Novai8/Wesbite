@@ -471,63 +471,54 @@ p, li {
   }
 }
 
-/* ---------- Landing hero: cinematic video stage ---------- */
+/* ---------- Landing hero: 3D scroll stage ---------- */
 
 .landing-hero {
   position: relative;
-  background: #0b0c10;
+  background:
+    radial-gradient(52rem 30rem at 78% 18%, rgba(41, 65, 232, 0.22), transparent 68%),
+    radial-gradient(40rem 26rem at 12% 82%, rgba(41, 65, 232, 0.12), transparent 70%),
+    #0b0c10;
   color: #f5f4f1;
   overflow: hidden;
 }
 
-.hero-video {
+/* The 3D stage fills the whole hero behind the content. */
+.hero-scene {
   position: absolute;
   inset: 0;
   z-index: 0;
+  pointer-events: none;
 }
 
-.hero-video-layer {
-  position: absolute;
-  inset: 0;
+.hero-scene-canvas {
+  display: block;
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  opacity: 0;
 }
 
-/* Poster holds the 8s frame until the video arms. */
-.hero-video[data-phase="still"] .hero-video-poster {
-  opacity: 1;
-}
-
-.hero-video[data-phase="live"] .hero-video-intro,
-.hero-video[data-phase="live"] .hero-video-loop {
-  transition: opacity 0.4s ease;
-}
-
-.hero-video[data-phase="live"] .hero-video-intro {
-  opacity: 1;
-}
-
-.hero-video[data-phase="live"] .hero-video-intro.is-done {
-  opacity: 0;
-}
-
-.hero-video[data-phase="live"] .hero-video-loop {
-  opacity: 0;
-}
-
-.hero-video[data-phase="live"] .hero-video-loop.is-playing {
-  opacity: 1;
-}
-
-.hero-video-scrim {
+/* Soft vignette keeps the copy legible over the moving scene. */
+.hero-scene::after {
+  content: "";
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(90deg, rgba(8, 9, 12, 0.78) 0%, rgba(8, 9, 12, 0.45) 42%, rgba(8, 9, 12, 0.08) 72%),
-    linear-gradient(180deg, rgba(8, 9, 12, 0.55) 0%, rgba(8, 9, 12, 0) 30%, rgba(8, 9, 12, 0.5) 100%);
+    linear-gradient(90deg, rgba(8, 9, 12, 0.72) 0%, rgba(8, 9, 12, 0.38) 42%, rgba(8, 9, 12, 0.05) 74%),
+    linear-gradient(180deg, rgba(8, 9, 12, 0.5) 0%, rgba(8, 9, 12, 0) 32%, rgba(8, 9, 12, 0.55) 100%);
   pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-scene-canvas {
+    display: none;
+  }
+
+  /* Static stand-in so the hero still reads as a stage. */
+  .hero-scene {
+    background:
+      radial-gradient(46rem 26rem at 76% 42%, rgba(41, 65, 232, 0.3), transparent 65%),
+      radial-gradient(28rem 16rem at 60% 70%, rgba(61, 85, 255, 0.18), transparent 70%);
+  }
 }
 
 .hero-overlay {
@@ -641,20 +632,54 @@ p, li {
 
 .hero-heading {
   margin: 0;
-  font-size: clamp(2.25rem, 7.4vw, 3.9rem);
-  line-height: 1.02;
-  letter-spacing: -0.035em;
-  font-weight: 650;
-  max-width: 15ch;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 0.02em;
+  font-size: clamp(3.4rem, 11.5vw, 7.5rem);
+  line-height: 0.95;
+  letter-spacing: 0.01em;
+  font-weight: 750;
   text-wrap: balance;
 }
 
+/* Per-letter staggered entrance for the FYNDRA wordmark. */
+.hero-heading-word {
+  display: inline-block;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .hero-heading-word {
+    animation: letter-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .hero-heading-word:nth-child(1) { animation-delay: 0.1s; }
+  .hero-heading-word:nth-child(2) { animation-delay: 0.18s; }
+  .hero-heading-word:nth-child(3) { animation-delay: 0.26s; }
+  .hero-heading-word:nth-child(4) { animation-delay: 0.34s; }
+  .hero-heading-word:nth-child(5) { animation-delay: 0.42s; }
+  .hero-heading-word:nth-child(6) { animation-delay: 0.5s; }
+}
+
+@keyframes letter-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.35em) rotate(4deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* The tagline rides directly under the wordmark. */
 .hero-lede {
   margin: 0;
   max-width: 34ch;
-  font-size: clamp(1rem, 2.1vw, 1.125rem);
-  line-height: 1.6;
-  color: rgba(245, 244, 241, 0.75);
+  font-size: clamp(1.05rem, 2.3vw, 1.3rem);
+  line-height: 1.5;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: rgba(245, 244, 241, 0.85);
 }
 
 .hero-actions {
@@ -823,7 +848,7 @@ p, li {
 
 @media (min-width: 1200px) {
   .hero-heading {
-    font-size: clamp(3.1rem, 4.1vw, 4.25rem);
+    font-size: clamp(4.5rem, 6vw, 8rem);
   }
 
   .hero-grid {

@@ -38,7 +38,7 @@ The wordmark is set in Bricolage Grotesque 700, lowercase "fyndra", charcoal, wi
 ## Layout & motion rules
 
 - 12-column grid, max 1200px, left-aligned. Hero sections may break the grid deliberately (7/5 split with the assistant preview offset).
-- Motion budget per page: one entrance moment (hero), plus interaction feedback (press, expand, step change). Nothing loops. Nothing floats.
+- Motion budget per page: the homepage hero is the one ambient/scroll moment (3D cart stage); elsewhere one entrance moment (hero), plus interaction feedback (press, expand, step change). Nothing loops. Nothing floats.
 - Durations and easings are fixed by `DESIGN.md` — do not invent new ones per component.
 
 ## Affiliate disclosure voice

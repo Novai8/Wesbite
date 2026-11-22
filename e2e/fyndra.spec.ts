@@ -47,9 +47,8 @@ test.describe("home", () => {
   });
 
   test("hero and core sections render", async ({ page }) => {
-    await expect(page.getByRole("heading", { level: 1 })).toContainText(
-      "People search for solutions."
-    );
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("Fyndra");
+    await expect(page.getByText("Shop Your Interests With Ease")).toBeVisible();
     await expect(page.getByRole("region", { name: "How it works" })).toBeVisible();
   });
 

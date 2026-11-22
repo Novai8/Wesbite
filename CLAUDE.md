@@ -33,11 +33,12 @@ via `@opennextjs/cloudflare`.
   swap point.
 - Server components by default; `"use client"` only where interaction
   requires it. CSS animations are transform/opacity only.
-- The homepage hero is a video: a parked poster frame on load, an intro
-  clip played once on scroll, then a ping-pong loop (forward + reversed,
-  frame-exact, no crossfade) that runs forever. Media lives in
-  `public/video/`; the phase machine lives only in
-  `src/components/landing/hero-video.tsx`. Under
-  `prefers-reduced-motion` the poster never yields to video.
+- The homepage hero is a 3D scroll stage: a brand-coloured shopping-cart
+  GLB (`public/models/cart.glb`) rides a scroll-driven path across the
+  viewport with a cobalt comet trail, rendered by plain three.js. The
+  scene lives only in `src/components/landing/hero-scene.tsx`; the copy
+  ("FYNDRA" / "Shop Your Interests With Ease") lives in
+  `hero-copy.tsx`. Under `prefers-reduced-motion` the canvas is hidden
+  and a static gradient stands in.
 - Docs live in `DESIGN.md` and `docs/`. Keep them current when behaviour
   changes.

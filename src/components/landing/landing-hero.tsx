@@ -2,13 +2,13 @@ import { HeroActions } from "./hero-actions";
 import { HeroCopy } from "./hero-copy";
 import { HeroNavigation } from "./hero-navigation";
 import { HeroQuote } from "./hero-quote";
-import { HeroVideo } from "./hero-video";
+import { HeroScene } from "./hero-scene";
 import { ScrollIndicator } from "./scroll-indicator";
 
 export function LandingHero() {
   return (
     <section className="landing-hero" aria-labelledby="landing-hero-heading">
-      <HeroVideo />
+      <HeroScene />
 
       <HeroNavigation />
 
