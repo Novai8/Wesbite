@@ -4,6 +4,7 @@
   "private": true,
   "description": "Rapigents portfolio — AI workflow automation demos built in n8n.",
   "scripts": {
+    "postinstall": "node scripts/patch-opennext-turbopack.js",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
