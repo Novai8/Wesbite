@@ -1,16 +1,18 @@
-import { DiscoveryScene } from "./discovery-scene";
 import { HeroActions } from "./hero-actions";
 import { HeroCopy } from "./hero-copy";
-import { HeroQuote } from "./hero-quote";
 import { HeroNavigation } from "./hero-navigation";
+import { HeroQuote } from "./hero-quote";
+import { HeroVideo } from "./hero-video";
 import { ScrollIndicator } from "./scroll-indicator";
 
 export function LandingHero() {
   return (
     <section className="landing-hero" aria-labelledby="landing-hero-heading">
+      <HeroVideo />
+
       <HeroNavigation />
 
-      <div className="container-page">
+      <div className="container-page hero-overlay">
         <div className="hero-grid">
           <div className="hero-column">
             <div id="landing-hero-heading">
@@ -18,10 +20,6 @@ export function LandingHero() {
             </div>
             <HeroActions />
             <HeroQuote />
-          </div>
-
-          <div className="hero-scene">
-            <DiscoveryScene />
           </div>
         </div>
 

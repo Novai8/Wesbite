@@ -33,8 +33,11 @@ via `@opennextjs/cloudflare`.
   swap point.
 - Server components by default; `"use client"` only where interaction
   requires it. CSS animations are transform/opacity only.
-- 3D is confined to the homepage hero: one hosted Spline scene, loaded
-  client-side, mounted once, paused under `prefers-reduced-motion`. Its
-  published URL lives only in `src/lib/discovery-scene.ts`.
+- The homepage hero is a video: a parked poster frame on load, an intro
+  clip played once on scroll, then a ping-pong loop (forward + reversed,
+  frame-exact, no crossfade) that runs forever. Media lives in
+  `public/video/`; the phase machine lives only in
+  `src/components/landing/hero-video.tsx`. Under
+  `prefers-reduced-motion` the poster never yields to video.
 - Docs live in `DESIGN.md` and `docs/`. Keep them current when behaviour
   changes.
