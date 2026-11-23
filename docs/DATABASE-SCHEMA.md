@@ -49,7 +49,7 @@ The core catalogue. One row per product.
 | source | text | `admitad` / `aliexpress` / null for curation |
 | external_product_id | text | advertiser's own id, with `advertiser_id`, forms the import identity |
 | advertiser_id | text | advertiser/programme id from the network |
-| commission_info | jsonb | internal provenance (advertiser, programme, original feed URL). Never in the public view. |
+| commission_info | jsonb | internal provenance: advertiser, programme, original feed URL, and the category provenance (`sourceCategoryId`, `sourceCategory`, `categoryBasis`). Never in the public view. |
 | last_synced_at | timestamptz | when the source data last changed; catalogue ordering key |
 | ai_headline / ai_description / ai_quality_flags | text / text / jsonb | generated copy, kept in their own columns so a re-sync cannot clobber them |
 | created_at | timestamptz default now() | |

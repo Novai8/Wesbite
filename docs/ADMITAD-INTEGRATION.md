@@ -65,7 +65,8 @@ is in `docs/research/admitad-api-notes.md`.
 | `src/lib/admitad/feed-parser.ts` | CSV / XML / JSON → canonical rows |
 | `src/lib/admitad/mapper.ts` | Rows → `Product`, with category/tier rules |
 | `src/lib/admitad/aliexpress.ts` | Canonical AliExpress product URLs from feed ids |
-| `src/lib/admitad/permissions.ts` | Product-feed permission (`show_products_links`) gate |
+| `src/lib/admitad/permissions.ts` | Three-state product-feed permission (`allowed` / `ambiguous` / `denied`) |
+| `src/lib/admitad/feed-stream.ts` | Streaming download, caps, timeouts, failure classification |
 | `src/lib/admitad/products.ts` | Import pipeline, dedupe, per-row errors |
 | `src/lib/admitad/import-service.ts` | Persistence, audit rows, AI enrichment |
 | `src/lib/admitad/enrich.ts` | Groq copy generation + fabrication guard |
@@ -76,17 +77,17 @@ is in `docs/research/admitad-api-notes.md`.
 | `src/lib/workflow-auth.ts` | Bearer auth for `/api/n8n/*`, fail-closed |
 | `supabase/migrations/0001_admitad_integration.sql` | Additive schema + RLS |
 | `n8n/fyndra-admitad-import.json` | Importable workflow |
-| `tests/*.test.ts` | 81 offline unit tests |
+| `tests/*.test.ts` | 150 offline unit tests |
 
 ### Routes
 
 | Route | Method | Purpose |
 | --- | --- | --- |
-| `/api/n8n/admitad/status` | GET | Per-check report: OAuth, ad space, programme eligibility, AliExpress availability |
+| `/api/n8n/admitad/status` | GET | Per-check report: OAuth, ad space, programme eligibility, AliExpress availability, three-state feed permission |
 | `/api/n8n/admitad/aliexpress` | GET | Focused AliExpress WW availability answer |
 | `/api/n8n/admitad/preview` | POST | Parse a feed file with no credentials, no writes |
 | `/api/n8n/admitad/deeplink` | POST | Generate + validate one tracked link |
-| `/api/n8n/admitad/import` | POST | Run an import (inline feed, feed URL, or programme feed) |
+| `/api/n8n/admitad/import` | POST | Run an import (inline feed, feed URL, or programme feed). `403` denied, `409` ambiguous, both before any download |
 | `/api/n8n/admitad/enrich` | POST | Generate AI copy for one stored product |
 
 All require `Authorization: Bearer $N8N_WEBHOOK_SECRET` and are rate limited.
@@ -193,10 +194,70 @@ and is never used as a destination.
 
 ### Product-feed permission
 
-`show_products_links` is the advertiser's permission switch. Signed feed URLs
-answering HTTP 200 does **not** mean importing is allowed. AliExpress WW
-currently reports `show_products_links: false`, so the importer fails closed
-with a 403 and a named reason, and does not download the feed at all.
+`show_products_links` is the advertiser's moderation switch. Signed feed URLs
+answering HTTP 200 does **not** mean importing is allowed, and neither does
+`has_tool=products` or the presence of `feeds_info`. AliExpress WW currently
+reports `show_products_links: false` while still advertising ten signed feeds,
+so the importer has three states rather than a boolean:
+
+| State | Condition | Importer |
+|---|---|---|
+| `allowed` | active connection **and** `show_products_links === true` | runs |
+| `ambiguous` | active connection, flag `false`, **and** a matching feed entry exists | **blocked** (HTTP 409) |
+| `denied` | not active, flag `false` with no feed entry, flag absent, or flag malformed | **blocked** (HTTP 403) |
+
+`ambiguous` is the honest description of the live contradiction: the export
+exists and will download, but the advertiser has not enabled product links in
+moderation. It is still refused — it exists to make the contradiction auditable,
+not to authorise anything. There is deliberately **no operator override**;
+written confirmation from Admitad or the AliExpress programme manager is
+required before that can exist.
+
+The state and its evidence (connection status, raw flag, matching feed ids —
+never the signed URLs) are exposed by `/api/n8n/admitad/status`, returned in
+every `ImportReport` as `feedPermission`, and included in the import route's
+response. Missing or malformed data always fails closed.
+
+### Large-feed streaming
+
+`src/lib/admitad/feed-stream.ts` reads exports without buffering them.
+`downloadFeed`'s old single 25-second deadline measured the whole transfer; the
+export host serves roughly 630 KB/s after a ~3 s time-to-first-byte, so anything
+above about 14 MB was killed mid-flight and reported as an expired link.
+
+- **Bounded memory.** XML records are split as they stream in and the raw
+  document is discarded. Memory is the retained records plus one partial
+  record, capped by `maxRecords` and `maxBytes`.
+- **Timeouts that match reality.** An idle timeout (default 30 s without bytes)
+  plus an absolute deadline (default 10 min), instead of one deadline for the
+  whole file.
+- **Caps are never silent.** Hitting the byte or record cap sets `truncated`
+  and a reason. A truncated feed is refused, because a partial catalogue looks
+  complete once written.
+- **Precise failures.** `expired` (4xx on a signed link, not retried),
+  `overloaded` / `timeout` / `network` (retried with backoff), `malformed` (XML
+  ends inside a record, or no product records), `empty`, `too_large`, `aborted`.
+  No URL or `code` parameter appears in any message.
+- **CSV and JSON still work.** They are decoded incrementally into `text`; XML
+  takes the streaming record path. Both feed the same row pipeline.
+
+`ImportReport.download` carries status, byte count, record count, duration and
+any truncation reason; `ImportReport.categories` carries dictionary coverage.
+
+### Category mapping
+
+AliExpress XML carries `categoryId` per offer plus a `<categories>` dictionary,
+but no per-offer category text. `parseCategoryDictionary` reads that block, and
+rows resolve in this order:
+
+1. the dictionary name, matched onto one of Fyndra's fixed shelves;
+2. the product title, when the dictionary name matches no shelf;
+3. `uncategorised`, when an id was supplied but could not be resolved;
+4. the catch-all shelf only when the source supplied no category signal at all.
+
+Unknown ids are counted in `ImportReport.categories.unresolvedIds` and kept in
+the product's `sourceCategoryId`. They are never replaced with an invented
+category name. `Product.categoryBasis` records which rule applied.
 
 1. **Never fabricate.** Missing price, image, description or availability stays
    missing. `productPublishBlockers` refuses to import a row without a price,
@@ -340,7 +401,10 @@ into verified results.
 - AliExpress WW (and most programmes) require advertiser approval. `pending` and
   `declined` are normal states; the API exposes them and Fyndra reports them
   rather than working around them.
-- Product feeds are separately gated by `show_products_links`.
+- Product feeds are gated by `show_products_links` with three states
+  (`allowed` / `ambiguous` / `denied`). `ambiguous` means the flag is `false`
+  but a feed entry exists; it stays blocked until the advertiser enables the
+  product tool, confirmed in writing.
 - `attach`/`detach` via API are disabled by Admitad (`410`); joining is a manual
   account action.
 
@@ -374,6 +438,10 @@ of the key because feed product ids are only unique inside one advertiser's feed
   `429`/`503`/`error_code 4` with exponential backoff and honours `Retry-After`.
 - Imports are sequential by design (one deeplink per row). Use
   `throttleMs` for large feeds and `maxRows` to bound a run.
+- Feed downloads stream with an idle timeout (30 s) and an absolute deadline
+  (10 min). Default caps are `maxBytes` 256 MB and `maxRecords` 50 000; a run
+  should set much smaller values. A capped read is reported as truncated and
+  refused, never imported partially.
 - Tokens are cached per isolate and refreshed 5 minutes before expiry.
 - Catalogue reads are fetch-cached for 300s; `revalidatePath` runs after an
   import so new products appear without waiting.

@@ -175,6 +175,65 @@ test("a public catalogue read never surfaces provenance", () => {
   assert.equal(withColumn.feedProductUrl, undefined, "the public mapper must ignore commission_info");
 });
 
+test("category provenance is privileged-only, like feed provenance", () => {
+  const row = {
+    ...baseRow,
+    commission_info: {
+      feedUrl: FEED_URL,
+      sourceCategoryId: "5",
+      sourceCategory: "Electrical Equipment & Supplies",
+      categoryBasis: "title",
+    },
+  };
+
+  // Base-table (service-role) read carries the provenance through.
+  const privileged = fromProductRow(row);
+  assert.equal(privileged.sourceCategoryId, "5");
+  assert.equal(privileged.sourceCategory, "Electrical Equipment & Supplies");
+  assert.equal(privileged.categoryBasis, "title");
+
+  // The public view never projects commission_info, and even a leaked column
+  // must not be read: the public mapper stays provenance-free on every field.
+  const publicRead = fromPublicProductRow(row);
+  assert.equal(publicRead.feedProductUrl, undefined);
+  assert.equal(publicRead.sourceCategoryId, undefined);
+  assert.equal(publicRead.sourceCategory, undefined);
+  assert.equal(publicRead.categoryBasis, undefined);
+});
+
+test("category provenance survives a toProductRow/fromProductRow round trip", () => {
+  const row = toProductRow(
+    {
+      ...product,
+      sourceCategoryId: "5",
+      sourceCategory: "Electrical Equipment & Supplies",
+      categoryBasis: "title",
+    },
+    { network: "admitad", feedUrl: FEED_URL },
+  );
+
+  // Both the feed URL and the category provenance live in one internal column.
+  assert.deepEqual(row.commission_info, {
+    sourceCategoryId: "5",
+    sourceCategory: "Electrical Equipment & Supplies",
+    categoryBasis: "title",
+    network: "admitad",
+    feedUrl: FEED_URL,
+  });
+
+  const back = fromProductRow(row as unknown as Record<string, unknown>);
+  assert.equal(back.sourceCategoryId, "5");
+  assert.equal(back.sourceCategory, "Electrical Equipment & Supplies");
+  assert.equal(back.categoryBasis, "title");
+  assert.equal(back.feedProductUrl, FEED_URL);
+});
+
+test("a product without category provenance writes no provenance keys", () => {
+  const row = toProductRow(product, { network: "admitad" });
+  assert.deepEqual(row.commission_info, { network: "admitad" });
+  assert.equal(toProductRow(product).commission_info, null, "no info means a null column, not an empty object");
+});
+
 test("missing provenance maps cleanly on both paths", () => {
   for (const row of [
     { ...baseRow, commission_info: null },

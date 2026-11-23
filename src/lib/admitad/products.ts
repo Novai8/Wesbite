@@ -14,9 +14,16 @@
 
 import { generateDeeplink } from "./deeplink";
 import { validateGeneratedDeeplink } from "./deeplink";
-import { parseFeed, type NormaliseFeedOptions } from "./feed-parser";
+import { parseFeed, parseStreamedXmlRecords, type NormaliseFeedOptions } from "./feed-parser";
+import type { FeedParseResult } from "./types";
+import {
+  streamFeed,
+  streamFeedWithRetry,
+  type FeedStreamLimits,
+  type FeedStreamResult,
+} from "./feed-stream";
 import { canonicalAliExpressProductUrl } from "./aliexpress";
-import { checkFeedPermission, type FeedPermission } from "./permissions";
+import { checkFeedPermission, type FeedPermission, type PermissionProgramme } from "./permissions";
 import {
   ADMITAD_PROGRAM_SLUG,
   mapFeedRowToProduct,
@@ -48,7 +55,7 @@ export interface ImportOptions {
    * The ad-space programme record. When supplied, its `show_products_links`
    * permission flag is enforced before a single row is processed.
    */
-  permission?: Pick<AdmitadCampaignForWebsite, "id" | "name" | "show_products_links" | "connection_status">;
+  permission?: PermissionProgramme;
   /**
    * Advertiser's allowed destination domains (Admitad
    * `allowed_deeplink_domains`). Used to validate the URL actually sent for
@@ -82,6 +89,27 @@ export interface ImportReport {
   blockedReason?: string;
   /** Present when the caller supplied the programme's ad-space record. */
   feedPermission?: FeedPermission;
+  /** Set when the feed was read from a URL and stopped early or failed. */
+  download?: FeedDownloadReport;
+  /** Category-id resolution against the feed's own dictionary. */
+  categories?: {
+    dictionarySize: number;
+    resolved: number;
+    unresolved: number;
+    unresolvedIds: string[];
+  };
+}
+
+export interface FeedDownloadReport {
+  /** HTTP status of the final attempt, when a response was received. */
+  status?: number;
+  contentType?: string | null;
+  bytes: number;
+  records: number;
+  elapsedMs: number;
+  /** True when a cap stopped the read before the document ended. */
+  truncated: boolean;
+  truncationReason?: string;
 }
 
 function sleep(ms: number): Promise<void> {
@@ -144,37 +172,50 @@ export async function importFromFeedText(
 ): Promise<{ report: ImportReport; products: Product[] }> {
   const startedAt = new Date().toISOString();
   const maxRows = options.maxRows ?? 200;
-  const throttleMs = options.throttleMs ?? 0;
 
   // Permission gate runs before parsing: a programme that has not enabled
-  // product links must not have its feed read at all.
-  if (options.permission) {
-    const permission = checkFeedPermission(options.permission);
-    if (!permission.allowed) {
-      const now = new Date().toISOString();
-      return {
-        report: {
-          campaignId: options.campaignId,
-          programmeName: options.programme?.name ?? options.permission.name ?? `Programme ${options.campaignId}`,
-          totalRows: 0,
-          imported: 0,
-          duplicates: 0,
-          skipped: 0,
-          errors: [],
-          unmappedColumns: [],
-          format: "unknown",
-          startedAt: now,
-          finishedAt: now,
-          blocked: true,
-          blockedReason: permission.reason,
-          feedPermission: permission,
-        },
-        products: [],
-      };
-    }
+  // product links must not have its feed read at all. `ambiguous` is blocked
+  // too, but says what the contradiction is instead of a flat denial.
+  const permission = options.permission ? checkFeedPermission(options.permission) : undefined;
+  if (permission && !permission.allowed) {
+    const now = new Date().toISOString();
+    return {
+      report: {
+        campaignId: options.campaignId,
+        programmeName: options.programme?.name ?? options.permission?.name ?? `Programme ${options.campaignId}`,
+        totalRows: 0,
+        imported: 0,
+        duplicates: 0,
+        skipped: 0,
+        errors: [],
+        unmappedColumns: [],
+        format: "unknown",
+        startedAt: now,
+        finishedAt: now,
+        blocked: true,
+        blockedReason: permission.reason,
+        feedPermission: permission,
+      },
+      products: [],
+    };
   }
 
+  // Inline text is already in memory, so the CSV/XML/JSON parser handles it
+  // directly; URL imports use the streaming path instead.
   const parsed = parseFeed(feedText, { ...options.feedOptions, maxRows });
+
+  return runRows(parsed, options, startedAt, permission);
+}
+
+async function runRows(
+  parsed: FeedParseResult,
+  options: ImportOptions,
+  startedAt: string,
+  permission: FeedPermission | undefined,
+  download?: FeedDownloadReport,
+): Promise<{ report: ImportReport; products: Product[] }> {
+  const throttleMs = options.throttleMs ?? 0;
+
   const report: ImportReport = {
     campaignId: options.campaignId,
     programmeName: options.programme?.name ?? `Programme ${options.campaignId}`,
@@ -188,8 +229,13 @@ export async function importFromFeedText(
     startedAt,
     finishedAt: startedAt,
     blocked: false,
-    feedPermission: options.permission ? checkFeedPermission(options.permission) : undefined,
+    feedPermission: permission,
+    categories: parsed.categories,
+    ...(download ? { download } : {}),
   };
+
+  const products: Product[] = [];
+  const seen = new Set<string>();
 
   if (parsed.totalRows === 0) {
     report.blocked = true;
@@ -207,9 +253,6 @@ export async function importFromFeedText(
       AdmitadCampaignForWebsite,
       "id" | "name" | "currency" | "regions"
     >);
-
-  const products: Product[] = [];
-  const seen = new Set<string>();
 
   for (let index = 0; index < parsed.rows.length; index += 1) {
     const row = parsed.rows[index];
@@ -304,27 +347,184 @@ export async function importFromFeedText(
     report.blockedReason =
       "No rows produced a usable tracked link. Most common causes: programme not connected, deeplinks disabled for the programme, or URLs outside the allowed domains.";
   }
-
   return { report, products };
 }
 
-/** Downloads a feed URL. Admitad feed links are bearer-free signed URLs. */
-export async function downloadFeed(url: string, timeoutMs = 25_000): Promise<string> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    const res = await fetch(url, {
-      headers: { Accept: "text/csv, application/xml, text/xml, application/json, */*" },
-      signal: controller.signal,
-      cache: "no-store",
-    });
-    if (!res.ok) {
-      throw new Error(
-        `Feed download failed (${res.status}). The feed link may have expired — refresh it from the Admitad dashboard or the ad-space programme endpoint.`,
-      );
-    }
-    return await res.text();
-  } finally {
-    clearTimeout(timer);
+/**
+ * Downloads a feed URL.
+ *
+ * Kept for callers that still want raw text (and for small inline feeds). It
+ * now streams with idle + absolute timeouts instead of one 25s deadline, so a
+ * large but healthy export is not mistaken for an expired link.
+ */
+export interface DownloadFeedOptions extends FeedStreamLimits {
+  fetchImpl?: typeof fetch;
+  signal?: AbortSignal;
+  onProgress?: (progress: { bytes: number; records: number; elapsedMs: number }) => void;
+}
+
+export async function downloadFeed(
+  url: string,
+  options: DownloadFeedOptions | number = {},
+): Promise<string> {
+  // Backwards compatibility: the old signature took a timeout in ms.
+  const opts: DownloadFeedOptions =
+    typeof options === "number" ? { totalTimeoutMs: options } : options;
+
+  const result = await streamFeed(url, opts);
+  if (!result.ok) {
+    throw new Error(result.message);
   }
+  if (result.format === "xml") {
+    // Reassemble the document from the records we kept, so callers that only
+    // want text still work without us retaining the original payload.
+    return [
+      '<?xml version="1.0" encoding="UTF-8"?>',
+      "<records>",
+      ...result.records.map((record) => record.xml),
+      "</records>",
+    ].join("\n");
+  }
+  return result.text;
+}
+
+export interface ImportFromFeedUrlOptions extends ImportOptions {
+  /** Stream/retry tuning. */
+  download?: DownloadFeedOptions & { attempts?: number };
+  /** Retries for transient failures only. Defaults to 3 attempts. */
+  attempts?: number;
+}
+
+/**
+ * Imports directly from a feed URL without buffering the whole file.
+ *
+ * Permission is checked before the first byte is requested. Truncated reads are
+ * refused outright rather than imported partially.
+ */
+export async function importFromFeedUrl(
+  url: string,
+  options: ImportFromFeedUrlOptions,
+): Promise<{ report: ImportReport; products: Product[] }> {
+  const startedAt = new Date().toISOString();
+  const permission = options.permission ? checkFeedPermission(options.permission) : undefined;
+  if (permission && !permission.allowed) {
+    return {
+      report: {
+        campaignId: options.campaignId,
+        programmeName: options.programme?.name ?? options.permission?.name ?? `Programme ${options.campaignId}`,
+        totalRows: 0,
+        imported: 0,
+        duplicates: 0,
+        skipped: 0,
+        errors: [],
+        unmappedColumns: [],
+        format: "unknown",
+        startedAt,
+        finishedAt: startedAt,
+        blocked: true,
+        blockedReason: permission.reason,
+        feedPermission: permission,
+      },
+      products: [],
+    };
+  }
+
+  // Transient failures (overload, timeout, network) are retried; an expired
+  // signature is not, because another attempt cannot help it. Default to one
+  // extra attempt, since the export host has been observed to blip.
+  const attempts = options.attempts ?? options.download?.attempts ?? 2;
+  const download =
+    attempts > 1
+      ? await streamFeedWithRetry(url, { ...(options.download ?? {}), attempts })
+      : await streamFeed(url, options.download ?? {});
+  if (!download.ok) {
+    return {
+      report: {
+        campaignId: options.campaignId,
+        programmeName: options.programme?.name ?? `Programme ${options.campaignId}`,
+        totalRows: 0,
+        imported: 0,
+        duplicates: 0,
+        skipped: 0,
+        errors: [],
+        unmappedColumns: [],
+        format: "unknown",
+        startedAt,
+        finishedAt: new Date().toISOString(),
+        blocked: true,
+        blockedReason: `Feed download failed (${download.kind}): ${download.message}`,
+        feedPermission: permission,
+        download: {
+          status: download.status,
+          bytes: 0,
+          records: 0,
+          elapsedMs: 0,
+          truncated: false,
+        },
+      },
+      products: [],
+    };
+  }
+
+  const downloadReport: FeedDownloadReport = {
+    status: download.status,
+    contentType: download.contentType,
+    bytes: download.bytes,
+    records: download.records.length,
+    elapsedMs: download.progress.elapsedMs,
+    truncated: download.truncated,
+    truncationReason: download.truncationReason,
+  };
+
+  // A truncated read is never imported: a partial catalogue looks complete to
+  // everything downstream once it is written.
+  if (download.truncated) {
+    return {
+      report: {
+        campaignId: options.campaignId,
+        programmeName: options.programme?.name ?? `Programme ${options.campaignId}`,
+        totalRows: download.records.length,
+        imported: 0,
+        duplicates: 0,
+        skipped: 0,
+        errors: [],
+        unmappedColumns: [],
+        format: download.format,
+        startedAt,
+        finishedAt: new Date().toISOString(),
+        blocked: true,
+        blockedReason:
+          `The feed read stopped early (${download.truncationReason ?? "unknown reason"}). ` +
+          "A truncated feed is refused instead of imported partially. Raise the caps or split the feed, then retry.",
+        feedPermission: permission,
+        download: downloadReport,
+      },
+      products: [],
+    };
+  }
+
+  return importParsedFeed(download, options, startedAt, permission, downloadReport);
+}
+
+/** Runs the row pipeline over an already-downloaded feed. */
+async function importParsedFeed(
+  download: FeedStreamResult & { ok: true },
+  options: ImportOptions,
+  startedAt: string,
+  permission: FeedPermission | undefined,
+  downloadReport: FeedDownloadReport,
+): Promise<{ report: ImportReport; products: Product[] }> {
+  const maxRows = options.maxRows ?? 200;
+  const parsed =
+    download.format === "xml"
+      ? parseStreamedXmlRecords(download.records, {
+          ...options.feedOptions,
+          maxRows,
+          categoryDictionary: download.categoryDictionary,
+          truncated: download.truncated,
+          truncationReason: download.truncationReason,
+        })
+      : parseFeed(download.text, { ...options.feedOptions, maxRows });
+
+  return runRows(parsed, options, startedAt, permission, downloadReport);
 }

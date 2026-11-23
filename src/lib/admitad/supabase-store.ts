@@ -105,6 +105,28 @@ function feedUrlFromCommissionInfo(value: unknown): string | undefined {
   return typeof feedUrl === "string" && feedUrl ? feedUrl : undefined;
 }
 
+/**
+ * Category provenance the feed supplied, if the row carries it.
+ *
+ * Like `feedUrlFromCommissionInfo`, this lives only in `commission_info`, which
+ * the public view does not project. Callers must therefore gate it behind a
+ * privileged read; the public mapper must never reach into `commission_info`,
+ * even when a future view change were to leak the column.
+ */
+function categoryProvenanceFromCommissionInfo(value: unknown): {
+  sourceCategoryId?: string;
+  sourceCategory?: string;
+  categoryBasis?: Product["categoryBasis"];
+} {
+  if (!value || typeof value !== "object") return {};
+  const info = value as Record<string, unknown>;
+  return {
+    sourceCategoryId: stringOrUndefined(info.sourceCategoryId),
+    sourceCategory: stringOrUndefined(info.sourceCategory),
+    categoryBasis: asCategoryBasis(info.categoryBasis),
+  };
+}
+
 interface RowToProductOptions {
   /**
    * Read `commission_info` for `feedProductUrl`. Only a privileged base-table
@@ -119,6 +141,11 @@ function rowToProduct(row: Record<string, unknown>, options: RowToProductOptions
   const tier = String(row.budget_tier ?? "budget");
   const approval = String(row.approval_status ?? "pending");
   const dataSource = String(row.data_source ?? "manual");
+  // Provenance columns are readable only on a privileged base-table read.
+  // Returning an empty object here keeps the public mapping provenance-free.
+  const provenance = options.readProvenance
+    ? categoryProvenanceFromCommissionInfo(row.commission_info)
+    : {};
 
   return {
     id: String(row.id),
@@ -153,6 +180,9 @@ function rowToProduct(row: Record<string, unknown>, options: RowToProductOptions
     source: row.source ? (String(row.source) as Product["source"]) : undefined,
     externalProductId: row.external_product_id ? String(row.external_product_id) : undefined,
     advertiserId: row.advertiser_id ? String(row.advertiser_id) : undefined,
+    sourceCategoryId: provenance.sourceCategoryId,
+    sourceCategory: provenance.sourceCategory,
+    categoryBasis: provenance.categoryBasis,
     lastSyncedAt: row.last_synced_at ? String(row.last_synced_at) : undefined,
     createdAt: String(row.created_at ?? ""),
     updatedAt: String(row.updated_at ?? ""),
@@ -173,6 +203,16 @@ function rowToProduct(row: Record<string, unknown>, options: RowToProductOptions
     modelGeneratedAt: row.model_generated_at ? String(row.model_generated_at) : undefined,
     sourceImageHash: row.source_image_hash ? String(row.source_image_hash) : undefined,
   };
+}
+
+function stringOrUndefined(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim() ? value : undefined;
+}
+
+function asCategoryBasis(value: unknown): Product["categoryBasis"] {
+  return value === "source-category" || value === "title" || value === "unresolved-id" || value === "none"
+    ? value
+    : undefined;
 }
 
 /**
@@ -217,6 +257,18 @@ export function toProductRow(
   const advertiserFromInfo =
     typeof commissionInfo?.advertiserId === "string" ? commissionInfo.advertiserId : undefined;
 
+  // Category provenance is carried inside `commission_info` because it belongs
+  // to the same internal column the public view omits. Caller-supplied keys win,
+  // so an explicit provenance object is never silently rewritten.
+  const provenance: Record<string, unknown> = {};
+  if (product.sourceCategoryId) provenance.sourceCategoryId = product.sourceCategoryId;
+  if (product.sourceCategory) provenance.sourceCategory = product.sourceCategory;
+  if (product.categoryBasis) provenance.categoryBasis = product.categoryBasis;
+  const mergedInfo =
+    Object.keys(provenance).length === 0 && !commissionInfo
+      ? null
+      : { ...provenance, ...(commissionInfo ?? {}) };
+
   return {
     id: product.id,
     slug: product.slug,
@@ -247,7 +299,7 @@ export function toProductRow(
     source: product.source ?? null,
     external_product_id: product.externalProductId ?? null,
     advertiser_id: product.advertiserId ?? advertiserFromInfo ?? null,
-    commission_info: commissionInfo ?? null,
+    commission_info: mergedInfo,
     last_synced_at: product.lastSyncedAt ?? new Date().toISOString(),
     updated_at: product.updatedAt,
   };

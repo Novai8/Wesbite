@@ -8,7 +8,13 @@
 
 import { enrichProduct } from "./enrich";
 import { PRODUCT_SOURCE_UNIQUE_COLUMNS } from "./mapper";
-import { downloadFeed, importFromFeedText, type ImportOptions, type ImportReport } from "./products";
+import {
+  importFromFeedText,
+  importFromFeedUrl,
+  type DownloadFeedOptions,
+  type ImportOptions,
+  type ImportReport,
+} from "./products";
 import { toProductRow } from "./supabase-store";
 import {
   getSupabaseConfig,
@@ -42,6 +48,8 @@ export interface RunImportInput {
   enrich?: boolean;
   /** Write to Supabase. Defaults to true when configured. */
   persist?: boolean;
+  /** Streaming download tuning for URL imports. */
+  download?: DownloadFeedOptions;
 }
 
 export interface RunImportResult {
@@ -54,13 +62,7 @@ export interface RunImportResult {
 }
 
 export async function runImport(input: RunImportInput): Promise<RunImportResult> {
-  let feedText = input.feedText;
-  if (!feedText) {
-    if (!input.feedUrl) throw new Error("Provide feedText or feedUrl.");
-    feedText = await downloadFeed(input.feedUrl);
-  }
-
-  const { report, products } = await importFromFeedText(feedText, {
+  const sharedOptions: ImportOptions = {
     campaignId: input.campaignId,
     programme: input.programme,
     permission: input.permission,
@@ -69,7 +71,13 @@ export async function runImport(input: RunImportInput): Promise<RunImportResult>
     subid: input.subid,
     maxRows: input.maxRows,
     throttleMs: input.throttleMs,
-  });
+  };
+
+  // URL imports stream; inline text is parsed directly. Both share the same
+  // permission gate and row pipeline.
+  const { report, products } = input.feedText
+    ? await importFromFeedText(input.feedText, sharedOptions)
+    : await importFromFeedUrl(requireFeedUrl(input), { ...sharedOptions, download: input.download });
 
   let enriched = 0;
   let enrichmentSkipped: string | undefined;
@@ -155,6 +163,11 @@ export async function runImport(input: RunImportInput): Promise<RunImportResult>
       enrichmentSkipped,
     };
   }
+}
+
+function requireFeedUrl(input: RunImportInput): string {
+  if (!input.feedUrl) throw new Error("Provide feedText or feedUrl.");
+  return input.feedUrl;
 }
 
 interface ExistingIdentity {

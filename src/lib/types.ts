@@ -75,6 +75,19 @@ export interface Product {
   externalProductId?: string;
   /** Admitad advertiser / campaign id. */
   advertiserId?: string;
+  /**
+   * Raw category id exactly as the source feed supplied it. Kept so an
+   * unresolved category can be explained later instead of guessed.
+   */
+  sourceCategoryId?: string;
+  /** Category name the source supplied, before any shelf mapping. */
+  sourceCategory?: string;
+  /**
+   * How `categorySlug` was derived. `unresolved-id` means the source named a
+   * category we could not resolve; the product is deliberately unshelved
+   * rather than assigned an invented category.
+   */
+  categoryBasis?: "source-category" | "title" | "unresolved-id" | "none";
   /** Pre-discount price, when the feed supplies one. */
   originalPrice?: number;
   /** Last successful sync from the source network. */
