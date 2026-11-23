@@ -44,6 +44,9 @@ export const metadata: Metadata = {
     type: "website",
   },
   robots: { index: true, follow: true },
+  other: {
+    "mitgo-verification": "acf3ba90-9321-4a9a-93ba-0c743663033e",
+  },
 };
 
 export const viewport: Viewport = {
