@@ -19,14 +19,19 @@ and console-error assertions on every static route:
 
 - All 15 static routes render 200 with no console errors
 - 404 page renders for unknown products
-- Home: hero, category tiles → filtered discover, featured products
+- Home: centred Fyndra wordmark and static typographic story, no canvas,
+  3D, video, scroll rail or scroll-scrubbed animation; category strip →
+  filtered discover; one real product from every category in the
+  catalogue shelf
 - Assistant: full wizard flow → deterministic results with score
   breakdown, remaining budget, alternatives; back navigation preserves
   state
 - Setup builder: category chips toggle, budget allocation with
   per-category picks
 - Problem solver: problem in → fix + alternative approaches out
-- Discover: search narrows results, empty state + clear filters, sort
+- Discover: search narrows results, sort, pagination, and an empty
+  state with a distinct "Show the full catalogue" reset so its label
+  never clashes with the toolbar's "Clear filters"
 - Product page: specs, pros/cons, affiliate link with
   `rel="nofollow sponsored noopener"`
 - Compare: pick two, table renders merged spec rows

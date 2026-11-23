@@ -47,9 +47,12 @@ test.describe("home", () => {
   });
 
   test("hero and core sections render", async ({ page }) => {
-    await expect(page.getByRole("heading", { level: 1 })).toContainText("Fyndra");
-    await expect(page.getByText("Shop Your Interests With Ease")).toBeVisible();
-    await expect(page.getByRole("region", { name: "How it works" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1 })).toContainText(
+      "Fyndra"
+    );
+    await expect(
+      page.getByRole("heading", { name: "The catalogue is the point." })
+    ).toBeVisible();
   });
 
   test("category tiles link to discover", async ({ page }) => {
@@ -176,14 +179,15 @@ test.describe("discover", () => {
   });
 
   test("search filters results and empty state works", async ({ page }) => {
+    const allCards = await page.locator('a[href^="/products/"]').count();
     const search = page.getByLabel(/Search/i);
     await search.fill("cable");
     await expect(page.locator('a[href^="/products/"]').first()).toBeVisible();
     const cableCount = await page.locator('a[href^="/products/"]').count();
-    expect(cableCount).toBeLessThan(8);
+    expect(cableCount).toBeLessThan(allCards);
 
     await search.fill("zzzznonexistent");
-    await expect(page.getByText(/Nothing matches/i)).toBeVisible();
+    await expect(page.getByRole("heading", { name: /That shelf is empty/i })).toBeVisible();
     await page.getByRole("button", { name: /Clear filters/i }).click();
     await expect(page.locator('a[href^="/products/"]').first()).toBeVisible();
   });
@@ -288,10 +292,10 @@ test.describe("navigation", () => {
     if (isMobile) {
       await page.getByRole("button", { name: /toggle menu/i }).click();
     }
-    await page.getByRole("banner").getByRole("link", { name: "Discover" }).first().click();
+    await page.locator("a:visible").filter({ hasText: /^Discover$/ }).first().click();
     await expect(page).toHaveURL(/\/discover/);
     await expect(page.getByRole("heading", { level: 1 })).toContainText(
-      "The whole catalogue"
+      "Good things"
     );
   });
 
@@ -314,12 +318,8 @@ test.describe("mobile menu", () => {
       await page.goto("/");
       const toggle = page.getByRole("button", { name: /toggle menu/i });
       await toggle.click();
-      await page
-        .getByRole("banner")
-        .getByRole("link", { name: "Setup builder" })
-        .last()
-        .click();
-      await expect(page).toHaveURL(/\/setup-builder/);
+      await page.locator("a:visible").filter({ hasText: /^Find a fix$/ }).first().click();
+      await expect(page).toHaveURL(/\/problem-solver/);
     });
   }
 });

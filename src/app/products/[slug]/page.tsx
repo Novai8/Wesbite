@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { ProductCard } from "@/components/product-card";
 import { Badge } from "@/components/ui/badge";
 import { AffiliateButton } from "@/components/affiliate-button";
-import { formatPrice, getProductBySlug, getRelatedProducts } from "@/lib/catalogue";
+import { formatPrice, getCategories, getProductBySlug, getRelatedProducts } from "@/lib/catalogue";
 import { outboundPath } from "@/lib/affiliate";
 
 export function generateStaticParams() {
@@ -20,11 +20,14 @@ export async function generateMetadata({
   const { slug } = await params;
   const product = getProductBySlug(slug);
   if (!product) return { title: "Product not found" };
-  return {
-    title: product.title,
-    description: product.description,
-  };
+  return { title: product.title, description: product.description };
 }
+
+const tierCopy: Record<string, string> = {
+  budget: "Budget",
+  mid: "Mid-range",
+  premium: "Premium",
+};
 
 export default async function ProductPage({
   params,
@@ -36,120 +39,155 @@ export default async function ProductPage({
   if (!product) notFound();
 
   const related = getRelatedProducts(product, 3);
+  const category = getCategories().find((item) => item.slug === product.categorySlug);
+  const image = product.imageUrls[0] ?? "/products/placeholder-organiser.svg";
 
   return (
-    <div className="container-page py-10 md:py-14">
-      <nav aria-label="Breadcrumb" className="text-sm text-muted">
-        <Link href="/discover" className="hover:text-ink hover:underline">Discover</Link>
-        <span aria-hidden="true"> / </span>
-        <Link href={`/discover?category=${product.categorySlug}`} className="hover:text-ink hover:underline">
-          {product.categorySlug.replace(/-/g, " ")}
-        </Link>
-      </nav>
+    <div className="product-room">
+      <div className="container-page product-room-top">
+        <nav aria-label="Breadcrumb" className="product-breadcrumb">
+          <Link href="/discover">Catalogue</Link>
+          <span aria-hidden="true">/</span>
+          <Link href={`/discover?category=${product.categorySlug}`}>
+            {category?.name ?? product.categorySlug.replace(/-/g, " ")}
+          </Link>
+          <span aria-hidden="true">/</span>
+          <span aria-current="page">{product.title}</span>
+        </nav>
 
-      <div className="mt-6 grid gap-10 lg:grid-cols-[1.1fr_1fr]">
-        {/* Image */}
-        <div className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-line bg-surface-warm">
-          <Image
-            src={product.imageUrls[0] ?? "/products/placeholder-organiser.svg"}
-            alt={product.title}
-            fill
-            sizes="(max-width: 1024px) 100vw, 50vw"
-            className="object-cover"
-            priority
-          />
-        </div>
-
-        {/* Details */}
-        <div>
-          <div className="flex flex-wrap gap-2">
-            <Badge tone="neutral">{product.merchant}</Badge>
-            {product.priceVerifiedAt && <Badge tone="verified">Price verified</Badge>}
-            <Badge tone="neutral">{product.budgetTier} tier</Badge>
-          </div>
-
-          <h1 className="mt-4 text-[clamp(1.75rem,3.5vw,2.5rem)]">{product.title}</h1>
-
-          <div className="mt-3 flex items-baseline gap-3">
-            <p className="price text-3xl">{formatPrice(product.price, product.currency)}</p>
-            {product.previousPrice != null && product.previousPrice > product.price && (
-              <p className="text-lg text-faint line-through">
-                {formatPrice(product.previousPrice, product.currency)}
-              </p>
-            )}
-          </div>
-
-          <p className="mt-4 leading-relaxed text-muted">{product.description}</p>
-
-          <div className="mt-6">
-            <AffiliateButton
-              href={outboundPath(product, "product-page")}
-              available={product.availability === "in_stock"}
+        <div className="product-stage">
+          <div className="product-media">
+            <span className="product-media-tag">{product.merchant}</span>
+            <Image
+              src={image}
+              alt={product.title}
+              fill
+              sizes="(max-width: 1024px) 100vw, 56vw"
+              className="object-cover"
+              priority
             />
-            <p className="mt-2 text-xs leading-relaxed text-faint">
-              Links marked Affiliate earn us a commission if you buy something.
-              It doesn&apos;t change what we recommend or what you pay. Prices were
-              verified at {new Date(product.priceVerifiedAt).toLocaleDateString("en-GB")} —
-              check the merchant page for the live price.
-            </p>
+            <span className="product-media-index" aria-hidden="true">01 — 01</span>
           </div>
 
-          {product.pros.length > 0 && (
-            <div className="mt-8">
-              <h2 className="text-lg">What&apos;s good</h2>
-              <ul className="verified-list mt-2">
-                {product.pros.map((pro) => (
-                  <li key={pro}>
-                    <span aria-hidden="true" className="text-lime-ink">✓</span>
-                    {pro}
-                  </li>
-                ))}
-              </ul>
+          <div className="product-detail">
+            <div className="product-detail-topline">
+              <Badge tone="neutral">{tierCopy[product.budgetTier] ?? product.budgetTier}</Badge>
+              {product.priceVerifiedAt ? <Badge tone="verified">Price verified</Badge> : null}
+              <Badge tone="neutral">
+                {product.availability === "in_stock" ? "Listed in stock" : "Check availability"}
+              </Badge>
             </div>
-          )}
 
-          {product.cons.length > 0 && (
-            <div className="mt-5">
-              <h2 className="text-lg">Trade-offs</h2>
-              <ul className="verified-list mt-2">
-                {product.cons.map((con) => (
-                  <li key={con}>
-                    <span aria-hidden="true" className="text-danger">–</span>
-                    {con}
-                  </li>
-                ))}
-              </ul>
+            <h1>{product.title}</h1>
+
+            <div className="product-price-row">
+              <p className="price">{formatPrice(product.price, product.currency)}</p>
+              {product.previousPrice != null && product.previousPrice > product.price ? (
+                <p className="product-price-was">
+                  {formatPrice(product.previousPrice, product.currency)}
+                </p>
+              ) : null}
+              <p className="product-price-note">Source record</p>
             </div>
-          )}
-        </div>
-      </div>
 
-      {/* Specs */}
-      {Object.keys(product.specs).length > 0 && (
-        <section className="mt-14" aria-labelledby="specs">
-          <h2 id="specs" className="text-2xl">Specifications</h2>
-          <dl className="mt-4 grid gap-x-10 sm:grid-cols-2">
-            {Object.entries(product.specs).map(([k, v]) => (
-              <div key={k} className="flex justify-between gap-4 border-b border-line py-3">
-                <dt className="text-sm font-medium text-muted">{k}</dt>
-                <dd className="text-sm text-right">{v}</dd>
+            <p className="product-description">{product.description}</p>
+
+            <div className="product-buy">
+              <AffiliateButton
+                href={outboundPath(product, "product-page")}
+                available={product.availability === "in_stock"}
+              />
+              <p className="product-buy-disclosure">
+                Links marked Affiliate earn Fyndra a commission if you buy
+                something. It does not change what we recommend or what you
+                pay. Price verified{" "}
+                {new Date(product.priceVerifiedAt).toLocaleDateString("en-GB")} —
+                check the merchant page for the live price.
+              </p>
+            </div>
+
+            <dl className="product-facts">
+              <div className="product-fact">
+                <dt>Merchant</dt>
+                <dd>{product.merchant}</dd>
               </div>
-            ))}
-          </dl>
-        </section>
-      )}
-
-      {/* Related */}
-      {related.length > 0 && (
-        <section className="mt-14" aria-labelledby="related">
-          <h2 id="related" className="text-2xl">Solves the same problem</h2>
-          <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {related.map((p) => (
-              <ProductCard key={p.id} product={p} />
-            ))}
+              <div className="product-fact">
+                <dt>Category</dt>
+                <dd>{category?.name ?? product.categorySlug.replace(/-/g, " ")}</dd>
+              </div>
+              {product.subcategory ? (
+                <div className="product-fact">
+                  <dt>Subcategory</dt>
+                  <dd>{product.subcategory}</dd>
+                </div>
+              ) : null}
+              <div className="product-fact">
+                <dt>Regions</dt>
+                <dd>{product.region.join(", ")}</dd>
+              </div>
+            </dl>
           </div>
-        </section>
-      )}
+        </div>
+
+        {product.pros.length > 0 || product.cons.length > 0 ? (
+          <div className="product-notes">
+            {product.pros.length > 0 ? (
+              <section className="product-note-block" aria-labelledby="product-pros">
+                <h2 id="product-pros">What&apos;s good</h2>
+                <ul className="product-notes-list">
+                  {product.pros.map((pro) => (
+                    <li key={pro}>{pro}</li>
+                  ))}
+                </ul>
+              </section>
+            ) : null}
+
+            {product.cons.length > 0 ? (
+              <section className="product-note-block is-cons" aria-labelledby="product-cons">
+                <h2 id="product-cons">Trade-offs</h2>
+                <ul className="product-notes-list">
+                  {product.cons.map((con) => (
+                    <li key={con}>{con}</li>
+                  ))}
+                </ul>
+              </section>
+            ) : null}
+          </div>
+        ) : null}
+
+        {Object.keys(product.specs).length > 0 ? (
+          <section className="product-specs" aria-labelledby="specifications">
+            <div className="product-specs-head">
+              <h2 id="specifications">Specifications</h2>
+              <p>From the source record</p>
+            </div>
+            <dl className="product-spec-grid">
+              {Object.entries(product.specs).map(([key, value]) => (
+                <div key={key} className="product-spec-row">
+                  <dt>{key}</dt>
+                  <dd>{value}</dd>
+                </div>
+              ))}
+            </dl>
+          </section>
+        ) : null}
+
+        {related.length > 0 ? (
+          <section className="product-related" aria-labelledby="related">
+            <div className="product-related-head">
+              <h2 id="related">Solves the same problem</h2>
+              <Link href={`/discover?category=${product.categorySlug}`} className="quiet-link">
+                More in {category?.name ?? "this category"}
+              </Link>
+            </div>
+            <div className="product-related-grid">
+              {related.map((item) => (
+                <ProductCard key={item.id} product={item} />
+              ))}
+            </div>
+          </section>
+        ) : null}
+      </div>
     </div>
   );
 }

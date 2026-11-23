@@ -5,6 +5,7 @@ Fyndra is the working brand for this platform (centralised in `src/lib/site.ts`,
 ## Design plan (decided, then built)
 
 - **Concept.** A research publication that answers shopping questions. Content-first grids, real product photography, generous whitespace, and one signature element: the **answer bar** — a warm-tinted panel framing every recommendation with its reasoning, like an annotated research note.
+- **Homepage.** A saturated blue scroll story anchored by a centred `Fyndra` wordmark and four editorial rooms. The hero is typographic rather than motion-led: no 3D, video or scroll-scrubbed animation. The catalogue is an Airflex-inspired editorial grid; product pages use a quieter Mushroom-style media/detail split.
 - **Color.** Warm off-white paper `#FAF9F6`, deep charcoal ink `#1C1917`, restrained electric cobalt `#2941E8`, controlled lime `#A3D418` (value/verified highlights only), soft warm surface `#F3F1EC`, hairline `#E5E1D8`.
 - **Type.** Bricolage Grotesque (display: heroes, section titles — opinionated, slightly compressed at large sizes) + Inter Tight (body and UI — tight, legible, modern). No serif body, no monospace labels.
 - **Layout.** Left-aligned editorial grid, 12-column with intentional asymmetry (7/5 splits), max-width 1200px, wide gutters. Product cards are quiet; photography is large.

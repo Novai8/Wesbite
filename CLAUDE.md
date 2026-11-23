@@ -33,12 +33,11 @@ via `@opennextjs/cloudflare`.
   swap point.
 - Server components by default; `"use client"` only where interaction
   requires it. CSS animations are transform/opacity only.
-- The homepage hero is a 3D scroll stage: a brand-coloured shopping-cart
-  GLB (`public/models/cart.glb`) rides a scroll-driven path across the
-  viewport with a cobalt comet trail, rendered by plain three.js. The
-  scene lives only in `src/components/landing/hero-scene.tsx`; the copy
-  ("FYNDRA" / "Shop Your Interests With Ease") lives in
-  `hero-copy.tsx`. Under `prefers-reduced-motion` the canvas is hidden
-  and a static gradient stands in.
+- The homepage is a typographic, scroll-story page: a saturated blue
+  stage, a centred `Fyndra` wordmark, then editorial rooms for discovery,
+  the category shortlist, the method and the final call to action. The
+  homepage supplies its own masthead; `ChromeGate` suppresses the global
+  header on `/`. There is no 3D, video or scroll-scrubbed animation on the
+  homepage — keep it static, fast and reduced-motion friendly.
 - Docs live in `DESIGN.md` and `docs/`. Keep them current when behaviour
   changes.
