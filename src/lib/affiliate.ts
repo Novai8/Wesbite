@@ -1,4 +1,5 @@
 import { getPrograms } from "@/lib/catalogue";
+import { getSupabaseConfig, insertRows, SUPABASE_TABLES } from "@/lib/supabase-rest";
 import type { Product } from "@/lib/types";
 
 /**
@@ -28,7 +29,11 @@ export function validateAffiliateUrl(raw: string, productProgram: string): { ok:
   if (!program) {
     return { ok: false, reason: `Unknown or inactive affiliate programme: ${productProgram}` };
   }
-  if (!url.hostname.endsWith(program.destinationDomain)) {
+  // Exact host or a subdomain of it. A bare `endsWith` would accept look-alikes
+  // such as "evil-ad.admitad.com" or "ad.admitad.com.evil.example".
+  const host = url.hostname.toLowerCase();
+  const domain = program.destinationDomain.toLowerCase().replace(/^\./, "");
+  if (host !== domain && !host.endsWith(`.${domain}`)) {
     return { ok: false, reason: `Affiliate URL host ${url.hostname} is outside approved programme domain ${program.destinationDomain}` };
   }
   return { ok: true };
@@ -47,8 +52,30 @@ export async function recordClick(product: Product, campaign?: string): Promise<
     ts: new Date().toISOString(),
     // Deliberately non-identifying: no IP, no user agent, no session id.
   };
-  // TODO(supabase): insert into affiliate_clicks when SUPABASE_URL is configured.
   console.info("[affiliate-click]", JSON.stringify(event));
+
+  // Persist when configured. A logging failure must never block the redirect,
+  // so errors are swallowed after being reported.
+  if (!getSupabaseConfig()) return;
+  try {
+    await insertRows(
+      SUPABASE_TABLES.clicks,
+      [
+        {
+          product_id: product.id,
+          program_slug: product.programSlug,
+          merchant: product.merchant,
+          campaign: campaign ?? null,
+          ts: event.ts,
+        },
+      ],
+      getSupabaseConfig() as NonNullable<ReturnType<typeof getSupabaseConfig>>,
+    );
+  } catch (err) {
+    console.error(
+      `[affiliate-click] failed to persist click: ${err instanceof Error ? err.message : String(err)}`,
+    );
+  }
 }
 
 export function outboundPath(product: Pick<Product, "id">, campaign?: string): string {

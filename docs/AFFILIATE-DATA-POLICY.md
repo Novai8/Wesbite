@@ -34,6 +34,26 @@ future integration produces.
 | Keywords / use cases | Editorial curation — these describe *problems*, and human judgement is expected |
 | Affiliate URL | Merchant programme, validated against `affiliate_programs.destination_domain` |
 
+### Admitad imports
+
+Admitad records follow the same rules, with these specifics:
+
+| Field | Source |
+| --- | --- |
+| Title, description, image, price, currency, availability | The advertiser's feed file, unchanged |
+| Original price | The feed's own `oldprice`-style column, and only shown when cheaper than the current price |
+| Category | Deterministic keyword rules in `mapper.ts` — never a model |
+| Budget tier | Fixed price thresholds |
+| Affiliate URL | `GET /deeplink/…`, validated to be on `ad.admitad.com` |
+| AI headline / description | Groq, constrained to copy; discarded if it contains numbers not present in the source |
+
+A row without a price, image, source URL or valid tracked link is **not
+imported**. It is counted as an error with a reason, not silently dropped.
+
+Import summary counters are the record of what happened: `imported`,
+`duplicates`, `skipped`, `errors`. A run that imports nothing is reported as
+`blocked` with a cause — never as a success.
+
 ## Enforcement points
 
 - `src/lib/affiliate.ts` — HTTPS-only, programme-domain-validated URLs;
@@ -43,6 +63,12 @@ future integration produces.
 - Seeded records are labelled as seed data in `src/data/seed-products.ts`
   and must be replaced through the admin dashboard or the n8n workflow
   before production launch.
+- `src/lib/admitad/mapper.ts` — `productPublishBlockers` refuses incomplete
+  records at import time.
+- `src/lib/admitad/feed-parser.ts` — rows with no absolute product URL or no
+  title are skipped with a stated reason.
+- `src/lib/admitad/enrich.ts` — `looksLikeFabrication` discards AI copy that
+  introduces unverifiable figures.
 
 ## Click tracking
 

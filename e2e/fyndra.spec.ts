@@ -283,6 +283,57 @@ test.describe("api/go guard", () => {
     const response = await request.get("/api/go?id=not-a-product");
     expect(response.status()).toBe(404);
   });
+
+  test("a seed product redirects to its validated affiliate URL", async ({ request }) => {
+    const response = await request.get("/api/go?id=p-monitor-arm-gas", {
+      maxRedirects: 0,
+    });
+    expect(response.status()).toBe(302);
+    expect(response.headers()["location"]).toMatch(/aliexpress\.com/);
+    expect(response.headers()["cache-control"]).toContain("no-store");
+  });
+});
+
+test.describe("Admitad workflow endpoints", () => {
+  // No N8N_WEBHOOK_SECRET in the test environment, so these fail closed with
+  // 503. With a secret set but no header, they would answer 401. Both are
+  // refusals, and neither may echo a credential.
+  const getRoutes = ["/api/n8n/admitad/status", "/api/n8n/admitad/aliexpress"];
+  const postRoutes = [
+    "/api/n8n/admitad/preview",
+    "/api/n8n/admitad/deeplink",
+    "/api/n8n/admitad/import",
+    "/api/n8n/admitad/enrich",
+  ];
+
+  for (const route of getRoutes) {
+    test(`${route} refuses unauthenticated access`, async ({ request }) => {
+      const response = await request.get(route);
+      expect([401, 503]).toContain(response.status());
+      const body = await response.json();
+      expect(JSON.stringify(body)).not.toMatch(/access_token|client_secret/i);
+    });
+  }
+
+  for (const route of postRoutes) {
+    test(`${route} refuses unauthenticated access`, async ({ request }) => {
+      const response = await request.post(route, { data: {} });
+      expect([401, 503]).toContain(response.status());
+      const body = await response.json();
+      expect(JSON.stringify(body)).not.toMatch(/access_token|client_secret/i);
+    });
+  }
+
+  test("status never leaks a credential value", async ({ request }) => {
+    const response = await request.get("/api/n8n/admitad/status", {
+      headers: { Authorization: "Bearer wrong-secret" },
+    });
+    // 503 when no secret is configured (fail closed, header never inspected);
+    // 401 once a secret exists. Both must hide credentials.
+    expect([401, 503]).toContain(response.status());
+    const body = await response.json();
+    expect(JSON.stringify(body)).not.toMatch(/access_token|client_secret/i);
+  });
 });
 
 test.describe("navigation", () => {

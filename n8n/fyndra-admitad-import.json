@@ -1,0 +1,253 @@
+{
+  "name": "Fyndra — Admitad product import",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 6
+            }
+          ]
+        }
+      },
+      "id": "schedule",
+      "name": "Run every 6 hours",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "fyndra-url", "name": "fyndraUrl", "value": "https://wesbite.hussnaintariq-ai.workers.dev", "type": "string" },
+            { "id": "campaign-id", "name": "campaignId", "value": 0, "type": "number" },
+            { "id": "max-rows", "name": "maxRows", "value": 100, "type": "number" },
+            { "id": "subid", "name": "subid", "value": "n8n-admitad", "type": "string" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "config",
+      "name": "Workflow config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [460, 300],
+      "notes": "Set campaignId to the advertiser programme id (e.g. AliExpress WW). Keep it here rather than in code."
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.fyndraUrl }}/api/n8n/admitad/status",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "status",
+      "name": "1. Check connection",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 300],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "fyndra-workflow",
+          "name": "Fyndra workflow token"
+        }
+      },
+      "notes": "Header credential: Authorization = Bearer <N8N_WEBHOOK_SECRET>. Admitad credentials stay in the Fyndra app, never here."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "configured",
+              "leftValue": "={{ $json.admitad && $json.admitad.websiteIdPresent }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "configured-gate",
+      "name": "2. Admitad configured?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Workflow config').item.json.fyndraUrl }}/api/n8n/admitad/import",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ campaignId: $('Workflow config').item.json.campaignId, useProgrammeFeed: true, enrich: true, maxRows: $('Workflow config').item.json.maxRows, subid: $('Workflow config').item.json.subid }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 120000
+        }
+      },
+      "id": "import",
+      "name": "3. Import feed",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1120, 200],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "fyndra-workflow",
+          "name": "Fyndra workflow token"
+        }
+      },
+      "notes": "useProgrammeFeed resolves the feed link from the ad-space programme object, so no feed URL needs maintaining here."
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "run-ok", "name": "ok", "value": "={{ $json.ok === true }}", "type": "boolean" },
+            { "id": "imported", "name": "imported", "value": "={{ $json.summary ? $json.summary.imported : 0 }}", "type": "number" },
+            { "id": "errors", "name": "errors", "value": "={{ $json.summary ? $json.summary.errors : 0 }}", "type": "number" },
+            { "id": "persisted", "name": "persisted", "value": "={{ $json.persisted === true }}", "type": "boolean" },
+            { "id": "summary-line", "name": "summary", "value": "={{ $json.summary ? ('imported ' + $json.summary.imported + '/' + $json.summary.totalRows + ', duplicates ' + $json.summary.duplicates + ', errors ' + $json.summary.errors) : ($json.error || 'import did not run') }}", "type": "string" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "summarise",
+      "name": "4. Build summary",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1340, 200]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "anything-wrong",
+              "leftValue": "={{ $json.ok && $json.persisted }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "warn-gate",
+      "name": "5. Needs attention?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1560, 200]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "warn-text", "name": "alert", "value": "={{ 'Fyndra Admitad import needs attention: ' + $json.summary }}", "type": "string" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "alert",
+      "name": "6a. Alert (wire your own channel)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1780, 320],
+      "notes": "Connect an email/Slack node here using your own credentials. Kept as a Set node so this workflow imports with no external secrets."
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "ok-text", "name": "alert", "value": "={{ 'Fyndra Admitad import ok: ' + $json.summary }}", "type": "string" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "noop",
+      "name": "6b. Success log",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1780, 120]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "skip-text", "name": "alert", "value": "Admitad is not configured in Fyndra. Set ADMITAD_CLIENT_ID, ADMITAD_CLIENT_SECRET and ADMITAD_WEBSITE_ID, then re-run. Missing: {{ $json.admitad ? $json.admitad.missing.join(', ') : 'unknown' }}", "type": "string" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "not-configured",
+      "name": "2a. Not configured — stop",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1120, 460]
+    }
+  ],
+  "connections": {
+    "Run every 6 hours": { "main": [[{ "node": "Workflow config", "type": "main", "index": 0 }]] },
+    "Workflow config": { "main": [[{ "node": "1. Check connection", "type": "main", "index": 0 }]] },
+    "1. Check connection": { "main": [[{ "node": "2. Admitad configured?", "type": "main", "index": 0 }]] },
+    "2. Admitad configured?": {
+      "main": [
+        [{ "node": "3. Import feed", "type": "main", "index": 0 }],
+        [{ "node": "2a. Not configured — stop", "type": "main", "index": 0 }]
+      ]
+    },
+    "3. Import feed": { "main": [[{ "node": "4. Build summary", "type": "main", "index": 0 }]] },
+    "4. Build summary": { "main": [[{ "node": "5. Needs attention?", "type": "main", "index": 0 }]] },
+    "5. Needs attention?": {
+      "main": [
+        [{ "node": "6a. Alert (wire your own channel)", "type": "main", "index": 0 }],
+        [{ "node": "6b. Success log", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": { "executionOrder": "v1", "saveManualExecutions": true, "callerPolicy": "workflowsFromSameOwner" },
+  "pinData": {},
+  "meta": {
+    "instanceId": "fyndra-admitad",
+    "templateCredsSetupCompleted": false
+  },
+  "tags": [{ "name": "fyndra" }, { "name": "admitad" }]
+}

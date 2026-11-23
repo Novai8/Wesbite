@@ -32,6 +32,8 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# The template contains names and comments only, never values.
+!.env.example
 
 # vercel
 .vercel
@@ -45,3 +47,12 @@ next-env.d.ts
 .wrangler/
 test-results/
 __pycache__/
+
+# Local research scratch (raw Admitad doc dumps + scrape helpers).
+# Distilled, reviewed notes live in docs/research/admitad-api-notes.md instead.
+/admitad-*.md
+/admitad-*.html
+/admitad-*.txt
+/hc-*.json
+/fetch-admitad.cjs
+/fetch-links.cjs

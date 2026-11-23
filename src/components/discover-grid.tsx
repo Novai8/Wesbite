@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { ProductCard } from "@/components/product-card";
 import { getCategories, getCatalogue } from "@/lib/catalogue";
+import type { Category, Product } from "@/lib/types";
 
 type SortKey = "relevance" | "price-asc" | "price-desc" | "newest";
 
@@ -15,9 +16,20 @@ const budgetLabels: Record<string, string> = {
   premium: "Premium",
 };
 
-export function DiscoverGrid() {
-  const products = getCatalogue();
-  const categories = getCategories();
+/**
+ * When the server supplies the merged catalogue (seed + imported), use it.
+ * Falling back to the synchronous seed keeps the component usable in isolation
+ * and keeps the client bundle free of any Supabase concern.
+ */
+export function DiscoverGrid({
+  initialProducts,
+  initialCategories,
+}: {
+  initialProducts?: Product[];
+  initialCategories?: Category[];
+} = {}) {
+  const products = initialProducts ?? getCatalogue();
+  const categories = initialCategories ?? getCategories();
   const searchParams = useSearchParams();
 
   const categoryFromUrl = searchParams.get("category") ?? "";

@@ -9,6 +9,8 @@
     "build": "node scripts/patch-opennext-turbopack.js && next build",
     "start": "next start",
     "lint": "eslint",
+    "test:unit": "node --no-warnings --import ./tests/register.mjs --test tests/*.test.ts",
+    "test:e2e": "playwright test",
     "worker": "node scripts/patch-opennext-turbopack.js && next build && opennextjs-cloudflare build --skipNextBuild"
   },
   "dependencies": {
