@@ -74,7 +74,7 @@ is in `docs/research/admitad-api-notes.md`.
 | `src/lib/workflow-auth.ts` | Bearer auth for `/api/n8n/*`, fail-closed |
 | `supabase/migrations/0001_admitad_integration.sql` | Additive schema + RLS |
 | `n8n/fyndra-admitad-import.json` | Importable workflow |
-| `tests/*.test.ts` | 70 offline unit tests |
+| `tests/*.test.ts` | 81 offline unit tests |
 
 ### Routes
 
@@ -93,17 +93,21 @@ All require `Authorization: Bearer $N8N_WEBHOOK_SECRET` and are rate limited.
 
 ## Data model
 
-Products reuse the existing `affiliate_products` contract and gain:
+The integration targets the **actual Affiliate Business Supabase project**,
+whose `public.affiliate_products` table already exists as an affiliate
+*research* table (20 columns, UUID primary key). The migration is additive: it
+never drops, renames or recreates that table, and it never writes a research
+column.
 
-| Column | Purpose |
-| --- | --- |
-| `source` | `admitad`, `aliexpress`, `manual` |
-| `external_product_id` | Admitad feed product id |
-| `advertiser_id` | Admitad programme id |
-| `original_price` | Pre-discount price, when supplied |
-| `commission_info` | Structured provenance (never an estimate) |
-| `last_synced_at` | Last successful import |
-| `ai_headline`, `ai_description`, `ai_quality_flags` | AI copy, isolated from facts |
+| Field group | Columns | Written by |
+| --- | --- | --- |
+| Research (pre-existing) | `product_name`, `product_url`, `affiliate_network`, `category`, `target_market`, `price_text`, `commission_rate_text`, `evidence_notes`, `decision`, `score`, `target_audience`, `positioning_angle`, `content_hooks`, `risk_flags`, `research_confidence`, `rationale`, `status` | research workflow |
+| Shared | `id` (uuid pk), `created_at`, `affiliate_url` | either |
+| Catalogue (added) | `slug`, `title`, `description`, `category_slug`, `subcategory`, `image_urls`, `merchant`, `program_slug`, `source_url`, `price`, `currency`, `previous_price`, `original_price`, `specs`, `pros`, `cons`, `availability`, `region`, `keywords`, `use_cases`, `budget_tier`, `price_verified_at`, `approval_status`, `data_source`, `source`, `external_product_id`, `advertiser_id`, `commission_info`, `last_synced_at`, `ai_headline`, `ai_description`, `ai_quality_flags`, `updated_at` | Admitad importer |
+
+`status` and `approval_status` are **different columns with different
+meanings** and are never mapped onto each other. A research row has
+`approval_status = NULL` and therefore never appears in the public catalogue.
 
 Duplicate prevention is a non-partial unique index scoped to the advertiser:
 
@@ -113,25 +117,38 @@ create unique index ... on affiliate_products (source, advertiser_id, external_p
 
 It is deliberately not partial, because PostgREST can only use a non-partial
 unique index as an `on_conflict` target. NULLs are distinct in a PostgreSQL
-unique index, so manual rows are unaffected.
+unique index, so manual and research rows are unaffected.
+
+`src/lib/admitad/mapper.ts` exports the conflict target:
+
+```ts
+export const PRODUCT_SOURCE_UNIQUE_COLUMNS = "source,advertiser_id,external_product_id";
+```
+
+The columns and their order must stay identical to the index, or every upsert
+fails with PostgreSQL error `42P10`.
 
 Manual edits are protected by the `protect_manual_product` trigger: an automated
-upsert cannot take ownership of a `data_source = 'manual'` row, and a manual row
-never has its `source`/`external_product_id` rewritten.
+upsert cannot take ownership of a manual row. A row counts as manual when
+`data_source = 'manual'` **or `data_source IS NULL`** — the second branch is what
+protects pre-existing research rows. A manual row never has its `source` /
+`external_product_id` / `advertiser_id` rewritten.
 
 RLS: `anon` may read approved products and active programmes only. Every write
 path needs the service role, which exists server-side only.
 
-> **ID compatibility.** The migration creates `affiliate_products` with
-> `id text` if it does not exist. A project created from the older
-> documentation may have `id uuid`. Imported records therefore use a
-> deterministic, UUID-shaped id derived from
-> `(source, advertiser_id, external_product_id)`, which inserts cleanly into
-> both column types without an `ALTER TABLE` and stays stable across re-syncs.
+> **ID compatibility.** The live project already has `id uuid primary key`. The
+> migration reuses it: it only adds a `gen_random_uuid()` default when `id` is
+> already `uuid`, and never changes the column type. Imported records carry a
+> deterministic, RFC 4122 version-5 UUID derived from
+> `(source, advertiser_id, external_product_id)`, which stays stable across
+> re-syncs.
 >
-> The migration also widens `price` / `previous_price` to `numeric(12,2)` and
-> replaces any legacy three-currency `CHECK` with an ISO-4217 shape check added
-> `NOT VALID`, so existing rows are never rejected or rewritten.
+> The migration widens `price` / `previous_price` to `numeric(12,2)` only when
+> they are already numeric, so a `price_text` column is never converted. Any
+> single-column currency allowlist is replaced by an ISO-4217 shape check added
+> `NOT VALID`, so existing rows are never rejected or rewritten. A combined
+> constraint that also references another column is left untouched.
 
 ---
 
@@ -156,7 +173,7 @@ path needs the service role, which exists server-side only.
 
 ## Verification status
 
-**Proven offline (70 tests, `npm run test:unit`):**
+**Proven offline (81 tests, `npm run test:unit`):**
 
 - CSV/XML/JSON parsing: quoted fields, BOM, CRLF, semicolon delimiters, CDATA,
   XML attributes, nested tags.
@@ -182,6 +199,27 @@ path needs the service role, which exists server-side only.
 - Affiliate-URL validation, including look-alike host rejection.
 - AI fabrication guard.
 - Honest configuration reporting (missing vars, blank values, static tokens).
+- The migration against the actual live schema (`tests/live-affiliate-schema.test.ts`):
+  a mocked PostgREST surface accepts only the live + added columns, enforces the
+  UUID primary key and the exact `on_conflict` tuple, keeps research rows
+  untouched, and is exercised for repeated imports, AI-field patches and
+  malformed rows.
+
+**Proven against real PostgreSQL (disposable cluster seeded with the live
+schema, not the Supabase project):**
+
+- All 20 research columns keep their exact types after the migration runs.
+- All 33 catalogue columns are added; the table ends at 53 columns.
+- The migration is idempotent: running it twice changes nothing.
+- `ADD COLUMN` carries no default, so research rows are not backfilled.
+- The dedupe index is unique and non-partial; the slug index rejects duplicates;
+  the exact `on_conflict` tuple upserts instead of inserting a second row.
+- The currency rule is added `NOT VALID`; an invalid new value is rejected, and a
+  combined currency+price constraint survives the migration.
+- `protect_manual_product` blocks an import from claiming a manual row **and** a
+  research row whose `data_source` is NULL.
+- A catalogue-only database gains the research columns, and a research-only
+  insert still works afterwards.
 
 **Not proven — requires credentials:**
 
@@ -218,8 +256,11 @@ into verified results.
 5. **Set the variables** (see `.env.example`): `ADMITAD_CLIENT_ID`,
    `ADMITAD_CLIENT_SECRET`, `ADMITAD_WEBSITE_ID`, plus `N8N_WEBHOOK_SECRET` and
    the Supabase pair.
-6. **Apply the migration** (`supabase db push`, or run
-   `supabase/migrations/0001_admitad_integration.sql` in the SQL editor).
+6. **Apply the migration.** It is **not applied yet**. Snapshot the project,
+   dry-run the file on a scratch copy, then run
+   `supabase/migrations/0001_admitad_integration.sql` in the SQL editor or via
+   `supabase db push`. Post-verify and re-run it once to prove idempotency —
+   see [Applying the migration](DATABASE-SCHEMA.md#applying-the-migration).
 7. **Confirm the connection:**
 
    ```bash
@@ -276,8 +317,10 @@ Create one credential — **HTTP Header Auth**, header `Authorization`, value
 `Bearer <N8N_WEBHOOK_SECRET>` — and attach it to all three HTTP nodes. No
 Admitad secret is stored in n8n.
 
-The import route is idempotent per `(source, external_product_id)`, so re-running
-is safe: existing rows are updated, new ones inserted, duplicates reported.
+The import route is idempotent per
+`(source, advertiser_id, external_product_id)`, so re-running is safe: existing
+rows are updated, new ones inserted, duplicates reported. `advertiser_id` is part
+of the key because feed product ids are only unique inside one advertiser's feed.
 
 ---
 
