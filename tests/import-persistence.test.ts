@@ -48,6 +48,9 @@ function mockSupabase(options: { existing?: Array<Record<string, unknown>> } = {
           { link: `https://ad.admitad.com/g/tracked/?ulp=${encodeURIComponent(ulp)}`, is_affiliate_product: true },
         ]);
       }
+      if (url.pathname === "/validate_links/") {
+        return Response.json({ message: "Link successfully tested." });
+      }
     }
 
     requests.push({
@@ -162,6 +165,9 @@ test("an existing-identity lookup failure degrades to deterministic ids, not a f
       }
       if (url.pathname.startsWith("/deeplink/")) {
         return Response.json([{ link: "https://ad.admitad.com/g/tracked/", is_affiliate_product: true }]);
+      }
+      if (url.pathname === "/validate_links/") {
+        return Response.json({ message: "Link successfully tested." });
       }
     }
     if (url.pathname.endsWith("/admitad_import_runs")) return Response.json([{ id: "run-1" }]);

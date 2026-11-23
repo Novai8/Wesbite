@@ -26,11 +26,17 @@ export const seedPrograms: AffiliateProgram[] = [
     name: "Admitad",
     network: "Admitad Publisher",
     /**
-     * Admitad deeplinks are served from ad.admitad.com and redirect onward.
-     * This is the only host an Admitad product's affiliate_url may use; the
-     * final merchant domain is never trusted from feed data.
+     * Destination = where the shopper ends up (validated per programme through
+     * Admitad's `allowed_deeplink_domains`).
+     *
+     * Tracking = where a *generated* deeplink lives. Admitad has served these
+     * from `ad.admitad.com`; AliExpress WW now returns `rzekl.com`, so both are
+     * provider hosts. A `rzekl.com` URL is only ever accepted when it came from
+     * an authenticated `/deeplink/` response for that programme — the host is
+     * shared across advertisers and is not a merchant destination.
      */
-    destinationDomain: "ad.admitad.com",
+    destinationDomain: "admitad.com",
+    trackingDomains: ["ad.admitad.com", "rzekl.com"],
     active: true,
     commissionNote: "Commission is reported by Admitad and is never estimated or hard-coded in this app.",
   },
