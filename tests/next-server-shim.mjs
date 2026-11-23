@@ -22,3 +22,11 @@ export class NextResponse extends Response {
 }
 
 export class NextRequest extends Request {}
+
+/**
+ * `next/cache` is pulled in by route modules that call `revalidatePath`.
+ * Outside a Next runtime there is nothing to revalidate, so these are no-ops.
+ */
+export function revalidatePath() {}
+
+export function revalidateTag() {}

@@ -206,6 +206,9 @@ function mockLiveProject(options: { rows?: LiveRow[] } = {}) {
           { link: `https://ad.admitad.com/g/tracked/?ulp=${encodeURIComponent(ulp)}`, is_affiliate_product: true },
         ]);
       }
+      if (url.pathname === "/validate_links/") {
+        return Response.json({ message: "Link successfully tested." });
+      }
     }
 
     // Must match the real endpoint in src/lib/admitad/enrich.ts.

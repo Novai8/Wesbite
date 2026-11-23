@@ -45,6 +45,12 @@ function mockDeeplinkApi(options: {
         headers: { "Content-Type": "application/json" },
       });
     }
+    if (url.pathname === "/validate_links/") {
+      return new Response(JSON.stringify({ message: "Link successfully tested." }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
     throw new Error(`Unexpected mocked call: ${url.pathname}`);
   }) as typeof fetch;
   return calls;
@@ -52,12 +58,12 @@ function mockDeeplinkApi(options: {
 
 const FEED = [
   "offer_id,Product Name,Description,Image,URL,Price,OldPrice,Currency,Category,Availability",
-  'A1,"Monitor Arm","A clamp-on gas spring arm for 13-32 inch screens with VESA mounting.","https://cdn.example.com/a.jpg","https://www.aliexpress.com/item/1.html",24.50,29.99,USD,"Computer / Monitor",in stock',
-  'A2,"Gaming Controller","A wireless controller with two analogue sticks for PC and console play.","https://cdn.example.com/b.jpg","https://www.aliexpress.com/item/2.html",32.00,,USD,"Gaming",in stock',
+  'A1,"Monitor Arm","A clamp-on gas spring arm for 13-32 inch screens with VESA mounting.","https://cdn.example.com/a.jpg","https://www.aliexpress.com/item/1005000000001.html",24.50,29.99,USD,"Computer / Monitor",in stock',
+  'A2,"Gaming Controller","A wireless controller with two analogue sticks for PC and console play.","https://cdn.example.com/b.jpg","https://www.aliexpress.com/item/1005000000002.html",32.00,,USD,"Gaming",in stock',
   // Duplicate of A1 — must be counted, not imported twice.
-  'A1,"Monitor Arm duplicate","A clamp-on gas spring arm for 13-32 inch screens with VESA mounting.","https://cdn.example.com/a.jpg","https://www.aliexpress.com/item/1.html",24.50,29.99,USD,"Computer / Monitor",in stock',
+  'A1,"Monitor Arm duplicate","A clamp-on gas spring arm for 13-32 inch screens with VESA mounting.","https://cdn.example.com/a.jpg","https://www.aliexpress.com/item/1005000000001.html",24.50,29.99,USD,"Computer / Monitor",in stock',
   // Missing image and price — must fail the publish gate.
-  'A3,"No Image Thing","This listing has no image and no price supplied by the feed at all.","","https://www.aliexpress.com/item/3.html",,,USD,"Gadgets",',
+  'A3,"No Image Thing","This listing has no image and no price supplied by the feed at all.","","https://www.aliexpress.com/item/1005000000003.html",,,USD,"Gadgets",',
   // No URL — parser skips it.
   'A4,"No URL","A record with no product URL at all in the feed row.","https://cdn.example.com/d.jpg","",10.00,,USD,"Gadgets",in stock',
 ].join("\n");
@@ -115,7 +121,7 @@ test("import pipeline produces a full, honest report", async () => {
 });
 
 test("a row whose deeplink resolves off-domain is rejected, not published", async () => {
-  mockDeeplinkApi({ returnUntrackedFor: ["item/1.html"] });
+  mockDeeplinkApi({ returnUntrackedFor: ["item/1005000000001.html"] });
   try {
     process.env.ADMITAD_CLIENT_ID = "test-id";
     process.env.ADMITAD_CLIENT_SECRET = "test-secret";
@@ -123,14 +129,17 @@ test("a row whose deeplink resolves off-domain is rejected, not published", asyn
 
     const feed = [
       "id,title,url,price,image",
-      'X1,"Monitor Arm","https://www.aliexpress.com/item/1.html",20,https://cdn.example.com/a.jpg',
+      'X1,"Monitor Arm","https://www.aliexpress.com/item/1005000000001.html",20,https://cdn.example.com/a.jpg',
     ].join("\n");
 
     const { report, products } = await importFromFeedText(feed, { campaignId: 1 });
     assert.equal(products.length, 0);
     assert.equal(report.imported, 0);
     assert.equal(report.blocked, true);
-    assert.ok(report.errors.some((e) => e.reason.includes("outside approved programme domain")));
+    assert.ok(
+      report.errors.some((e) => e.reason.includes("outside the programme's tracking domains")),
+      `expected a host rejection, got: ${JSON.stringify(report.errors)}`,
+    );
   } finally {
     globalThis.fetch = realFetch;
     delete process.env.ADMITAD_CLIENT_ID;
@@ -140,7 +149,7 @@ test("a row whose deeplink resolves off-domain is rejected, not published", asyn
 });
 
 test("deeplink failures are recorded per row and the run is marked blocked", async () => {
-  mockDeeplinkApi({ failFor: ["item/2.html"] });
+  mockDeeplinkApi({ failFor: ["item/1005000000002.html"] });
   try {
     process.env.ADMITAD_CLIENT_ID = "test-id";
     process.env.ADMITAD_CLIENT_SECRET = "test-secret";
@@ -148,7 +157,7 @@ test("deeplink failures are recorded per row and the run is marked blocked", asy
 
     const feed = [
       "id,title,url,price,image",
-      'Y1,"Controller","https://www.aliexpress.com/item/2.html",20,https://cdn.example.com/a.jpg',
+      'Y1,"Controller","https://www.aliexpress.com/item/1005000000002.html",20,https://cdn.example.com/a.jpg',
     ].join("\n");
 
     const { report, products } = await importFromFeedText(feed, { campaignId: 1 });

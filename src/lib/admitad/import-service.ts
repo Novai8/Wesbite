@@ -25,6 +25,16 @@ export interface RunImportInput {
   feedUrl?: string;
   campaignId: number;
   programme?: ImportOptions["programme"];
+  /**
+   * The ad-space programme record. When present, its `show_products_links`
+   * flag is enforced and the import fails closed without reading the feed.
+   * Omitted by callers that only supply metadata (tests, inline feed text).
+   */
+  permission?: ImportOptions["permission"];
+  /** Advertiser's allowed destination domains, from the ad-space programme. */
+  allowedDeeplinkDomains?: string[];
+  /** Skip Admitad /validate_links/ per row. Tests only. */
+  skipLinkValidation?: boolean;
   subid?: string;
   maxRows?: number;
   throttleMs?: number;
@@ -53,6 +63,9 @@ export async function runImport(input: RunImportInput): Promise<RunImportResult>
   const { report, products } = await importFromFeedText(feedText, {
     campaignId: input.campaignId,
     programme: input.programme,
+    permission: input.permission,
+    allowedDeeplinkDomains: input.allowedDeeplinkDomains,
+    skipLinkValidation: input.skipLinkValidation,
     subid: input.subid,
     maxRows: input.maxRows,
     throttleMs: input.throttleMs,
@@ -110,6 +123,10 @@ export async function runImport(input: RunImportInput): Promise<RunImportResult>
             advertiserId: p.advertiserId ?? String(input.campaignId),
             programme: input.programme?.name,
             network: "admitad",
+            // Provenance only: the URL the feed supplied. For AliExpress WW this
+            // is a long provider tracking link, so it is never tracked; the
+            // canonical product page lives in `source_url`.
+            feedUrl: p.feedProductUrl,
           });
           // Keep the identity of a row an earlier import already created. The
           // upsert conflict target is the source tuple, so sending a new id

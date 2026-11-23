@@ -12,6 +12,7 @@
 
 import { getAdmitadConfig } from "./config";
 import { admitadRequest } from "./client";
+import { validateAffiliateUrl } from "@/lib/affiliate";
 import type { AdmitadDeeplinkResult } from "./types";
 
 export class AdmitadDeeplinkError extends Error {
@@ -116,4 +117,53 @@ export async function validateDeeplink(link: string): Promise<LinkValidationResu
       message: err instanceof Error ? err.message : "Link validation failed.",
     };
   }
+}
+
+export interface GeneratedLinkCheck {
+  ok: boolean;
+  /** Which guard rejected the link, when it did. */
+  stage?: "host" | "validate_links";
+  reason: string;
+}
+
+/**
+ * Full acceptance test for a link that came back from `/deeplink/`.
+ *
+ * A generated link is accepted only when BOTH hold:
+ *  1. its host is one of the programme's provider tracking hosts (this is what
+ *     keeps a hijacked or off-network response out of the catalogue), and
+ *  2. Admitad's own `/validate_links/` confirms it will be paid.
+ *
+ * Callers must pass the raw API response here — never a URL a user supplied.
+ * The host check alone is insufficient: `rzekl.com` is shared by many
+ * advertisers, so "on rzekl.com" does not mean "on this programme".
+ */
+export async function validateGeneratedDeeplink(
+  response: AdmitadDeeplinkResult | null | undefined,
+  programmeSlug = "admitad",
+  options: { skipNetworkValidation?: boolean } = {},
+): Promise<GeneratedLinkCheck> {
+  if (!response?.link) {
+    return { ok: false, stage: "host", reason: "Admitad returned no deeplink." };
+  }
+
+  const hostCheck = validateAffiliateUrl(response.link, programmeSlug);
+  if (!hostCheck.ok) {
+    return { ok: false, stage: "host", reason: hostCheck.reason };
+  }
+
+  if (options.skipNetworkValidation) {
+    return { ok: true, reason: "Tracking host accepted; network validation skipped by caller." };
+  }
+
+  const validation = await validateDeeplink(response.link);
+  if (!validation.ok) {
+    return {
+      ok: false,
+      stage: "validate_links",
+      reason: `Admitad did not confirm the link will be paid: ${validation.message}`,
+    };
+  }
+
+  return { ok: true, reason: validation.message };
 }

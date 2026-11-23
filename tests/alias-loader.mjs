@@ -34,6 +34,10 @@ export async function resolve(specifier, context, nextResolve) {
     return { url: pathToFileURL(path.join(projectRoot, "tests", "next-server-shim.mjs")).href, shortCircuit: true };
   }
 
+  if (specifier === "next/cache") {
+    return { url: pathToFileURL(path.join(projectRoot, "tests", "next-server-shim.mjs")).href, shortCircuit: true };
+  }
+
   if (specifier.startsWith("@/")) {
     const base = path.join(projectRoot, "src", specifier.slice(2));
     const file = resolveFile(base);

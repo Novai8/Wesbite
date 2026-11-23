@@ -46,6 +46,12 @@ export interface Product {
   programSlug: ProgramSlug;
   affiliateUrl: string;
   sourceUrl?: string;
+  /**
+   * The URL exactly as the feed supplied it, when it differs from `sourceUrl`
+   * (AliExpress WW supplies a long provider tracking link). Provenance only;
+   * never used as a destination.
+   */
+  feedProductUrl?: string;
   price: number;
   /** ISO 4217 code. Wildcard keeps room for Admitad programme currencies. */
   currency: string;
@@ -95,7 +101,17 @@ export interface AffiliateProgram {
   slug: string;
   name: string;
   network: string;
+  /**
+   * Merchant domain a *destination* (the customer-facing product page) must
+   * belong to. This is never where a tracked link points.
+   */
   destinationDomain: string;
+  /**
+   * Hosts a *generated tracking link* may use. Empty/absent means the
+   * programme has no separate tracking host and links stay on the network's
+   * own domain.
+   */
+  trackingDomains?: string[];
   active: boolean;
   commissionNote?: string;
 }

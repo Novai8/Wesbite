@@ -210,6 +210,12 @@ export interface MapFeedRowInput {
   programme: Pick<AdmitadCampaignForWebsite, "id" | "name" | "currency">;
   /** Validated tracked URL. When absent, the product is not publishable. */
   affiliateUrl: string;
+  /**
+   * The merchant destination actually tracked. Defaults to the feed row's URL.
+   * AliExpress WW passes a canonical product URL here because its feed URL is a
+   * long provider tracking link.
+   */
+  destinationUrl?: string;
   /** Merchant display name. Defaults to the programme name. */
   merchant?: string;
   region?: string[];
@@ -228,6 +234,7 @@ export function mapFeedRowToProduct(input: MapFeedRowInput): Product {
   const category = inferCategory(row.category, row.title);
   const tracker = row.brand?.trim() || input.merchant || programme.name;
   const advertiserId = String(programme.id);
+  const destination = input.destinationUrl?.trim() || row.product_url;
 
   return {
     id: stableProductId(ADMITAD_PROGRAM_SLUG, advertiserId, row.external_product_id),
@@ -240,7 +247,12 @@ export function mapFeedRowToProduct(input: MapFeedRowInput): Product {
     merchant: tracker,
     programSlug: ADMITAD_PROGRAM_SLUG,
     affiliateUrl,
-    sourceUrl: row.product_url,
+    // Provenance: the merchant product page the tracked link resolves to. The
+    // feed's own URL is only used when it *is* that page.
+    sourceUrl: destination,
+    // Provenance: the URL exactly as the feed supplied it, when it was not the
+    // destination (AliExpress WW's 485-character tracking link).
+    feedProductUrl: row.product_url !== destination ? row.product_url : undefined,
     price: row.price ?? 0,
     currency: normaliseCurrency(row.currency, programme.currency ?? "USD") ?? "USD",
     previousPrice: row.original_price && row.price && row.original_price > row.price ? row.original_price : undefined,

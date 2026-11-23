@@ -4,7 +4,7 @@
 
 | Check | Command | Status |
 | --- | --- | --- |
-| Unit tests (offline) | `npm run test:unit` | 81 passed |
+| Unit tests (offline) | `npm run test:unit` | 107 passed |
 | TypeScript strict | `npx tsc --noEmit` | clean |
 | ESLint | `npm run lint` | clean |
 | Next.js production build | `npm run build` | 24 routes pass |
@@ -26,6 +26,9 @@ so a unit test can never quietly depend on Admitad being reachable.
 | `admitad-config.test.ts` | Honest config reporting: missing vars, blank values, static tokens, deeplink capability |
 | `supabase-store.test.ts` | `Product` ↔ row round-trip, null tolerance, JSON-string columns, AI fields kept separate |
 | `live-affiliate-schema.test.ts` | Migration against the actual live research schema: UUID pk, research columns preserved, exact `on_conflict` target, manual-row protection, AI patches, repeated imports, malformed rows |
+| `aliexpress-canonical.test.ts` | Canonical product URLs from feed ids, strict id validation, long-URL replacement, `ulp` limit unchanged |
+| `admitad-tracking-domains.test.ts` | `rzekl.com` as a provider tracking host, arbitrary rzekl URLs rejected, bad hosts / HTTP links, `validate_links` requirement, merchant-destination validation |
+| `feed-permission.test.ts` | Fail-closed on `show_products_links: false`, no feed read, route returns 403, parsing still testable offline |
 | `enrich.test.ts` | Quality flags from record completeness; fabrication guard rejects invented ratings/discounts/counts |
 
 ### What is not covered
