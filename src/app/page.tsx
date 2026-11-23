@@ -1,16 +1,15 @@
 import Link from "next/link";
 import { LandingHero } from "@/components/landing/landing-hero";
 import { ProductCard } from "@/components/product-card";
-import { getCatalogue, getCategories } from "@/lib/catalogue";
+import { getCatalogueSnapshot } from "@/lib/catalogue-server";
 
 function realImageHandle(product: { imageUrls: string[] }) {
   const image = product.imageUrls[0];
   return Boolean(image && !image.endsWith(".svg"));
 }
 
-export default function HomePage() {
-  const catalogue = getCatalogue();
-  const categories = getCategories();
+export default async function HomePage() {
+  const { products: catalogue, categories } = await getCatalogueSnapshot();
 
   const categoryLinks = categories.map((category) => ({
     name: category.name,

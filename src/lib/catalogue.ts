@@ -71,7 +71,28 @@ export function getPopularProducts(limit = 4): Product[] {
   return picks.slice(0, limit);
 }
 
+const CURRENCY_SYMBOLS: Record<string, string> = {
+  USD: "$",
+  EUR: "€",
+  GBP: "£",
+  JPY: "¥",
+  CNY: "¥",
+  INR: "₹",
+  KRW: "₩",
+  RUB: "₽",
+  UAH: "₴",
+  TRY: "₺",
+  BRL: "R$",
+  PLN: "zł",
+};
+
+/**
+ * Formats a source price. Unknown ISO codes fall back to the code itself
+ * (`1,234.00 AED`) rather than a wrong symbol.
+ */
 export function formatPrice(price: number, currency: string): string {
-  const symbol = currency === "EUR" ? "€" : currency === "GBP" ? "£" : "$";
-  return `${symbol}${price.toFixed(2)}`;
+  const code = (currency || "USD").toUpperCase();
+  const symbol = CURRENCY_SYMBOLS[code];
+  if (symbol) return `${symbol}${price.toFixed(2)}`;
+  return `${price.toFixed(2)} ${code}`;
 }

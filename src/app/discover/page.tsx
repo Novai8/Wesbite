@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { DiscoverGrid } from "@/components/discover-grid";
 import { DiscoverSkeleton } from "@/components/discover-skeleton";
-import { getCatalogue, getCategories } from "@/lib/catalogue";
+import { getCatalogueSnapshot } from "@/lib/catalogue-server";
 
 export const metadata: Metadata = {
   title: "Discover",
@@ -10,9 +10,8 @@ export const metadata: Metadata = {
     "Browse Fyndra's full curated catalogue of approved products. Filter by category, budget tier and price, then sort by what matters to you.",
 };
 
-export default function DiscoverPage() {
-  const catalogue = getCatalogue();
-  const categories = getCategories();
+export default async function DiscoverPage() {
+  const { products: catalogue, categories } = await getCatalogueSnapshot();
 
   return (
     <div className="catalogue-page">
@@ -39,7 +38,7 @@ export default function DiscoverPage() {
 
       <div className="container-page catalogue-body">
         <Suspense fallback={<DiscoverSkeleton />}>
-          <DiscoverGrid />
+          <DiscoverGrid initialProducts={catalogue} initialCategories={categories} />
         </Suspense>
       </div>
     </div>

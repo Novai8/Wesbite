@@ -17,6 +17,9 @@ const eslintConfig = defineConfig([
     "docs/**",
     "test-results/**",
     "playwright-report/**",
+    // Local research scratch, git-ignored (see .gitignore).
+    "fetch-admitad.cjs",
+    "fetch-links.cjs",
   ]),
 ]);
 

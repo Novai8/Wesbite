@@ -21,6 +21,19 @@ export const seedPrograms: AffiliateProgram[] = [
     active: true,
     commissionNote: "Actual commission rates come from the AliExpress portal report, never from this app.",
   },
+  {
+    slug: "admitad",
+    name: "Admitad",
+    network: "Admitad Publisher",
+    /**
+     * Admitad deeplinks are served from ad.admitad.com and redirect onward.
+     * This is the only host an Admitad product's affiliate_url may use; the
+     * final merchant domain is never trusted from feed data.
+     */
+    destinationDomain: "ad.admitad.com",
+    active: true,
+    commissionNote: "Commission is reported by Admitad and is never estimated or hard-coded in this app.",
+  },
 ];
 
 export const seedCategories: Category[] = [

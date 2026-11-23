@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { recordClick, validateAffiliateUrl } from "@/lib/affiliate";
 import { getCatalogue, getProductBySlug } from "@/lib/catalogue";
+import { getLiveCatalogue } from "@/lib/catalogue-server";
 
 export const runtime = "nodejs";
 
@@ -12,9 +13,14 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Missing product id." }, { status: 400 });
   }
 
-  // Lookup by id; the discover/product UIs always pass internal ids.
-  const product =
-    getCatalogue().find((p) => p.id === id) ?? getProductBySlug(id);
+  // Seed lookup is synchronous and always available; imported products live in
+  // Supabase, so fall through to the live catalogue only when the seed misses.
+  let product = getCatalogue().find((p) => p.id === id) ?? getProductBySlug(id);
+
+  if (!product) {
+    const live = await getLiveCatalogue();
+    product = live.find((p) => p.id === id || p.slug === id);
+  }
 
   if (!product) {
     return NextResponse.json({ error: "Unknown product." }, { status: 404 });

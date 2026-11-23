@@ -4,6 +4,10 @@ Fyndra uses Supabase (PostgreSQL) for persistent storage. The seed catalogue
 in `src/data/seed-products.ts` mirrors these tables so the app runs fully
 without credentials — the Supabase layer swaps in when configured.
 
+The earliest migration (`supabase/migrations/0001_admitad_integration.sql`)
+creates these tables if the database has never had them, then adds the Admitad
+columns described below. It is idempotent.
+
 ## Rules
 
 1. **Never reset or drop existing tables.** All migrations are additive
@@ -49,6 +53,36 @@ The core catalogue. One row per product.
 | created_at | timestamptz default now() | |
 | updated_at | timestamptz default now() | |
 
+#### Import provenance (added by `0001_admitad_integration.sql`)
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| source | text | `admitad`, `aliexpress`, `manual`. Null for legacy rows. |
+| external_product_id | text | Admitad feed product id. |
+| advertiser_id | text | Admitad programme id. |
+| original_price | numeric(12,2) | Pre-discount price, when supplied. |
+| commission_info | jsonb | Structured provenance. **Never an estimated rate.** |
+| last_synced_at | timestamptz | Last successful import. |
+| ai_headline | text | AI copy. Never a source of product facts. |
+| ai_description | text | AI copy. |
+| ai_quality_flags | jsonb default '[]' | Deterministic completeness flags. |
+
+Dedupe constraint:
+
+```sql
+create unique index affiliate_products_source_external_key
+  on affiliate_products (source, external_product_id)
+  where source is not null and external_product_id is not null;
+```
+
+`protect_manual_product` (a before-update trigger) refuses to let an automated
+upsert claim a `data_source = 'manual'` row, and never rewrites `source` /
+`external_product_id` on a manual row.
+
+`id` is `text`, not `uuid`: imported records use stable,
+network-scoped ids (`admitad-<campaign>-<external id>`), and the existing
+catalogue already mixes string ids.
+
 RLS: `select` allowed for `anon` **only** where `approval_status = 'approved'`.
 Write access (`insert/update/delete`) only for `service_role`.
 
@@ -76,6 +110,21 @@ RLS: `select` for `anon`; writes for `service_role`.
 | commission_note | text | never machine-generated figures |
 
 RLS: `select` for `anon` (active rows only); writes for `service_role`.
+
+### admitad_import_runs
+
+One row per import execution: `campaign_id`, `programme_name`, `feed_format`,
+`total_rows`, `imported`, `duplicates`, `skipped`, `error_count`, `blocked`,
+`blocked_reason`, `unmapped_columns`, `started_at`, `finished_at`.
+
+RLS: `service_role` only.
+
+### admitad_import_errors
+
+Per-row failures, cascading from a run: `run_id`, `row_index`,
+`external_product_id`, `reason`. Capped at 200 rows per run.
+
+RLS: `service_role` only.
 
 ### product_sources
 

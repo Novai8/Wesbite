@@ -12,6 +12,11 @@ workflow callbacks are authenticated and return `401` when the shared secret
 is missing from the environment. The app never pretends a workflow ran when
 it did not.
 
+The one workflow with a written, importable definition is
+`n8n/fyndra-admitad-import.json` — see
+[Workflow 7 — Admitad import](#workflow-7--admitad-import). It is tested
+offline but has never been executed against a live Admitad account.
+
 ## Authentication
 
 All workflow-facing endpoints require a shared secret header:
@@ -129,3 +134,64 @@ Purpose: post approved picks to social channels.
 - Rate limits apply (10 requests/min/IP). Workflows should batch.
 - All callbacks are logged server-side with their outcome; `/admin`
   surfaces recent activity.
+
+## Workflow 7 — Admitad import
+
+Importable definition: `n8n/fyndra-admitad-import.json`.
+
+Runs on a schedule, checks the integration, imports a programme feed, and
+reports a summary. It holds **no Admitad credentials** — those stay in the
+Fyndra app. The workflow needs a single HTTP Header Auth credential:
+
+```
+Authorization: Bearer $N8N_WEBHOOK_SECRET
+```
+
+### Endpoints
+
+| Route | Method | Purpose |
+| --- | --- | --- |
+| `/api/n8n/admitad/status` | GET | Config presence, AliExpress availability, programme counts |
+| `/api/n8n/admitad/aliexpress` | GET | AliExpress WW availability (`?refresh=1` bypasses cache) |
+| `/api/n8n/admitad/preview` | POST | Parse a feed with no credentials and no writes |
+| `/api/n8n/admitad/deeplink` | POST | Generate + validate one tracked link |
+| `/api/n8n/admitad/import` | POST | Run an import |
+| `/api/n8n/admitad/enrich` | POST | Generate AI copy for one stored product |
+
+### Import payload
+
+```json
+{
+  "campaignId": 20523,
+  "useProgrammeFeed": true,
+  "enrich": true,
+  "maxRows": 100,
+  "subid": "n8n-admitad"
+}
+```
+
+`feedText` (inline file contents) or `feedUrl` (a specific signed link) can be
+used instead of `useProgrammeFeed`. Signed feed links expire, so
+`useProgrammeFeed` is preferred: it re-reads the link from the ad-space
+programme object on every run.
+
+### Response contract
+
+- `200` — import ran and produced at least one publishable product.
+- `409` — import ran but produced **zero** publishable products. `blockedReason`
+  says why; this is not a success.
+- `422` — payload problem. Fix and retry.
+- `429` — rate limited. Retry after `Retry-After`.
+- `502/500` — Admitad or Supabase failure. Retry later.
+
+The response includes `summary` (`totalRows`, `imported`, `duplicates`,
+`skipped`, `errors`, `unmappedColumns`, `durationMs`), `persisted`,
+`persistReason`, `enriched`, and an `errorSample` of the first ten row
+failures. `report.blocked` is `true` whenever nothing was imported.
+
+### Re-run safety
+
+Imports upsert on `(source, external_product_id)`, so re-running updates
+existing rows instead of duplicating them. An import never overwrites a
+manually curated row (enforced by a database trigger), and AI fields are written
+separately so a re-sync cannot erase generated copy.

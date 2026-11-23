@@ -5,7 +5,12 @@ import { notFound } from "next/navigation";
 import { ProductCard } from "@/components/product-card";
 import { Badge } from "@/components/ui/badge";
 import { AffiliateButton } from "@/components/affiliate-button";
-import { formatPrice, getCategories, getProductBySlug, getRelatedProducts } from "@/lib/catalogue";
+import { formatPrice, getCategories } from "@/lib/catalogue";
+import {
+  getCatalogueSnapshot,
+  getLiveProductBySlug,
+  relatedFrom,
+} from "@/lib/catalogue-server";
 import { outboundPath } from "@/lib/affiliate";
 
 export function generateStaticParams() {
@@ -18,9 +23,9 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const product = getProductBySlug(slug);
+  const product = await getLiveProductBySlug(slug);
   if (!product) return { title: "Product not found" };
-  return { title: product.title, description: product.description };
+  return { title: product.title, description: product.aiDescription ?? product.description };
 }
 
 const tierCopy: Record<string, string> = {
@@ -35,10 +40,11 @@ export default async function ProductPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const product = getProductBySlug(slug);
+  const { products } = await getCatalogueSnapshot();
+  const product = products.find((item) => item.slug === slug);
   if (!product) notFound();
 
-  const related = getRelatedProducts(product, 3);
+  const related = relatedFrom(products, product, 3);
   const category = getCategories().find((item) => item.slug === product.categorySlug);
   const image = product.imageUrls[0] ?? "/products/placeholder-organiser.svg";
 
@@ -79,6 +85,12 @@ export default async function ProductPage({
             </div>
 
             <h1>{product.title}</h1>
+
+            {product.aiHeadline ? (
+              <p className="product-price-note">
+                Fyndra note: {product.aiHeadline}
+              </p>
+            ) : null}
 
             <div className="product-price-row">
               <p className="price">{formatPrice(product.price, product.currency)}</p>
@@ -125,6 +137,37 @@ export default async function ProductPage({
                 <dt>Regions</dt>
                 <dd>{product.region.join(", ")}</dd>
               </div>
+              {product.source ? (
+                <div className="product-fact">
+                  <dt>Source</dt>
+                  <dd>
+                    {product.source === "admitad"
+                      ? "Imported from Admitad"
+                      : product.source === "aliexpress"
+                        ? "AliExpress listing"
+                        : "Fyndra curation"}
+                    {product.sourceUrl ? (
+                      <>
+                        {" · "}
+                        <a
+                          href={product.sourceUrl}
+                          rel="nofollow noopener"
+                          target="_blank"
+                          className="quiet-link"
+                        >
+                          View original listing
+                        </a>
+                      </>
+                    ) : null}
+                  </dd>
+                </div>
+              ) : null}
+              {product.lastSyncedAt ? (
+                <div className="product-fact">
+                  <dt>Last synced</dt>
+                  <dd>{new Date(product.lastSyncedAt).toLocaleDateString("en-GB")}</dd>
+                </div>
+              ) : null}
             </dl>
           </div>
         </div>
