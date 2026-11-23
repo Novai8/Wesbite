@@ -2,11 +2,12 @@ import { seedCategories, seedProducts, seedPrograms } from "@/data/seed-products
 import type { AffiliateProgram, Category, Product } from "@/lib/types";
 
 /**
- * Catalogue access layer.
+ * Synchronous, seed-backed catalogue helpers.
  *
- * Reads from Supabase when configured (via lib/supabase-server); falls back to
- * the seed catalogue so every discovery surface works without credentials.
- * All public functions are safe to call from server components.
+ * Everything here reads `src/data/seed-products.ts` only, so it is safe in the
+ * client bundle and during a credential-free build. Live catalogue reads (seed
+ * rows merged with approved Supabase rows) live in `lib/catalogue-server.ts`;
+ * callers that need imported products use `getCatalogueSnapshot()` there.
  */
 
 export function getCatalogue(): Product[] {

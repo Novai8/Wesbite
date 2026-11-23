@@ -33,7 +33,7 @@ The core catalogue. One row per product.
 | affiliate_url | text not null | validated against programme domain |
 | source_url | text | public listing the data came from |
 | price | numeric(10,2) not null check (price >= 0) | |
-| currency | text not null default 'USD' check in (USD, EUR, GBP) | |
+| currency | text not null default 'USD' | ISO 4217 code; flexible three-letter validation, not a fixed list | |
 | previous_price | numeric(10,2) | for was/now display |
 | specs | jsonb default '{}' | key/value spec pairs |
 | pros | jsonb default '[]' | |
@@ -46,6 +46,12 @@ The core catalogue. One row per product.
 | price_verified_at | timestamptz | last price check |
 | approval_status | text not null default 'pending' check in (approved, pending, rejected) | |
 | data_source | text not null default 'manual' check in (manual, api, csv_import, n8n_workflow) | |
+| source | text | `admitad` / `aliexpress` / null for curation |
+| external_product_id | text | advertiser's own id, with `advertiser_id`, forms the import identity |
+| advertiser_id | text | advertiser/programme id from the network |
+| commission_info | jsonb | internal provenance (advertiser, programme, original feed URL). Never in the public view. |
+| last_synced_at | timestamptz | when the source data last changed; catalogue ordering key |
+| ai_headline / ai_description / ai_quality_flags | text / text / jsonb | generated copy, kept in their own columns so a re-sync cannot clobber them |
 | created_at | timestamptz default now() | |
 | updated_at | timestamptz default now() | |
 | model_url | text | public URL of the generated GLB; set only when `model_status = 'completed'` |
@@ -57,11 +63,47 @@ The core catalogue. One row per product.
 | model_error | text | human-readable failure reason; never contains credentials |
 | source_image_hash | text | SHA-256 of the source photo; used to dedupe generation |
 
-RLS: `select` allowed for `anon` **only** where `approval_status = 'approved'`.
-Write access (`insert/update/delete`) only for `service_role`.
+The `model_*` and `source_image_hash` columns are added by
+`supabase/migrations/20261123150000_fyndra_3d_models.sql` with
+`ADD COLUMN IF NOT EXISTS`, so the migration is safe on an existing catalogue.
 
-Added by `supabase/migrations/20261123150000_fyndra_3d_models.sql` with
-`ADD COLUMN IF NOT EXISTS`, so it is safe on an existing catalogue.
+#### Currency
+
+`currency` holds an ISO 4217 three-letter code (`USD`, `EUR`, `GBP`, `AED`,
+`PKR`, `JPY`, `INR`, …). Validation is a format check plus a known-code table
+(`src/lib/currency.ts`), not a column constraint listing three values, so a new
+advertiser currency does not need a migration. Display uses
+`Intl.NumberFormat` with the real code and never silently re-labels an unknown
+currency as USD.
+
+#### Access
+
+RLS is enabled with `products_read_approved` (approved rows only). Column-level
+security is enforced by **not granting** `anon`/`authenticated` any privilege on
+this table:
+
+- `revoke all on public.affiliate_products from anon, authenticated`
+- public reads go through the `catalogue_products` view below
+- `insert`/`update`/`delete` remain `service_role` only
+
+#### catalogue_products (view)
+
+Customer-facing projection of approved rows. A `security_barrier` view owned by
+`postgres`, readable by `anon` and `authenticated`. It exists because RLS is
+row-level only: without it, an approved row would expose every column.
+
+Deliberately **absent** from the view:
+
+| Column | Why |
+| --- | --- |
+| `evidence_notes`, `score`, `research_confidence`, `decision` | internal research output |
+| `model_error` | operator-facing 3D failure detail |
+| `commission_info` | internal provenance; contains signed advertiser feed URLs |
+
+`created_at`, `updated_at`, `last_synced_at`, `advertiser_id`,
+`external_product_id` and the display-only `model_*` fields are included.
+Catalogue reads in the app use `fromPublicProductRow()`, which never reads
+`commission_info`; privileged reads of the base table use `fromProductRow()`.
 
 ### product_model_jobs
 

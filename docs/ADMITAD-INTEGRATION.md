@@ -304,7 +304,7 @@ into verified results.
    dry-run the file on a scratch copy, then run
    `supabase/migrations/0001_admitad_integration.sql` in the SQL editor or via
    `supabase db push`. Post-verify and re-run it once to prove idempotency —
-   see [Applying the migration](DATABASE-SCHEMA.md#applying-the-migration).
+   see [Migration approach](DATABASE-SCHEMA.md#migration-approach).
 7. **Confirm the connection:**
 
    ```bash

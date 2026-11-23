@@ -90,8 +90,31 @@ function asNumber(value: unknown): number | undefined {
   return Number.isFinite(n) ? n : undefined;
 }
 
-/** Row -> Product. Tolerant of nulls so an incomplete import cannot crash a page. */
-export function fromProductRow(row: Record<string, unknown>): Product {
+/**
+ * The feed URL the advertiser originally supplied, if the row carries it.
+ *
+ * `commission_info` is internal provenance. It lives on the base table only:
+ * the public `catalogue_products` view deliberately omits it because it holds
+ * signed, advertiser-controlled feed URLs. Reads that can see it are privileged
+ * (service role) reads, never browser reads.
+ */
+function feedUrlFromCommissionInfo(value: unknown): string | undefined {
+  if (!value || typeof value !== "object") return undefined;
+  const info = value as Record<string, unknown>;
+  const feedUrl = info.feedUrl ?? info.feed_url;
+  return typeof feedUrl === "string" && feedUrl ? feedUrl : undefined;
+}
+
+interface RowToProductOptions {
+  /**
+   * Read `commission_info` for `feedProductUrl`. Only a privileged base-table
+   * read may set this: the public catalogue view does not project the column.
+   */
+  readProvenance: boolean;
+}
+
+/** Shared row -> Product mapping. Tolerant of nulls and partial rows. */
+function rowToProduct(row: Record<string, unknown>, options: RowToProductOptions): Product {
   const availability = String(row.availability ?? "unknown");
   const tier = String(row.budget_tier ?? "budget");
   const approval = String(row.approval_status ?? "pending");
@@ -109,14 +132,9 @@ export function fromProductRow(row: Record<string, unknown>): Product {
     programSlug: String(row.program_slug ?? ""),
     affiliateUrl: String(row.affiliate_url ?? ""),
     sourceUrl: row.source_url ? String(row.source_url) : undefined,
-    feedProductUrl:
-      row.commission_info && typeof row.commission_info === "object"
-        ? (() => {
-            const info = row.commission_info as Record<string, unknown>;
-            const feedUrl = info.feedUrl ?? info.feed_url;
-            return typeof feedUrl === "string" && feedUrl ? feedUrl : undefined;
-          })()
-        : undefined,
+    feedProductUrl: options.readProvenance
+      ? feedUrlFromCommissionInfo(row.commission_info)
+      : undefined,
     price: asNumber(row.price) ?? 0,
     currency: String(row.currency ?? "USD"),
     previousPrice: asNumber(row.previous_price),
@@ -155,6 +173,29 @@ export function fromProductRow(row: Record<string, unknown>): Product {
     modelGeneratedAt: row.model_generated_at ? String(row.model_generated_at) : undefined,
     sourceImageHash: row.source_image_hash ? String(row.source_image_hash) : undefined,
   };
+}
+
+/**
+ * Row -> Product for a privileged read of `public.affiliate_products`.
+ *
+ * Privileged callers (the service-role import/enrichment paths and their tests)
+ * see the base table, including `commission_info`, so feed provenance is
+ * preserved. Tolerant of nulls so an incomplete import cannot crash a page.
+ */
+export function fromProductRow(row: Record<string, unknown>): Product {
+  return rowToProduct(row, { readProvenance: true });
+}
+
+/**
+ * Row -> Product for the public `catalogue_products` view.
+ *
+ * The view omits research columns, `model_error` and `commission_info`. Feed
+ * provenance is therefore *never available* here, by design, and the mapping
+ * must not depend on it: `feedProductUrl` is always undefined, and no
+ * browser-facing render reads it.
+ */
+export function fromPublicProductRow(row: Record<string, unknown>): Product {
+  return rowToProduct(row, { readProvenance: false });
 }
 
 /**

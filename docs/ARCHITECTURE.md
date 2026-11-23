@@ -16,24 +16,35 @@
 ```
 src/
   app/                 pages + API routes
-    api/recommend      POST — scored recommendations (+ optional Groq explanation)
-    api/setup-build    POST — budget-split setup builder
-    api/go             GET  — validated affiliate redirect
+    api/recommend              POST — scored recommendations (+ optional Groq explanation)
+    api/setup-build            POST — budget-split setup builder
+    api/go                     GET  — validated affiliate redirect + click log
+    api/products/3d-model      POST — enqueue one 3D generation (shared secret)
+    api/products/3d-model/status GET — job/queue state for one product
+    api/n8n/admitad/*          workflow routes: status, preview, import,
+                               deeplink, aliexpress, enrich
   components/          UI (server by default, "use client" only where needed)
   lib/
     types.ts           shared domain types
     site.ts            brand config (single source of truth)
-    catalogue.ts       data access layer (seed ⇄ Supabase swap point)
+    catalogue.ts       synchronous seed data + formatPrice (build-safe)
+    catalogue-server.ts server catalogue: seed + approved Supabase rows,
+                        merged; reads the public `catalogue_products` view
+    currency.ts        ISO 4217 validation + formatting helpers
     recommendation-engine.ts   deterministic scoring + setup builder
     ai/provider.ts     AI abstraction — explanations only, never facts
     ai/groq.ts         Groq adapter (OpenAI-compatible endpoint)
     ai/freellmapi.ts   FreeLLMAPI adapter — optional categorisation only
-    supabase-server.ts PostgREST + Storage wrapper (service role, server only)
+    supabase-rest.ts   PostgREST wrapper for the catalogue + import pipeline
+    supabase-server.ts PostgREST wrapper for the 3D queue (service role)
     model-store.ts     model state reads + generation queue
     glb.ts             structural GLB validation (pure, testable)
     affiliate.ts       URL validation + non-identifying click logging
+    admitad/           Admitad client, mapper, feed parser, importer,
+                       permissions (feed gate), provenance store
     rate-limit.ts      in-memory token bucket (10 req/60s/IP/route)
     validation.ts      input parsing bounds
+    workflow-auth.ts   shared-secret auth for /api/n8n routes
   data/
     seed-products.ts   seed catalogue (labelled as sample data)
 ```
@@ -48,21 +59,49 @@ deterministic explanation is used and `generatedBy` says so.
 
 ## Data flow
 
-1. All catalogue reads go through `catalogue.ts`, currently backed by the
-   seed data. When Supabase credentials exist, the same functions read from
-   `affiliate_products` (RLS-governed).
-2. Recommendations are computed per-request on the server; rate limited per
+1. Client components read the synchronous seed catalogue from
+   `catalogue.ts`. Server pages (`/discover`, `/products/[slug]`) call
+   `getCatalogueSnapshot()`, which merges approved Supabase rows with the
+   seed list and degrades to seed-only when credentials are absent or the
+   read fails.
+2. Catalogue reads go through the `catalogue_products` **view**, not the base
+   table. The view is limited to approved rows and to customer-facing
+   columns: research fields, `model_error` and `commission_info` (signed feed
+   provenance) are absent, and `anon`/`authenticated` hold no privilege on
+   `affiliate_products` itself.
+3. Ordering is `last_synced_at desc, created_at desc` — deliberately not
+   `updated_at`, which the import guard and 3D worker both bump, so a model
+   completion cannot reorder the storefront.
+4. Recommendations are computed per-request on the server; rate limited per
    IP per route.
-3. Outbound purchase clicks go through `/api/go`, which validates the
+5. Outbound purchase clicks go through `/api/go`, which validates the
    destination against the approved programme domain before issuing a 302
    with `no-store` and no referrer.
 
+## Admitad integration
+
+The importer is a workflow route (`POST /api/n8n/admitad/import`) protected
+by `N8N_WEBHOOK_SECRET`. It fails closed on two independent checks:
+
+- **Permission.** `show_products_links` must be `true` and the connection
+  active. A feed URL that downloads successfully is *not* evidence of
+  permission; a signed link returning HTTP 200 is ignored when the advertiser
+  has not enabled product links.
+- **Credentials.** Without them the route reports exactly what is missing
+  rather than falling back to an unauthenticated scrape.
+
+Imports upsert on `(source, advertiser_id, external_product_id)`, never claim
+a `data_source = 'manual'` row (enforced by a `BEFORE UPDATE` guard trigger),
+and keep AI copy in its own `ai_*` columns. The original feed URL is stored
+only in `commission_info` on the base table.
+
 ## Admin
 
-`/admin` is a protected dashboard for catalogue management (CRUD, CSV/JSON
-import, approval, price freshness, click stats). Access requires admin
-auth; without credentials configured the dashboard is unreachable and says
-so.
+There is **no `/admin` route in this codebase**. Catalogue writes happen
+through the workflow API (`/api/n8n/admitad/*`), which is gated by
+`N8N_WEBHOOK_SECRET`, and through direct service-role operations. Approval
+state lives in `affiliate_products.approval_status` and only approved rows
+are reachable through the public view.
 
 ## 3D product models
 

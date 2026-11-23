@@ -360,10 +360,16 @@ begin
   -- Widen a pre-existing numeric price column without touching data. A column
   -- of any other type (for example `price_text`) is left alone: converting it
   -- would rewrite data and is not part of this migration.
+  --
+  -- Skip the ALTER when the column is already numeric(12, 2). PostgreSQL would
+  -- otherwise execute a no-op type change and refuse it when a view depends on
+  -- the column ("cannot alter type of a column used by a view"), which breaks
+  -- a legitimate re-run once `catalogue_products` exists.
   if exists (
     select 1 from information_schema.columns
     where table_schema = 'public' and table_name = 'affiliate_products'
       and column_name = 'price' and data_type in ('numeric', 'decimal')
+      and (numeric_precision is distinct from 12 or numeric_scale is distinct from 2)
   ) then
     alter table public.affiliate_products alter column price type numeric(12, 2);
   end if;
@@ -371,6 +377,7 @@ begin
     select 1 from information_schema.columns
     where table_schema = 'public' and table_name = 'affiliate_products'
       and column_name = 'previous_price' and data_type in ('numeric', 'decimal')
+      and (numeric_precision is distinct from 12 or numeric_scale is distinct from 2)
   ) then
     alter table public.affiliate_products alter column previous_price type numeric(12, 2);
   end if;

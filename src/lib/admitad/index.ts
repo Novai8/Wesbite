@@ -42,5 +42,5 @@ export {
 export { importFromFeedText, downloadFeed, type ImportReport, type ImportOptions } from "./products";
 export { runImport, type RunImportInput, type RunImportResult } from "./import-service";
 export { enrichProduct, computeQualityFlags, looksLikeFabrication } from "./enrich";
-export { fromProductRow, toProductRow, importUpdateColumns } from "./supabase-store";
+export { fromProductRow, fromPublicProductRow, toProductRow, importUpdateColumns } from "./supabase-store";
 export * from "./types";

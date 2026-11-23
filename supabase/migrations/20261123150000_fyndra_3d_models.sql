@@ -209,7 +209,8 @@ drop policy if exists product_models_public_read on storage.objects;
 -- RLS is row-level only. Supabase grants anon/authenticated table SELECT by
 -- default, so `products_read_approved` alone would expose *every* column of an
 -- approved row -- including research fields (evidence_notes, score,
--- research_confidence, decision) and the operator-facing model_error.
+-- research_confidence, decision), the operator-facing model_error and
+-- `commission_info`, which holds signed advertiser feed URLs.
 --
 -- Fix: expose only customer-facing columns through a view, and stop granting
 -- anon/authenticated direct SELECT on the base table. The service role keeps
@@ -272,7 +273,7 @@ from public.affiliate_products
 where approval_status = 'approved';
 
 comment on view public.catalogue_products is
-  'Customer-facing catalogue. Omits research columns (evidence_notes, score, research_confidence, decision) and model_error. Only approved rows.';
+  'Customer-facing catalogue. Omits research columns (evidence_notes, score, research_confidence, decision), model_error and commission_info (signed feed provenance). Only approved rows.';
 
 -- Only approved, customer-facing rows are reachable through the view, so it
 -- can be readable by the public roles without a second policy.

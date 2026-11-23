@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { test } from "node:test";
 
 /**
@@ -16,6 +16,14 @@ function read(relative: string): string {
 }
 
 const migration = () => read("supabase/migrations/20261123150000_fyndra_3d_models.sql");
+
+/** Recursively list files under `dir`, returned with forward-slash paths. */
+function walk(dir: string): string[] {
+  return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    const path = `${dir}/${entry.name}`;
+    return entry.isDirectory() ? walk(path) : [path];
+  });
+}
 
 const SENSITIVE_COLUMNS = [
   "evidence_notes",
@@ -125,4 +133,44 @@ test("catalogue ordering does not depend on updated_at", () => {
 
 test("the queue's updated_at trigger is still defined", () => {
   assert.match(migration(), /create trigger product_model_jobs_set_updated_at/i);
+});
+
+test("the public view never projects commission_info", () => {
+  // `commission_info` carries signed, advertiser-controlled feed URLs. It is
+  // internal provenance and must stay on the base table.
+  const sql = migration();
+  const viewStart = sql.indexOf("create or replace view public.catalogue_products");
+  const viewEnd = sql.indexOf("comment on view public.catalogue_products");
+  assert.ok(viewStart > -1 && viewEnd > viewStart, "expected the view definition block");
+
+  const viewSql = sql.slice(viewStart, viewEnd).toLowerCase();
+  assert.doesNotMatch(
+    viewSql,
+    /^\s*commission_info\s*,?\s*$/m,
+    "the public view must not expose commission_info",
+  );
+});
+
+test("catalogue reads use the provenance-free public mapper", () => {
+  const server = read("src/lib/catalogue-server.ts");
+  assert.match(server, /fromPublicProductRow/);
+  assert.doesNotMatch(
+    server,
+    /import\s*\{\s*fromProductRow\s*\}/,
+    "public catalogue reads must not use the privileged mapper",
+  );
+});
+
+test("only privileged modules import the base-table provenance mapper", () => {
+  // Enrichment operates on a stored row read with the service role, so it may
+  // use fromProductRow. Anything that serves the public catalogue may not.
+  const allowlist = [
+    "src/lib/admitad/supabase-store.ts",
+    "src/lib/admitad/index.ts",
+    "src/app/api/n8n/admitad/enrich/route.ts",
+  ];
+  const offenders = walk("src")
+    .filter((file) => /\.(ts|tsx)$/.test(file) && !allowlist.includes(file))
+    .filter((file) => /\bfromProductRow\b/.test(read(file)));
+  assert.deepEqual(offenders, [], `unexpected fromProductRow callers: ${offenders.join(", ")}`);
 });

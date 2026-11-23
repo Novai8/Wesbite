@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { fromProductRow, toProductRow } from "../src/lib/admitad/supabase-store.ts";
+import {
+  fromProductRow,
+  fromPublicProductRow,
+  toProductRow,
+} from "../src/lib/admitad/supabase-store.ts";
 import type { Product } from "../src/lib/types.ts";
 
 const product: Product = {
@@ -130,4 +134,65 @@ test("fromProductRow surfaces AI fields separately from source fields", () => {
   assert.equal(back.aiHeadline, "Punchy headline");
   assert.equal(back.aiDescription, "Short blurb");
   assert.deepEqual(back.aiQualityFlags, ["no_specs"]);
+});
+
+/* ------------------------------------------------------------------------- */
+/* Feed provenance: privileged reads vs the public catalogue view            */
+/* ------------------------------------------------------------------------- */
+
+const FEED_URL = "https://export.admitad.com/ww/products/AE/feed.xml?code=signed-secret";
+
+const baseRow = {
+  id: "x", slug: "s", title: "T", description: "D",
+  category_slug: "desk-setup", merchant: "M", program_slug: "admitad",
+  affiliate_url: "https://ad.admitad.com/g/1/", price: 1, currency: "USD",
+  approval_status: "approved", data_source: "api", source: "admitad",
+};
+
+test("a privileged base-table read preserves feed provenance", () => {
+  const back = fromProductRow({
+    ...baseRow,
+    source_url: "https://www.aliexpress.com/item/1.html",
+    commission_info: { feedUrl: FEED_URL },
+  });
+  assert.equal(back.feedProductUrl, FEED_URL);
+  assert.equal(back.sourceUrl, "https://www.aliexpress.com/item/1.html");
+});
+
+test("feed_url is accepted as well as feedUrl", () => {
+  const back = fromProductRow({ ...baseRow, commission_info: { feed_url: FEED_URL } });
+  assert.equal(back.feedProductUrl, FEED_URL);
+});
+
+test("a public catalogue read never surfaces provenance", () => {
+  // The view does not project commission_info, so the column is absent. Even if
+  // a future view change leaked it, the public mapper must not read it.
+  const withoutColumn = fromPublicProductRow(baseRow);
+  assert.equal(withoutColumn.feedProductUrl, undefined);
+  assert.equal(withoutColumn.title, "T");
+
+  const withColumn = fromPublicProductRow({ ...baseRow, commission_info: { feedUrl: FEED_URL } });
+  assert.equal(withColumn.feedProductUrl, undefined, "the public mapper must ignore commission_info");
+});
+
+test("missing provenance maps cleanly on both paths", () => {
+  for (const row of [
+    { ...baseRow, commission_info: null },
+    { ...baseRow, commission_info: {} },
+    { ...baseRow, commission_info: { feedUrl: "" } },
+    { ...baseRow, commission_info: { feedUrl: 42 } },
+    baseRow,
+  ]) {
+    assert.equal(fromProductRow(row).feedProductUrl, undefined);
+    assert.equal(fromPublicProductRow(row).feedProductUrl, undefined);
+  }
+});
+
+test("feedProductUrl is never required for rendering a product", () => {
+  const publicProduct = fromPublicProductRow(baseRow);
+  // Every field the product page reads is present without provenance.
+  for (const key of ["id", "slug", "title", "description", "categorySlug", "merchant",
+    "affiliateUrl", "price", "currency", "imageUrls", "pros", "cons", "specs", "region"] as const) {
+    assert.notEqual(publicProduct[key], undefined, `${key} must be present without provenance`);
+  }
 });
