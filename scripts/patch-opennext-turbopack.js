@@ -18,6 +18,7 @@
  * Idempotent: no-ops when the fix is present or upstream has changed the file.
  * Wired as the `postinstall` npm script so `npm install` re-applies it.
  */
+/* eslint-disable @typescript-eslint/no-require-imports -- Node CJS postinstall script */
 const fs = require("node:fs");
 const path = require("node:path");
 
