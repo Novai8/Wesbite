@@ -58,6 +58,16 @@ test("toProductRow writes snake_case columns and keeps AI fields out", () => {
   assert.equal("ai_headline" in row, false, "AI copy is written by its own PATCH, never in an import upsert");
 });
 
+test("toProductRow omits created_at so a re-sync cannot rewrite it", () => {
+  const row = toProductRow(product);
+  assert.equal(
+    "created_at" in row,
+    false,
+    "an upsert that resends created_at overwrites the original creation time on every sync",
+  );
+  assert.equal(row.updated_at, product.updatedAt);
+});
+
 test("fromProductRow tolerates nulls and bad enum values", () => {
   const back = fromProductRow({
     id: "x",

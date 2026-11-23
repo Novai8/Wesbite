@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   ADMITAD_PROGRAM_SLUG,
+  PRODUCT_SOURCE_UNIQUE_COLUMNS,
   buildProductSlug,
   inferBudgetTier,
   inferCategory,
@@ -11,6 +12,7 @@ import {
   productSourceKey,
   shortHash,
   slugify,
+  stableProductId,
 } from "../src/lib/admitad/mapper.ts";
 import type { FeedRow } from "../src/lib/admitad/types.ts";
 
@@ -68,6 +70,36 @@ test("dedupe key is stable and network-scoped", () => {
   assert.notEqual(productSourceKey("admitad", "X"), productSourceKey("aliexpress", "X"));
 });
 
+test("dedupe key is advertiser-scoped when an advertiser id is known", () => {
+  assert.equal(productSourceKey("admitad", "AE-1", "20523"), "admitad:20523:AE-1");
+  assert.notEqual(
+    productSourceKey("admitad", "AE-1", "20523"),
+    productSourceKey("admitad", "AE-1", "31415"),
+    "two advertisers may publish the same external product id",
+  );
+});
+
+test("stable product ids are UUID-shaped, deterministic and advertiser-scoped", () => {
+  const UUID_V5 = /^[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+  const id = stableProductId("admitad", "20523", "AE-1");
+
+  assert.match(id, UUID_V5, "a uuid column must accept the id without a cast");
+  assert.equal(id, stableProductId("admitad", "20523", "AE-1"), "re-syncs must keep the same id");
+  assert.notEqual(id, stableProductId("admitad", "31415", "AE-1"));
+  assert.notEqual(id, stableProductId("aliexpress", "20523", "AE-1"));
+});
+
+test("slug hashing includes the advertiser so identical ids cannot collide", () => {
+  const a = buildProductSlug("Desk Lamp", "AE-1", "20523");
+  const b = buildProductSlug("Desk Lamp", "AE-1", "31415");
+  assert.notEqual(a, b);
+  assert.equal(buildProductSlug("Desk Lamp", "AE-1", "20523"), a);
+});
+
+test("the upsert conflict target matches the migration's unique index", () => {
+  assert.equal(PRODUCT_SOURCE_UNIQUE_COLUMNS, "source,advertiser_id,external_product_id");
+});
+
 test("normaliseCurrency accepts ISO codes and rejects junk", () => {
   assert.equal(normaliseCurrency("usd"), "USD");
   assert.equal(normaliseCurrency("RUB"), "RUB");
@@ -87,6 +119,11 @@ test("mapFeedRowToProduct maps source data without inventing anything", () => {
   assert.equal(product.source, "admitad");
   assert.equal(product.externalProductId, "AE-12345");
   assert.equal(product.advertiserId, "20523");
+  assert.match(
+    product.id,
+    /^[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
+    "imported ids must fit both uuid and text primary keys",
+  );
   assert.equal(product.price, 24.5);
   assert.equal(product.previousPrice, 29.99);
   assert.equal(product.currency, "USD");

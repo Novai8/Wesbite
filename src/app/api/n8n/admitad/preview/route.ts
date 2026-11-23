@@ -62,7 +62,11 @@ export async function POST(req: Request) {
     skipped: parsed.skipped.slice(0, 25),
     sample: parsed.rows.slice(0, 5).map((row) => ({
       externalProductId: row.external_product_id,
-      dedupeKey: productSourceKey("admitad", row.external_product_id),
+      dedupeKey: productSourceKey(
+        "admitad",
+        row.external_product_id,
+        Number.isFinite(campaignId) ? String(campaignId) : undefined,
+      ),
       tier: inferBudgetTier(row.price),
       category: inferCategory(row.category, row.title),
       title: row.title.slice(0, 90),
@@ -70,7 +74,11 @@ export async function POST(req: Request) {
       currency: row.currency,
       image: Boolean(row.image_url),
       productUrlHost: safeHost(row.product_url),
-      hashSlug: buildProductSlug(row.title, row.external_product_id),
+      hashSlug: buildProductSlug(
+        row.title,
+        row.external_product_id,
+        Number.isFinite(campaignId) ? String(campaignId) : undefined,
+      ),
       campaignId: Number.isFinite(campaignId) ? campaignId : undefined,
     })),
     note:

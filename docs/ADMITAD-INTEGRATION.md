@@ -74,13 +74,13 @@ is in `docs/research/admitad-api-notes.md`.
 | `src/lib/workflow-auth.ts` | Bearer auth for `/api/n8n/*`, fail-closed |
 | `supabase/migrations/0001_admitad_integration.sql` | Additive schema + RLS |
 | `n8n/fyndra-admitad-import.json` | Importable workflow |
-| `tests/*.test.ts` | 53 offline unit tests |
+| `tests/*.test.ts` | 70 offline unit tests |
 
 ### Routes
 
 | Route | Method | Purpose |
 | --- | --- | --- |
-| `/api/n8n/admitad/status` | GET | Config presence, AliExpress availability, programme counts |
+| `/api/n8n/admitad/status` | GET | Per-check report: OAuth, ad space, programme eligibility, AliExpress availability |
 | `/api/n8n/admitad/aliexpress` | GET | Focused AliExpress WW availability answer |
 | `/api/n8n/admitad/preview` | POST | Parse a feed file with no credentials, no writes |
 | `/api/n8n/admitad/deeplink` | POST | Generate + validate one tracked link |
@@ -105,12 +105,15 @@ Products reuse the existing `affiliate_products` contract and gain:
 | `last_synced_at` | Last successful import |
 | `ai_headline`, `ai_description`, `ai_quality_flags` | AI copy, isolated from facts |
 
-Duplicate prevention is a partial unique index:
+Duplicate prevention is a non-partial unique index scoped to the advertiser:
 
 ```sql
-create unique index ... on affiliate_products (source, external_product_id)
-  where source is not null and external_product_id is not null;
+create unique index ... on affiliate_products (source, advertiser_id, external_product_id);
 ```
+
+It is deliberately not partial, because PostgREST can only use a non-partial
+unique index as an `on_conflict` target. NULLs are distinct in a PostgreSQL
+unique index, so manual rows are unaffected.
 
 Manual edits are protected by the `protect_manual_product` trigger: an automated
 upsert cannot take ownership of a `data_source = 'manual'` row, and a manual row
@@ -119,12 +122,16 @@ never has its `source`/`external_product_id` rewritten.
 RLS: `anon` may read approved products and active programmes only. Every write
 path needs the service role, which exists server-side only.
 
-> **Migration caveat.** The migration creates `affiliate_products` if it does not
-> exist, using `id text`. If your Supabase project already created this table
-> from the older documentation with `id uuid` (nothing in the repo ever did),
-> the `create table if not exists` is skipped and imported text ids will not
-> insert. Check with `\d affiliate_products` before pushing; if `id` is `uuid`,
-> reconcile the column type first rather than forcing the migration.
+> **ID compatibility.** The migration creates `affiliate_products` with
+> `id text` if it does not exist. A project created from the older
+> documentation may have `id uuid`. Imported records therefore use a
+> deterministic, UUID-shaped id derived from
+> `(source, advertiser_id, external_product_id)`, which inserts cleanly into
+> both column types without an `ALTER TABLE` and stays stable across re-syncs.
+>
+> The migration also widens `price` / `previous_price` to `numeric(12,2)` and
+> replaces any legacy three-currency `CHECK` with an ISO-4217 shape check added
+> `NOT VALID`, so existing rows are never rejected or rewritten.
 
 ---
 
@@ -149,14 +156,26 @@ path needs the service role, which exists server-side only.
 
 ## Verification status
 
-**Proven offline (53 tests, `npm run test:unit`):**
+**Proven offline (70 tests, `npm run test:unit`):**
 
 - CSV/XML/JSON parsing: quoted fields, BOM, CRLF, semicolon delimiters, CDATA,
   XML attributes, nested tags.
 - Column mapping across the spellings advertisers actually use.
 - Number parsing for `1,234.50`, `1 234,50`, `€12.99`.
 - Category inference and budget tiers.
-- Stable slugs and the `source:external_product_id` dedupe key.
+- Stable slugs and the `source:advertiser_id:external_product_id` dedupe key.
+- Advertiser-scoped dedupe keys, UUID-shaped deterministic ids that fit both
+  `id text` and `id uuid`, and an upsert conflict target that matches the
+  migration's non-partial unique index.
+- Import persistence request shapes: merge-duplicates on the provenance tuple,
+  reuse of an existing row's id/slug, no `manual` writes, and graceful
+  degradation when the identity lookup fails.
+- `/api/go` redirects, 404 handling for unknown ids, and refusal to resolve an
+  arbitrary destination.
+- Status-route auth (fail-closed 503, 401 on a wrong token) and per-check
+  reporting against a mocked API, including the OAuth-failure path.
+- `created_at` is excluded from the import upsert, so re-syncs preserve the
+  original creation timestamp.
 - `Product` ↔ row round-trip, including nulls and JSON-string columns.
 - Full import pipeline against a **mocked** Admitad API: dedupe, per-row failure,
   off-domain rejection, blocked-run reporting.

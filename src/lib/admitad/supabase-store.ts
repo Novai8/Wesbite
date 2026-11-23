@@ -45,7 +45,6 @@ export interface ProductRow {
   advertiser_id: string | null;
   commission_info: Record<string, unknown> | null;
   last_synced_at: string | null;
-  created_at: string;
   updated_at: string;
 }
 
@@ -141,11 +140,21 @@ export function fromProductRow(row: Record<string, unknown>): Product {
  * Product -> row for an import upsert.
  * `commissionInfo` is optional structured provenance (advertiser, currency,
  * programme name) — it is data we received, never an estimate.
+ *
+ * `created_at` is deliberately absent: an upsert merges into an existing row,
+ * and re-sending the import timestamp would rewrite the original creation
+ * time on every re-sync. The column keeps its `default now()` on insert.
  */
 export function toProductRow(
   product: Product,
   commissionInfo?: Record<string, unknown>,
 ): ProductRow {
+  // The upsert conflict target includes advertiser_id, and NULLs never match in
+  // a unique index. Fall back to the import-supplied advertiser id so every
+  // imported row has a usable key.
+  const advertiserFromInfo =
+    typeof commissionInfo?.advertiserId === "string" ? commissionInfo.advertiserId : undefined;
+
   return {
     id: product.id,
     slug: product.slug,
@@ -175,10 +184,9 @@ export function toProductRow(
     data_source: product.dataSource,
     source: product.source ?? null,
     external_product_id: product.externalProductId ?? null,
-    advertiser_id: product.advertiserId ?? null,
+    advertiser_id: product.advertiserId ?? advertiserFromInfo ?? null,
     commission_info: commissionInfo ?? null,
     last_synced_at: product.lastSyncedAt ?? new Date().toISOString(),
-    created_at: product.createdAt,
     updated_at: product.updatedAt,
   };
 }

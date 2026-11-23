@@ -11,6 +11,7 @@
  *    the feed's own text and price — never guessed by a model.
  */
 
+import { createHash } from "node:crypto";
 import type { Product } from "@/lib/types";
 import type { AdmitadCampaignForWebsite, FeedRow } from "./types";
 
@@ -106,15 +107,60 @@ export function shortHash(input: string): string {
   return hash.toString(36).slice(0, 6);
 }
 
-export function buildProductSlug(title: string, externalId: string): string {
+export function buildProductSlug(title: string, externalId: string, advertiserId?: string): string {
   const base = slugify(title) || "admitad-product";
-  return `${base}-${shortHash(externalId)}`;
+  const hashInput = advertiserId ? `${advertiserId}:${externalId}` : externalId;
+  return `${base}-${shortHash(hashInput)}`;
 }
 
-/** Dedupe key. Stable across syncs and independent of slug/title edits. */
-export function productSourceKey(source: string, externalProductId: string): string {
-  return `${source}:${externalProductId}`;
+/**
+ * Dedupe key. Stable across syncs and independent of slug/title edits.
+ *
+ * Advertiser ids are included when available: feed product ids are only
+ * guaranteed unique inside one advertiser's feed, so two programmes can
+ * legitimately publish the same external id.
+ */
+export function productSourceKey(
+  source: string,
+  externalProductId: string,
+  advertiserId?: string,
+): string {
+  return advertiserId
+    ? `${source}:${advertiserId}:${externalProductId}`
+    : `${source}:${externalProductId}`;
 }
+
+/**
+ * Deterministic, UUID-shaped id for an imported record.
+ *
+ * The database contract exists in two forms in the wild: the original schema
+ * documentation used `id uuid`, while earlier migrations created `id text`.
+ * A name-based UUID inserts cleanly into either column type without an
+ * `ALTER TABLE`, and stays stable across re-syncs so an upsert updates the
+ * existing identity instead of creating a new one.
+ */
+export function stableProductId(
+  source: string,
+  advertiserId: string,
+  externalProductId: string,
+): string {
+  const digest = createHash("sha1")
+    .update(`fyndra:${source}:${advertiserId}:${externalProductId}`, "utf8")
+    .digest();
+  const bytes = Buffer.from(digest.subarray(0, 16));
+  // RFC 4122 version 5 (name-based) and variant bits.
+  bytes[6] = (bytes[6] & 0x0f) | 0x50;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = bytes.toString("hex");
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+
+/**
+ * Columns PostgREST names in `on_conflict`. Must match the non-partial unique
+ * index created by `0001_admitad_integration.sql` exactly, or every upsert is
+ * rejected by PostgreSQL.
+ */
+export const PRODUCT_SOURCE_UNIQUE_COLUMNS = "source,advertiser_id,external_product_id";
 
 const MAX_KEYWORDS = 10;
 
@@ -186,10 +232,11 @@ export function mapFeedRowToProduct(input: MapFeedRowInput): Product {
   const timestamp = now.toISOString();
   const category = inferCategory(row.category, row.title);
   const tracker = row.brand?.trim() || input.merchant || programme.name;
+  const advertiserId = String(programme.id);
 
   return {
-    id: `admitad-${programme.id}-${row.external_product_id}`.slice(0, 120),
-    slug: buildProductSlug(row.title, row.external_product_id),
+    id: stableProductId(ADMITAD_PROGRAM_SLUG, advertiserId, row.external_product_id),
+    slug: buildProductSlug(row.title, row.external_product_id, advertiserId),
     title: row.title.trim().slice(0, 240),
     description: buildDescription(row),
     categorySlug: category,
@@ -221,7 +268,7 @@ export function mapFeedRowToProduct(input: MapFeedRowInput): Product {
     dataSource: "api",
     source: "admitad",
     externalProductId: row.external_product_id,
-    advertiserId: String(programme.id),
+    advertiserId,
     lastSyncedAt: timestamp,
     createdAt: timestamp,
     updatedAt: timestamp,
