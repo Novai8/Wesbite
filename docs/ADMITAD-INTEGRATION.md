@@ -181,8 +181,8 @@ path needs the service role, which exists server-side only.
 - Number parsing for `1,234.50`, `1 234,50`, `€12.99`.
 - Category inference and budget tiers.
 - Stable slugs and the `source:advertiser_id:external_product_id` dedupe key.
-- Advertiser-scoped dedupe keys, UUID-shaped deterministic ids that fit both
-  `id text` and `id uuid`, and an upsert conflict target that matches the
+- Advertiser-scoped dedupe keys, UUID-shaped deterministic ids that fit the live
+  `id uuid` primary key, and an upsert conflict target that matches the
   migration's non-partial unique index.
 - Import persistence request shapes: merge-duplicates on the provenance tuple,
   reuse of an existing row's id/slug, no `manual` writes, and graceful
