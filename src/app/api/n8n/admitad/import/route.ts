@@ -48,6 +48,34 @@ function asString(value: unknown): string | undefined {
   return typeof value === "string" && value.trim() ? value.trim() : undefined;
 }
 
+/**
+ * Response for a blocked permission state.
+ *
+ * `ambiguous` (feed exists, advertiser says no) gets 409: the request is
+ * well-formed and the resource exists, but the current state conflicts with
+ * importing. `denied` gets 403. Neither path downloads a feed.
+ */
+function permissionResponse(
+  permission: ReturnType<typeof checkFeedPermission>,
+  note: string,
+) {
+  return NextResponse.json(
+    {
+      ok: false,
+      blocked: true,
+      error: permission.reason,
+      feedPermission: {
+        state: permission.state,
+        allowed: permission.allowed,
+        reason: permission.reason,
+        evidence: permission.evidence,
+      },
+      note,
+    },
+    { status: permission.state === "ambiguous" ? 409 : 403 },
+  );
+}
+
 export async function POST(req: Request) {
   const auth = requireWorkflowAuth(req);
   if (!auth.ok) {
@@ -109,16 +137,7 @@ export async function POST(req: Request) {
     // answers HTTP 200 is not evidence the advertiser allows importing.
     const permission = checkFeedPermission(programmeData);
     if (!permission.allowed) {
-      return NextResponse.json(
-        {
-          ok: false,
-          blocked: true,
-          error: permission.reason,
-          feedPermission: permission,
-          note: "No feed was downloaded and nothing was imported.",
-        },
-        { status: 403 },
-      );
+      return permissionResponse(permission, "No feed was downloaded and nothing was imported.");
     }
     programme = programmeData;
     feedUrl =
@@ -175,16 +194,7 @@ export async function POST(req: Request) {
     }
     const permission = checkFeedPermission(programme);
     if (!permission.allowed) {
-      return NextResponse.json(
-        {
-          ok: false,
-          blocked: true,
-          error: permission.reason,
-          feedPermission: permission,
-          note: "Nothing was imported.",
-        },
-        { status: 403 },
-      );
+      return permissionResponse(permission, "Nothing was imported.");
     }
   }
 
@@ -230,6 +240,18 @@ export async function POST(req: Request) {
         enriched: result.enriched,
         enrichmentNote: result.enrichmentSkipped,
         blockedReason: report.blockedReason,
+        // Permission state and the evidence behind it, so a caller can tell
+        // "not permitted" from "permitted but the feed failed".
+        feedPermission: report.feedPermission
+          ? {
+              state: report.feedPermission.state,
+              allowed: report.feedPermission.allowed,
+              reason: report.feedPermission.reason,
+              evidence: report.feedPermission.evidence,
+            }
+          : null,
+        download: report.download ?? null,
+        categories: report.categories ?? null,
         // First few errors only: enough to debug, small enough for a log entry.
         errorSample: report.errors.slice(0, 10),
       },

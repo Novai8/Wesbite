@@ -55,6 +55,17 @@ const CATEGORY_RULES: { slug: string; patterns: RegExp[] }[] = [
 export const FALLBACK_CATEGORY = "desk-setup";
 
 /**
+ * Shelf for products whose source category could not be resolved.
+ *
+ * A row with a category *id* the feed's dictionary does not contain must not be
+ * pushed onto an unrelated shelf (that silently invents an association the
+ * source never made). Such rows land here instead, and the importer reports how
+ * many did. The slug is not in the seed catalogue, so the UI renders it as
+ * "uncategorised" rather than claiming a shelf.
+ */
+export const UNCATEGORISED_SLUG = "uncategorised";
+
+/**
  * Category chosen from the feed's own category path / product type text.
  *
  * Highest-confidence match wins, not first match. Source paths are often broad
@@ -74,6 +85,43 @@ export function inferCategory(...hints: (string | undefined)[]): string {
     }
   }
   return best?.slug ?? FALLBACK_CATEGORY;
+}
+
+export type CategoryBasis = "source-category" | "title" | "unresolved-id" | "none";
+
+/**
+ * Category for a feed row, honouring the feed's own category dictionary.
+ *
+ * Precedence, in order of evidence strength:
+ *  1. the row's category text resolved against Fyndra's shelves;
+ *  2. the title, when the source category text matched nothing;
+ *  3. `uncategorised`, when an id was present but could not be resolved;
+ *  4. the catch-all shelf only when the source supplied no category signal.
+ *
+ * The distinction between 3 and 4 matters: an unresolved id means "we were told
+ * a category and could not read it", which must not be dressed up as a shelf.
+ */
+export function resolveProductCategory(row: {
+  category?: string;
+  categoryId?: string;
+  title?: string;
+}): { slug: string; basis: CategoryBasis } {
+  const rulesMatch = (text: string | undefined) =>
+    text?.trim()
+      ? CATEGORY_RULES.some((rule) => rule.patterns.some((pattern) => pattern.test(text)))
+      : false;
+
+  if (row.category?.trim()) {
+    const slug = inferCategory(row.category);
+    if (rulesMatch(row.category)) return { slug, basis: "source-category" };
+    // The source category is real but outside our shelves: try the title
+    // before giving up, since feeds often use generic top-level categories.
+    if (rulesMatch(row.title)) return { slug: inferCategory(row.title), basis: "title" };
+    return { slug: UNCATEGORISED_SLUG, basis: "unresolved-id" };
+  }
+  if (rulesMatch(row.title)) return { slug: inferCategory(row.title), basis: "title" };
+  if (row.categoryId?.trim()) return { slug: UNCATEGORISED_SLUG, basis: "unresolved-id" };
+  return { slug: FALLBACK_CATEGORY, basis: "none" };
 }
 
 /** Budget tier from the source price. Thresholds match the seed catalogue. */
@@ -236,7 +284,7 @@ export function mapFeedRowToProduct(input: MapFeedRowInput): Product {
   const { row, programme, affiliateUrl } = input;
   const now = input.now ?? new Date();
   const timestamp = now.toISOString();
-  const category = inferCategory(row.category, row.title);
+  const category = resolveProductCategory(row);
   const tracker = row.brand?.trim() || input.merchant || programme.name;
   const advertiserId = String(programme.id);
   const destination = input.destinationUrl?.trim() || row.product_url;
@@ -246,7 +294,7 @@ export function mapFeedRowToProduct(input: MapFeedRowInput): Product {
     slug: buildProductSlug(row.title, row.external_product_id, advertiserId),
     title: row.title.trim().slice(0, 240),
     description: buildDescription(row),
-    categorySlug: category,
+    categorySlug: category.slug,
     subcategory: row.category?.slice(0, 80),
     imageUrls: row.image_url ? [row.image_url] : [],
     merchant: tracker,
@@ -281,6 +329,9 @@ export function mapFeedRowToProduct(input: MapFeedRowInput): Product {
     source: "admitad",
     externalProductId: row.external_product_id,
     advertiserId,
+    sourceCategoryId: row.categoryId,
+    sourceCategory: row.category,
+    categoryBasis: category.basis,
     lastSyncedAt: timestamp,
     createdAt: timestamp,
     updatedAt: timestamp,

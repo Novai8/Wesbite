@@ -14,6 +14,7 @@
 
 import { getAdmitadConfig, requireWebsiteId } from "./config";
 import { admitadRequest } from "./client";
+import { checkFeedPermission, type FeedPermission } from "./permissions";
 import type {
   AdmitadCampaign,
   AdmitadCampaignForWebsite,
@@ -176,6 +177,8 @@ export interface AliExpressAvailability {
   canImportProducts: boolean;
   /** True when deeplinks may be generated for this programme. */
   canUseDeeplinks: boolean;
+  /** Three-state feed permission. `ambiguous` is not importable. */
+  feedPermission?: FeedPermission;
 }
 
 /**
@@ -204,24 +207,22 @@ export async function checkAliExpressAvailability(
 
   const status = programme.connection_status ?? "unknown";
   const active = status === "active";
-  const hasFeed = Boolean(
-    programme.show_products_links ||
-      programme.products_csv_link ||
-      programme.products_xml_link ||
-      (programme.feeds_info && programme.feeds_info.length > 0),
-  );
+  // Permission is a three-state decision, not "a download link exists".
+  // `ambiguous` (flag false, feed present) stays unimportable until the
+  // advertiser or Admitad confirms in writing.
+  const feedPermission = checkFeedPermission(programme);
+  const canImportProducts = feedPermission.state === "allowed";
   const canUseDeeplinks = active && programme.allow_deeplink !== false;
 
   return {
     available: active,
     programme,
     connectionStatus: status,
-    canImportProducts: active && hasFeed,
+    canImportProducts,
     canUseDeeplinks,
+    feedPermission,
     reason: active
-      ? hasFeed
-        ? "AliExpress WW is connected and exposes product feeds."
-        : "AliExpress WW is connected but this ad space has no product-feed links. Enable the product tool / request feed access with the advertiser."
+      ? feedPermission.reason
       : `AliExpress WW cooperation status is "${status}". Approval is required before imports or deeplinks can be used.`,
   };
 }
