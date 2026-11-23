@@ -60,16 +60,17 @@ function mockAdmitadProgramme(showProductsLinks: boolean, calls: string[]) {
   }) as typeof fetch;
 }
 
-test("permission is denied when show_products_links is false", () => {
+test("show_products_links=false without any feed entry is denied", () => {
   const permission = checkFeedPermission({
     id: 6115,
     name: "AliExpress WW",
     connection_status: "active",
     show_products_links: false,
   });
+  assert.equal(permission.state, "denied");
   assert.equal(permission.allowed, false);
   assert.match(permission.reason, /show_products_links = false/);
-  assert.match(permission.reason, /not enabled product links/i);
+  assert.match(permission.reason, /no product-feed entry/i);
 });
 
 test("permission is denied when the flag is absent, not assumed true", () => {
@@ -129,7 +130,7 @@ test("the importer refuses before reading the feed when permission is false", as
   }
 });
 
-test("the import route returns 403 with an explanation and imports nothing", async () => {
+test("the import route returns 409 ambiguous with an explanation and imports nothing", async () => {
   const calls: string[] = [];
   mockAdmitadProgramme(false, calls);
   process.env.N8N_WEBHOOK_SECRET = "test-secret";
@@ -147,11 +148,14 @@ test("the import route returns 403 with an explanation and imports nothing", asy
         body: JSON.stringify({ campaignId: 6115, feedText: FEED }),
       }),
     );
-    assert.equal(res.status, 403, `unexpected status ${res.status}`);
+    // The mocked programme advertises `products_csv_link`, so a refusal here is
+    // the ambiguous case: a feed exists but the advertiser flag says no.
+    assert.equal(res.status, 409, `unexpected status ${res.status}`);
     const body = await res.json();
     assert.equal(body.ok, false);
     assert.equal(body.blocked, true);
     assert.match(body.error, /show_products_links = false/);
+    assert.equal(body.feedPermission.state, "ambiguous");
     assert.equal(body.feedPermission.allowed, false);
     // The programme lookup is expected; fetching the feed is not.
     assert.equal(

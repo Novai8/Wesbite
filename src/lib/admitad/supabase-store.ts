@@ -135,6 +135,18 @@ export function fromProductRow(row: Record<string, unknown>): Product {
     source: row.source ? (String(row.source) as Product["source"]) : undefined,
     externalProductId: row.external_product_id ? String(row.external_product_id) : undefined,
     advertiserId: row.advertiser_id ? String(row.advertiser_id) : undefined,
+    sourceCategoryId:
+      row.commission_info && typeof row.commission_info === "object"
+        ? stringOrUndefined((row.commission_info as Record<string, unknown>).sourceCategoryId)
+        : undefined,
+    sourceCategory:
+      row.commission_info && typeof row.commission_info === "object"
+        ? stringOrUndefined((row.commission_info as Record<string, unknown>).sourceCategory)
+        : undefined,
+    categoryBasis:
+      row.commission_info && typeof row.commission_info === "object"
+        ? asCategoryBasis((row.commission_info as Record<string, unknown>).categoryBasis)
+        : undefined,
     lastSyncedAt: row.last_synced_at ? String(row.last_synced_at) : undefined,
     createdAt: String(row.created_at ?? ""),
     updatedAt: String(row.updated_at ?? ""),
@@ -142,6 +154,16 @@ export function fromProductRow(row: Record<string, unknown>): Product {
     aiDescription: row.ai_description ? String(row.ai_description) : undefined,
     aiQualityFlags: asStringArray(row.ai_quality_flags),
   };
+}
+
+function stringOrUndefined(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim() ? value : undefined;
+}
+
+function asCategoryBasis(value: unknown): Product["categoryBasis"] {
+  return value === "source-category" || value === "title" || value === "unresolved-id" || value === "none"
+    ? value
+    : undefined;
 }
 
 /**

@@ -11,7 +11,7 @@
 
 import { NextResponse } from "next/server";
 import { parseFeed } from "@/lib/admitad/feed-parser";
-import { inferBudgetTier, inferCategory, productSourceKey, buildProductSlug } from "@/lib/admitad/mapper";
+import { inferBudgetTier, productSourceKey, buildProductSlug, resolveProductCategory } from "@/lib/admitad/mapper";
 import { clientKey, rateLimit } from "@/lib/rate-limit";
 import { requireWorkflowAuth } from "@/lib/workflow-auth";
 
@@ -60,6 +60,7 @@ export async function POST(req: Request) {
     parsedRows: parsed.rows.length,
     unmappedColumns: parsed.unmappedColumns,
     skipped: parsed.skipped.slice(0, 25),
+    categories: parsed.categories ?? null,
     sample: parsed.rows.slice(0, 5).map((row) => ({
       externalProductId: row.external_product_id,
       dedupeKey: productSourceKey(
@@ -68,7 +69,10 @@ export async function POST(req: Request) {
         Number.isFinite(campaignId) ? String(campaignId) : undefined,
       ),
       tier: inferBudgetTier(row.price),
-      category: inferCategory(row.category, row.title),
+      category: resolveProductCategory(row).slug,
+      categoryBasis: resolveProductCategory(row).basis,
+      sourceCategoryId: row.categoryId ?? null,
+      sourceCategory: row.category ?? null,
       title: row.title.slice(0, 90),
       price: row.price,
       currency: row.currency,

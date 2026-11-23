@@ -17,6 +17,11 @@ import {
   isAdmitadFullyConfigured,
   listWebsiteProgrammes,
 } from "@/lib/admitad";
+import {
+  checkFeedPermission,
+  describeFeedEntries,
+  type FeedPermission,
+} from "@/lib/admitad/permissions";
 import { isSupabaseConfigured } from "@/lib/supabase-rest";
 import { requireWorkflowAuth } from "@/lib/workflow-auth";
 
@@ -35,6 +40,44 @@ interface CheckResult {
 
 function errorDetail(err: unknown): string {
   return err instanceof Error ? err.message : "Unknown error.";
+}
+
+/**
+ * Per-programme permission state for the diagnostics view.
+ *
+ * Includes the feed ids we know about (never the signed URLs) plus the exact
+ * reason the importer would accept or refuse. `ambiguous` is listed explicitly
+ * so an operator can see the contradiction without reading logs.
+ */
+function summarisePermissions(
+  programmes: Awaited<ReturnType<typeof listWebsiteProgrammes>>,
+): {
+  counts: Record<string, number>;
+  programmes: Array<{
+    id: number;
+    name: string;
+    state: FeedPermission["state"];
+    reason: string;
+    feedIds: string[];
+    evidence: FeedPermission["evidence"];
+  }>;
+} {
+  const counts: Record<string, number> = { allowed: 0, ambiguous: 0, denied: 0 };
+  const rows = programmes.map((programme) => {
+    const permission = checkFeedPermission(programme);
+    counts[permission.state] = (counts[permission.state] ?? 0) + 1;
+    return {
+      id: programme.id,
+      name: programme.name,
+      state: permission.state,
+      reason: permission.reason,
+      feedIds: describeFeedEntries(programme)
+        .map((entry) => entry.feedId)
+        .filter((id): id is string => Boolean(id)),
+      evidence: permission.evidence,
+    };
+  });
+  return { counts, programmes: rows };
 }
 
 export async function GET(req: Request) {
@@ -142,13 +185,20 @@ export async function GET(req: Request) {
         data: {
           aliExpress,
           connectedProgrammes: programmes.length,
-          programmesWithProducts: programmes.filter(
-            (p) => p.show_products_links || p.products_csv_link || p.products_xml_link,
-          ).length,
+          // Counted by permission *state*, never by "a download link exists".
+          // A link is not permission; see lib/admitad/permissions.ts.
+          feedPermissions: summarisePermissions(programmes),
         },
       };
 
-      return NextResponse.json({ ...base, live: true, aliExpress });
+      return NextResponse.json({
+        ...base,
+        live: true,
+        aliExpress,
+        feedPermission: aliExpress.programme
+          ? checkFeedPermission(aliExpress.programme)
+          : null,
+      });
     } catch (err) {
       base.checks.programmes = { status: "failed", detail: errorDetail(err) };
       return NextResponse.json(

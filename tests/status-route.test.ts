@@ -127,9 +127,12 @@ test("status reports each live check separately against a mocked Admitad API", a
         assert.equal(body.checks.website.data.id, 777);
         assert.equal(body.checks.programmes.status, "ok");
         assert.equal(body.checks.programmes.data.connectedProgrammes, 1);
-        assert.equal(body.checks.programmes.data.programmesWithProducts, 1);
+        // Counted by permission state, not by "a download link exists".
+        assert.equal(body.checks.programmes.data.feedPermissions.counts.allowed, 1);
+        assert.equal(body.checks.programmes.data.feedPermissions.counts.ambiguous, 0);
         assert.equal(body.checks.programmes.data.aliExpress.available, true);
         assert.equal(body.checks.programmes.data.aliExpress.canImportProducts, true);
+        assert.equal(body.feedPermission.state, "allowed");
 
         // Still honest: nothing was imported by a status read.
         assert.equal(body.checks.productImport.status, "not_run");

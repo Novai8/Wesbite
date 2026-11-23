@@ -20,7 +20,7 @@
  * validation, or namespaced XPath. Column mapping is name-based and tolerant.
  */
 
-import type { FeedFormat, FeedParseResult, FeedRow } from "./types";
+import type { FeedCategoryResolution, FeedFormat, FeedParseResult, FeedRow } from "./types";
 
 // ---------------------------------------------------------------------------
 // CSV
@@ -163,6 +163,147 @@ export function parseXmlRecords(input: string): Record<string, string>[] {
 }
 
 // ---------------------------------------------------------------------------
+// XML category dictionary
+// ---------------------------------------------------------------------------
+
+/** Product feeds name the id differently; these are the observed spellings. */
+const CATEGORY_ID_FIELDS = ["categoryid", "category_id", "category.id", "category"] as const;
+
+/**
+ * Parses the `<categories>` block a YML/Yandex-Market feed ships alongside its
+ * offers:
+ *
+ *     <categories><category id="5">Electrical</category></categories>
+ *
+ * The dictionary is the *only* source of category names we accept. A name is
+ * never derived from an id.
+ */
+export function parseCategoryDictionary(input: string): Map<string, string> {
+  const dictionary = new Map<string, string>();
+  const block = input.match(/<categories>([\s\S]*?)<\/categories>/i);
+  if (!block) return dictionary;
+
+  const re = /<category\s+([^>]*)>([\s\S]*?)<\/category>/gi;
+  let match: RegExpExecArray | null;
+  while ((match = re.exec(block[1])) !== null) {
+    const attrs = readAttributes(match[1] ?? "");
+    const id = (attrs.id ?? "").trim();
+    const name = decodeXmlEntities(match[2] ?? "").trim();
+    if (!id || !name) continue;
+    dictionary.set(id, name);
+  }
+  return dictionary;
+}
+
+/** Raw category id carried by a normalised record, if any. */
+export function categoryIdFromRecord(record: Record<string, string>): string | undefined {
+  const normalised = new Map(Object.entries(record).map(([key, value]) => [normaliseKey(key), value]));
+  for (const field of CATEGORY_ID_FIELDS) {
+    const value = normalised.get(normaliseKey(field));
+    if (value && /^\d+$/.test(value.trim())) return value.trim();
+  }
+  return undefined;
+}
+
+/**
+ * Incremental XML record splitter for streaming.
+ *
+ * `push()` returns only *complete* records, so a chunk boundary can never
+ * produce a half-parsed row. Bytes that do not yet contain a closing tag stay
+ * buffered until the next chunk (or `finish()`).
+ *
+ * Memory is bounded by the size of one record plus whatever the caller retains.
+ */
+export interface XmlRecordBlock {
+  /** The complete `<tag ...>…</tag>` block, exactly as it appeared. */
+  xml: string;
+  /** Attributes on the opening tag (Yandex-style `<offer id="…">`). */
+  attributes: Record<string, string>;
+}
+
+export class XmlRecordStream {
+  private buffer = "";
+  private tag: string | null = null;
+  private scannedUpTo = 0;
+  private readonly recordTags: readonly string[];
+
+  /** Records emitted so far. */
+  emitted = 0;
+  /** Bytes consumed through `push`. */
+  bytes = 0;
+
+  constructor(options: { recordTags?: readonly string[] } = {}) {
+    this.recordTags = options.recordTags ?? RECORD_TAGS;
+  }
+
+  /** Detects which record tag the document uses, from the first chunk. */
+  private detectTag(): string | null {
+    const candidates = this.recordTags;
+    for (const tag of candidates) {
+      if (new RegExp(`<${tag}(\\s|>)`, "i").test(this.buffer)) return tag;
+    }
+    return null;
+  }
+
+  push(chunk: string): XmlRecordBlock[] {
+    this.bytes += Buffer.byteLength(chunk, "utf8");
+    this.buffer += chunk;
+    if (!this.tag) this.tag = this.detectTag();
+    if (!this.tag) return [];
+
+    const records: XmlRecordBlock[] = [];
+    const openRe = new RegExp(`<${this.tag}(\\s[^>]*)?>`, "gi");
+    const closeTag = `</${this.tag}>`;
+
+    let searchFrom = 0;
+    for (;;) {
+      openRe.lastIndex = searchFrom;
+      const open = openRe.exec(this.buffer);
+      if (!open) break;
+      const closeAt = this.buffer.indexOf(closeTag, openRe.lastIndex);
+      if (closeAt === -1) break;
+
+      const body = this.buffer.slice(openRe.lastIndex, closeAt);
+      records.push({
+        xml: `${open[0]}${body}${closeTag}`,
+        attributes: readAttributes(open[1] ?? ""),
+      });
+      this.emitted += 1;
+      searchFrom = closeAt + closeTag.length;
+    }
+
+    if (searchFrom > 0) {
+      this.buffer = this.buffer.slice(searchFrom);
+    }
+    this.scannedUpTo = 0;
+    return records;
+  }
+
+  /**
+   * True when the stream ended with an unterminated record. Callers must treat
+   * this as a malformed feed, not as "a few extra empty rows".
+   */
+  hasPartialRecord(): boolean {
+    if (!this.tag) return false;
+    return new RegExp(`<${this.tag}(\\s|>)[\\s\\S]*$`, "i").test(this.buffer);
+  }
+
+  /** True when the document was closed with `</tag>` for the detected record. */
+  finish(): { partialRecord: boolean; bufferedChars: number } {
+    void this.scannedUpTo;
+    return { partialRecord: this.hasPartialRecord(), bufferedChars: this.buffer.length };
+  }
+
+  reset(): void {
+    this.buffer = "";
+    this.tag = null;
+    this.scannedUpTo = 0;
+    this.emitted = 0;
+    this.bytes = 0;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // JSON
 // ---------------------------------------------------------------------------
 
@@ -220,6 +361,7 @@ export const FIELD_ALIASES = {
   original_price: ["oldprice", "old_price", "originalprice", "original_price", "listprice", "list_price", "price.old", "priceold"],
   currency: ["currency", "currencyid", "currency_id", "price.currency", "pricecurrency"],
   category: ["category", "categoryname", "category_name", "categorypath", "producttype", "google_product_category"],
+  category_id: ["categoryid", "category_id", "category.id", "categorycode"],
   availability: ["availability", "available", "stock", "in_stock", "instock"],
   brand: ["brand", "vendor", "manufacturer"],
 } as const;
@@ -284,16 +426,26 @@ export interface NormaliseFeedOptions {
   defaultCurrency?: string;
   /** Cap rows processed; protects the Worker from enormous feeds. */
   maxRows?: number;
+  /**
+   * Category id -> name dictionary parsed from the feed's own `<categories>`
+   * block. When supplied, ids are resolved through it and unresolved ids are
+   * reported instead of being replaced with an invented name.
+   */
+  categoryDictionary?: Map<string, string>;
 }
 
 export function normaliseRecords(
   records: Record<string, string>[],
   options: NormaliseFeedOptions = {},
-): Pick<FeedParseResult, "rows" | "skipped" | "unmappedColumns" | "totalRows"> {
+): Pick<FeedParseResult, "rows" | "skipped" | "unmappedColumns" | "totalRows" | "categories"> {
   const maxRows = options.maxRows ?? 500;
   const defaultCurrency = (options.defaultCurrency ?? "USD").toUpperCase();
   const rows: FeedRow[] = [];
   const skipped: { index: number; reason: string }[] = [];
+  const dictionary = options.categoryDictionary;
+  const unresolvedIds = new Set<string>();
+  let resolvedCategories = 0;
+  let unresolvedCategories = 0;
 
   const firstKeys = records[0] ? Object.keys(records[0]) : [];
   const unmappedColumns = firstKeys.filter((key) => !canonicalField(key));
@@ -334,13 +486,38 @@ export function normaliseRecords(
       original_price: parseNumber(pick(record, "original_price")),
       currency: (pick(record, "currency") ?? defaultCurrency).toUpperCase().slice(0, 3),
       category: pick(record, "category"),
+      categoryId: pick(record, "category_id"),
       availability: normaliseAvailability(pick(record, "availability")),
       brand: pick(record, "brand"),
       raw: record,
     });
   });
 
-  return { rows, skipped, unmappedColumns, totalRows: records.length };
+  // Resolve category ids against the feed's own dictionary. The row's own
+  // category text always wins; the dictionary only fills a gap and only when
+  // this exact id is present. Unknown ids stay unknown.
+  for (const row of rows) {
+    if (!row.categoryId || !dictionary) continue;
+    const name = dictionary.get(row.categoryId);
+    if (name) {
+      if (!row.category) row.category = name;
+      resolvedCategories += 1;
+    } else {
+      unresolvedCategories += 1;
+      unresolvedIds.add(row.categoryId);
+    }
+  }
+
+  const categories: FeedCategoryResolution | undefined = dictionary
+    ? {
+        dictionarySize: dictionary.size,
+        resolved: resolvedCategories,
+        unresolved: unresolvedCategories,
+        unresolvedIds: [...unresolvedIds].sort().slice(0, 25),
+      }
+    : undefined;
+
+  return { rows, skipped, unmappedColumns, totalRows: records.length, categories };
 }
 
 export function detectFormat(input: string): FeedFormat {
@@ -364,5 +541,33 @@ export function parseFeed(input: string, options: NormaliseFeedOptions = {}): Fe
     return { format, rows: [], skipped: [], unmappedColumns: [], totalRows: 0 };
   }
 
-  return { format, ...normaliseRecords(records, options) };
+  const categoryDictionary = options.categoryDictionary ?? (format === "xml" ? parseCategoryDictionary(input) : undefined);
+
+  return { format, ...normaliseRecords(records, { ...options, categoryDictionary }) };
+}
+
+/**
+ * Parses XML records that were already split by the streaming reader.
+ *
+ * Same normalisation and category resolution as `parseFeed`, but avoids
+ * re-scanning a document that is no longer in memory. The opening tag's
+ * attributes are merged in, so `<offer id="42">` keeps its id.
+ */
+export function parseStreamedXmlRecords(
+  records: XmlRecordBlock[],
+  options: NormaliseFeedOptions & { truncated?: boolean; truncationReason?: string } = {},
+): FeedParseResult {
+  const parsed = records.map((record) => {
+    const body = record.xml.slice(record.xml.indexOf(">") + 1, record.xml.lastIndexOf("</"));
+    return { ...record.attributes, ...readChildTags(body) };
+  });
+
+  const result = normaliseRecords(parsed, options);
+  return {
+    format: "xml",
+    ...result,
+    ...(options.truncated
+      ? { truncated: true, truncationReason: options.truncationReason }
+      : {}),
+  };
 }

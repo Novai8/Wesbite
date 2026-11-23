@@ -81,6 +81,8 @@ export interface AdmitadFeedInfo {
   csv_link?: string;
   admitad_last_update?: string;
   advertiser_last_update?: string;
+  /** `feed_id` as returned by newer publisher API responses, when present. */
+  feed_id?: string | number;
 }
 
 /** Item from `GET /advcampaigns/`. */
@@ -162,12 +164,32 @@ export interface FeedRow {
   original_price?: number;
   currency?: string;
   category?: string;
+  /**
+   * Raw merchant category id. Retained so callers can explain an unresolved
+   * category instead of silently replacing it with a shelf.
+   */
+  categoryId?: string;
   availability?: string;
   brand?: string;
   raw?: Record<string, string>;
 }
 
 export type FeedFormat = "csv" | "xml" | "json" | "unknown";
+
+/**
+ * How a feed's category ids were resolved against the file's own dictionary.
+ * `unresolved` ids are reported, never guessed.
+ */
+export interface FeedCategoryResolution {
+  /** Dictionary entries the file supplied. */
+  dictionarySize: number;
+  /** Rows that carried a category id the dictionary could resolve. */
+  resolved: number;
+  /** Rows that carried a category id the dictionary could not resolve. */
+  unresolved: number;
+  /** Distinct ids that could not be resolved, capped for readability. */
+  unresolvedIds: string[];
+}
 
 export interface FeedParseResult {
   format: FeedFormat;
@@ -177,4 +199,13 @@ export interface FeedParseResult {
   /** Rows that were skipped, with the reason. */
   skipped: { index: number; reason: string }[];
   totalRows: number;
+  /** Present when the source supplied a category dictionary. */
+  categories?: FeedCategoryResolution;
+  /**
+   * True when parsing stopped at a cap (row cap, byte cap, or malformed tail)
+   * rather than at the natural end of the feed. Never set silently: the reason
+   * accompanies it.
+   */
+  truncated?: boolean;
+  truncationReason?: string;
 }
