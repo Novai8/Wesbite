@@ -5,7 +5,7 @@
  *   1. parse + normalise the feed file (feed-parser.ts)
  *   2. generate a tracked deeplink for the source product URL (deeplink.ts)
  *   3. map to a Fyndra Product (mapper.ts)
- *   4. dedupe by `source:external_product_id`, keeping the first occurrence
+ *   4. dedupe by `source:advertiser_id:external_product_id`, keeping the first occurrence
  *   5. validate the resulting affiliate URL against the programme domain
  *
  * Failures are recorded per row with a reason. Nothing is silently dropped:
@@ -18,6 +18,7 @@ import {
   ADMITAD_PROGRAM_SLUG,
   mapFeedRowToProduct,
   productPublishBlockers,
+  productSourceKey,
 } from "./mapper";
 import type { AdmitadCampaignForWebsite } from "./types";
 import type { Product } from "@/lib/types";
@@ -116,7 +117,11 @@ export async function importFromFeedText(
 
   for (let index = 0; index < parsed.rows.length; index += 1) {
     const row = parsed.rows[index];
-    const dedupeKey = `${ADMITAD_PROGRAM_SLUG}:${row.external_product_id}`;
+    const dedupeKey = productSourceKey(
+      ADMITAD_PROGRAM_SLUG,
+      row.external_product_id,
+      String(options.campaignId),
+    );
 
     if (seen.has(dedupeKey)) {
       report.duplicates += 1;

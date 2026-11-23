@@ -7,12 +7,14 @@
  */
 
 import { enrichProduct } from "./enrich";
+import { PRODUCT_SOURCE_UNIQUE_COLUMNS } from "./mapper";
 import { downloadFeed, importFromFeedText, type ImportOptions, type ImportReport } from "./products";
 import { toProductRow } from "./supabase-store";
 import {
   getSupabaseConfig,
   insertRows,
   isSupabaseConfigured,
+  selectRows,
   upsertRows,
   SUPABASE_TABLES,
 } from "@/lib/supabase-rest";
@@ -100,16 +102,25 @@ export async function runImport(input: RunImportInput): Promise<RunImportResult>
   try {
     await recordRun(report);
     if (products.length > 0) {
+      const existing = await existingProductIdentities(products, getSupabaseConfig() as NonNullable<ReturnType<typeof getSupabaseConfig>>);
       await upsertRows(
         SUPABASE_TABLES.products,
-        products.map((p) =>
-          toProductRow(p, {
+        products.map((p) => {
+          const row = toProductRow(p, {
             advertiserId: p.advertiserId ?? String(input.campaignId),
             programme: input.programme?.name,
             network: "admitad",
-          }),
-        ),
-        "source,external_product_id",
+          });
+          // Keep the identity of a row an earlier import already created. The
+          // upsert conflict target is the source tuple, so sending a new id
+          // would rewrite the primary key (and any referencing rows) instead
+          // of updating the record in place.
+          const prior = p.externalProductId
+            ? existing.get(`${row.advertiser_id}:${p.externalProductId}`)
+            : undefined;
+          return prior ? { ...row, id: prior.id, slug: prior.slug } : row;
+        }),
+        PRODUCT_SOURCE_UNIQUE_COLUMNS,
         getSupabaseConfig() as NonNullable<ReturnType<typeof getSupabaseConfig>>,
       );
       // Persist AI copy to its own columns, so a later re-sync of source data
@@ -126,6 +137,73 @@ export async function runImport(input: RunImportInput): Promise<RunImportResult>
       enriched,
       enrichmentSkipped,
     };
+  }
+}
+
+interface ExistingIdentity {
+  id: string;
+  slug: string;
+  advertiserId: string;
+  externalProductId: string;
+}
+
+/** Escapes a value for PostgREST's quoted `in.(...)` list. */
+function postgrestListValue(value: string): string {
+  return `"${value.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
+}
+
+/**
+ * Reads the ids and slugs of rows this import will merge into.
+ *
+ * Failure here must not block an import: the deterministic id is still a
+ * valid fallback. It is only an optimisation for databases that already hold
+ * rows from an earlier version of the integration.
+ */
+async function existingProductIdentities(
+  products: Product[],
+  config: NonNullable<ReturnType<typeof getSupabaseConfig>>,
+): Promise<Map<string, ExistingIdentity>> {
+  const externalIds = [
+    ...new Set(
+      products
+        .map((product) => product.externalProductId)
+        .filter((id): id is string => Boolean(id)),
+    ),
+  ];
+  if (externalIds.length === 0) return new Map();
+
+  try {
+    const rows = await selectRows<Record<string, unknown>>(
+      SUPABASE_TABLES.products,
+      {
+        select: "id,slug,advertiser_id,external_product_id",
+        source: "eq.admitad",
+        external_product_id: `in.(${externalIds.map(postgrestListValue).join(",")})`,
+      },
+      config,
+      { revalidate: 0 },
+    );
+
+    const found = new Map<string, ExistingIdentity>();
+    for (const row of rows) {
+      const advertiserId = String(row.advertiser_id ?? "");
+      const externalProductId = String(row.external_product_id ?? "");
+      if (!row.id || !row.slug || !externalProductId) continue;
+      found.set(`${advertiserId}:${externalProductId}`, {
+        id: String(row.id),
+        slug: String(row.slug),
+        advertiserId,
+        externalProductId,
+      });
+    }
+    return found;
+  } catch (err) {
+    console.warn(
+      `[admitad-import] could not read existing identities; using deterministic ids: ${
+        err instanceof Error ? err.message : String(err)
+      }`,
+    );
+    return new Map();
   }
 }
 
@@ -189,7 +267,16 @@ async function patchAiFields(
   config: NonNullable<ReturnType<typeof getSupabaseConfig>>,
 ): Promise<void> {
   const url = new URL(`${config.url}/rest/v1/${SUPABASE_TABLES.products}`);
-  url.searchParams.set("id", `eq.${product.id}`);
+  // Filter on the provenance tuple, not the primary key: a re-sync may reuse
+  // the id of a row created by an earlier import, and the tuple is the
+  // invariant both writes agree on.
+  if (product.source && product.advertiserId && product.externalProductId) {
+    url.searchParams.set("source", `eq.${product.source}`);
+    url.searchParams.set("advertiser_id", `eq.${product.advertiserId}`);
+    url.searchParams.set("external_product_id", `eq.${product.externalProductId}`);
+  } else {
+    url.searchParams.set("id", `eq.${product.id}`);
+  }
   url.searchParams.set("data_source", "neq.manual");
   const res = await fetch(url.toString(), {
     method: "PATCH",

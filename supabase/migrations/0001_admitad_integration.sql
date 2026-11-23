@@ -143,11 +143,88 @@ alter table public.affiliate_products
   add column if not exists ai_description      text,
   add column if not exists ai_quality_flags    jsonb not null default '[]'::jsonb;
 
--- Dedupe: one row per (network, external id). Partial so manual rows
--- (external_product_id null) are unaffected.
-create unique index if not exists affiliate_products_source_external_key
-  on public.affiliate_products (source, external_product_id)
-  where source is not null and external_product_id is not null;
+-- Dedupe: one row per (network, advertiser, external id).
+--
+-- This index is deliberately NOT partial. PostgREST's `on_conflict` parameter
+-- can only infer a non-partial unique index; a partial index makes every
+-- upsert fail with "no unique or exclusion constraint matching the ON CONFLICT
+-- specification". NULLs are distinct in a PostgreSQL unique index, so manual
+-- rows (source / external id null) remain unaffected.
+create unique index if not exists affiliate_products_source_advertiser_external_key
+  on public.affiliate_products (source, advertiser_id, external_product_id);
+
+-- Remove the older two-column index only after the replacement exists. It
+-- would otherwise reject two advertisers that legitimately share a product id.
+drop index if exists public.affiliate_products_source_external_key;
+
+-- Compatibility for databases created from the earlier documented schema:
+--   * currency was constrained to USD/EUR/GBP, which rejects valid Admitad
+--     currencies (SAR, PLN, ...),
+--   * price columns were numeric(10,2), narrower than the import contract.
+-- Both changes are additive: no row is deleted and existing values are kept.
+do $$
+declare
+  con record;
+begin
+  if to_regclass('public.affiliate_products') is null then
+    return;
+  end if;
+
+  for con in
+    select conname
+    from pg_constraint
+    where conrelid = 'public.affiliate_products'::regclass
+      and contype = 'c'
+      and conname <> 'affiliate_products_currency_iso'
+      -- Only a constraint that *starts* with currency is a currency allowlist.
+      -- A combined constraint (e.g. currency + price) is left untouched.
+      -- Explicit character class: PostgreSQL ARE treats `\b` as backspace, not
+      -- a word boundary, so a `\b` here would silently match nothing.
+      and pg_get_constraintdef(oid) ~* '^CHECK \(\(?currency[ ):=]'
+  loop
+    execute format('alter table public.affiliate_products drop constraint %I', con.conname);
+  end loop;
+end $$;
+
+do $$
+begin
+  -- `affiliate_products` exists from the CREATE above; the guard keeps this
+  -- block harmless if the migration runs against a partially built database.
+  if to_regclass('public.affiliate_products') is null then
+    return;
+  end if;
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'affiliate_products' and column_name = 'price'
+  ) then
+    alter table public.affiliate_products alter column price type numeric(12, 2);
+  end if;
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'affiliate_products' and column_name = 'previous_price'
+  ) then
+    alter table public.affiliate_products alter column previous_price type numeric(12, 2);
+  end if;
+end $$;
+
+do $$
+begin
+  if to_regclass('public.affiliate_products') is null then
+    return;
+  end if;
+  if not exists (
+    select 1
+    from pg_constraint
+    where conrelid = 'public.affiliate_products'::regclass
+      and conname = 'affiliate_products_currency_iso'
+  ) then
+    -- NOT VALID: new/updated rows are checked, but pre-existing rows are never
+    -- rejected or rewritten by this migration.
+    alter table public.affiliate_products
+      add constraint affiliate_products_currency_iso
+      check (currency ~ '^[A-Z]{3}$') not valid;
+  end if;
+end $$;
 
 create index if not exists affiliate_products_program_idx
   on public.affiliate_products (program_slug);

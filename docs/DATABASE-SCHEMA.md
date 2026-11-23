@@ -25,20 +25,20 @@ The core catalogue. One row per product.
 
 | Column | Type | Notes |
 | --- | --- | --- |
-| id | uuid pk default gen_random_uuid() | |
+| id | text pk default gen_random_uuid() | UUID-shaped; imported rows use a deterministic name-based UUID |
 | slug | text unique not null | URL identifier |
 | title | text not null | |
 | description | text not null | |
-| category_slug | text not null references affiliate_categories(slug) | |
+| category_slug | text not null | app-validated against `affiliate_categories.slug` |
 | subcategory | text | |
 | image_urls | jsonb default '[]' | array of URLs |
 | merchant | text not null | |
-| program_slug | text not null references affiliate_programs(slug) | |
+| program_slug | text not null | app-validated against `affiliate_programs.slug` |
 | affiliate_url | text not null | validated against programme domain |
 | source_url | text | public listing the data came from |
-| price | numeric(10,2) not null check (price >= 0) | |
-| currency | text not null default 'USD' check in (USD, EUR, GBP) | |
-| previous_price | numeric(10,2) | for was/now display |
+| price | numeric(12,2) not null check (price >= 0) | |
+| currency | text not null default 'USD' | ISO 4217 shaped (`^[A-Z]{3}$`), see note below |
+| previous_price | numeric(12,2) | for was/now display |
 | specs | jsonb default '{}' | key/value spec pairs |
 | pros | jsonb default '[]' | |
 | cons | jsonb default '[]' | |
@@ -70,18 +70,36 @@ The core catalogue. One row per product.
 Dedupe constraint:
 
 ```sql
-create unique index affiliate_products_source_external_key
-  on affiliate_products (source, external_product_id)
-  where source is not null and external_product_id is not null;
+create unique index affiliate_products_source_advertiser_external_key
+  on affiliate_products (source, advertiser_id, external_product_id);
 ```
+
+The index is intentionally **not** partial: PostgREST's `on_conflict` can only
+target a non-partial unique index, and a partial one makes every upsert fail
+with `no unique or exclusion constraint matching the ON CONFLICT specification`.
+PostgreSQL treats NULLs as distinct in a unique index, so manual rows — which
+have no source or external id — are unaffected.
+
+Advertiser ids are part of the key because feed product ids are only guaranteed
+unique inside one advertiser's feed; two programmes may legitimately publish the
+same external id.
 
 `protect_manual_product` (a before-update trigger) refuses to let an automated
 upsert claim a `data_source = 'manual'` row, and never rewrites `source` /
 `external_product_id` on a manual row.
 
-`id` is `text`, not `uuid`: imported records use stable,
-network-scoped ids (`admitad-<campaign>-<external id>`), and the existing
-catalogue already mixes string ids.
+`id` is `text`, but imported records use a deterministic, RFC 4122 version-5
+UUID derived from `(source, advertiser_id, external_product_id)`. That value is
+stable across re-syncs and inserts cleanly whether a pre-existing database uses
+`id uuid` or `id text`, so no column rewrite is required.
+
+`created_at` is never sent by an import upsert; the column keeps its
+`default now()` on insert and is not rewritten on re-sync.
+
+The currency check is added as `NOT VALID`. PostgreSQL still validates new and
+updated rows, but a legacy row whose currency predates the rule is never
+rejected or rewritten by the migration. Re-validate later with
+`ALTER TABLE ... VALIDATE CONSTRAINT` once existing data is reviewed.
 
 RLS: `select` allowed for `anon` **only** where `approval_status = 'approved'`.
 Write access (`insert/update/delete`) only for `service_role`.

@@ -4,7 +4,7 @@
  * help locating files.
  */
 
-import { existsSync } from "node:fs";
+import { existsSync, statSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import path from "node:path";
 
@@ -14,12 +14,26 @@ const candidates = ["", ".ts", ".tsx", ".mts", "/index.ts", "/index.tsx"];
 function resolveFile(base) {
   for (const suffix of candidates) {
     const full = base + suffix;
-    if (existsSync(full) && !full.endsWith(path.sep)) return full;
+    if (!existsSync(full)) continue;
+    // A bare specifier such as `@/lib/admitad` names a directory; returning it
+    // makes Node try to read a folder as a module (EISDIR).
+    try {
+      if (statSync(full).isFile()) return full;
+    } catch {
+      // ignore unreadable entries
+    }
   }
   return null;
 }
 
 export async function resolve(specifier, context, nextResolve) {
+  // Next publishes extensionless subpaths that its bundler resolves but bare
+  // Node ESM does not (`next/server` -> `next/server.js`). Route-level tests
+  // import the real handler, so map it here instead of changing app code.
+  if (specifier === "next/server") {
+    return { url: pathToFileURL(path.join(projectRoot, "tests", "next-server-shim.mjs")).href, shortCircuit: true };
+  }
+
   if (specifier.startsWith("@/")) {
     const base = path.join(projectRoot, "src", specifier.slice(2));
     const file = resolveFile(base);
