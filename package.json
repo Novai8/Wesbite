@@ -6,10 +6,10 @@
   "scripts": {
     "postinstall": "node scripts/patch-opennext-turbopack.js",
     "dev": "next dev",
-    "build": "next build",
+    "build": "node scripts/patch-opennext-turbopack.js && next build",
     "start": "next start",
     "lint": "eslint",
-    "worker": "next build && opennextjs-cloudflare build --skipNextBuild"
+    "worker": "node scripts/patch-opennext-turbopack.js && next build && opennextjs-cloudflare build --skipNextBuild"
   },
   "dependencies": {
     "clsx": "^2.1.1",
