@@ -13,6 +13,7 @@
 
 import { createHash } from "node:crypto";
 import type { Product } from "@/lib/types";
+import { currencyOrDefault } from "@/lib/currency";
 import type { AdmitadCampaignForWebsite, FeedRow } from "./types";
 
 export const ADMITAD_PROGRAM_SLUG = "admitad";
@@ -195,19 +196,13 @@ export function buildDescription(row: FeedRow): string {
   return parts.join(" ").slice(0, 600);
 }
 
-const ISO_CURRENCIES = new Set([
-  "USD", "EUR", "GBP", "AED", "AUD", "BRL", "CAD", "CHF", "CNY", "CZK", "DKK",
-  "EGP", "HKD", "HUF", "IDR", "ILS", "INR", "JPY", "KRW", "KZT", "MXN", "MYR",
-  "NGN", "NOK", "NZD", "PHP", "PKR", "PLN", "RON", "RUB", "SAR", "SEK", "SGD",
-  "THB", "TRY", "TWD", "UAH", "VND", "ZAR",
-]);
-
-/** Coerces feed currency to a 3-letter ISO code, or undefined if unusable. */
+/**
+ * Coerces a feed currency to a 3-letter ISO 4217 code, or undefined if
+ * unusable. The ISO list lives in `lib/currency` so the catalogue, the
+ * validator and the importer agree on exactly one set of codes.
+ */
 export function normaliseCurrency(value: string | undefined, fallback = "USD"): string | undefined {
-  const code = value?.trim().toUpperCase();
-  if (code && ISO_CURRENCIES.has(code)) return code;
-  const fallbackCode = fallback.trim().toUpperCase();
-  return ISO_CURRENCIES.has(fallbackCode) ? fallbackCode : "USD";
+  return currencyOrDefault(value, fallback);
 }
 
 export interface MapFeedRowInput {

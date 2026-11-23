@@ -4,15 +4,6 @@ Fyndra uses Supabase (PostgreSQL) for persistent storage. The seed catalogue
 in `src/data/seed-products.ts` mirrors these tables so the app runs fully
 without credentials — the Supabase layer swaps in when configured.
 
-The earliest migration (`supabase/migrations/0001_admitad_integration.sql`)
-creates these tables if the database has never had them, then adds the Admitad
-columns described below. It is idempotent and purely additive.
-
-> **This migration has not been applied to the live Supabase project.** It was
-> verified by executing it against a disposable PostgreSQL cluster seeded with
-> the exact live `affiliate_products` schema. See
-> [Applying the migration](#applying-the-migration).
-
 ## Rules
 
 1. **Never reset or drop existing tables.** All migrations are additive
@@ -26,141 +17,85 @@ columns described below. It is idempotent and purely additive.
 
 ### affiliate_products
 
-One table, two pipelines. The **Affiliate Business** project uses
-`affiliate_products` for affiliate *research*; the Fyndra importer writes a
-*catalogue* into the same table. The migration lets both coexist:
-
-| Field group | Written by | Never written by |
-| --- | --- | --- |
-| Research (20 columns below) | the research workflow | the Admitad importer |
-| Catalogue (columns below) | the Admitad importer | the research workflow |
-
-`status` (research lifecycle) and `approval_status` (catalogue visibility) are
-**separate columns with different meanings**. Nothing maps one onto the other.
-
-#### Live research columns (inspected 2026-11-23, preserved unchanged)
-
-| Column | Type |
-| --- | --- |
-| id | **uuid primary key**, default `gen_random_uuid()` |
-| created_at | timestamptz default now() |
-| product_name | text |
-| product_url | text |
-| affiliate_url | text (shared with the catalogue) |
-| affiliate_network | text |
-| category | text |
-| target_market | text |
-| price_text | text |
-| commission_rate_text | text |
-| evidence_notes | text |
-| decision | text |
-| score | integer |
-| target_audience | text |
-| positioning_angle | text |
-| content_hooks | text |
-| risk_flags | text |
-| research_confidence | numeric |
-| rationale | text |
-| status | text |
-
-The migration never adds a constraint, default or rewrite to these columns.
-Existing rows keep `data_source = NULL` and `approval_status = NULL`, so they
-stay out of the public catalogue read without being modified.
-
-#### Catalogue columns
-
-All are nullable, so a research insert never has to supply them.
+The core catalogue. One row per product.
 
 | Column | Type | Notes |
 | --- | --- | --- |
-| slug | text | unique index; NULL for research rows |
-| title | text | |
-| description | text | |
-| category_slug | text | app-validated against `affiliate_categories.slug` |
+| id | uuid pk default gen_random_uuid() | |
+| slug | text unique not null | URL identifier |
+| title | text not null | |
+| description | text not null | |
+| category_slug | text not null references affiliate_categories(slug) | |
 | subcategory | text | |
 | image_urls | jsonb default '[]' | array of URLs |
-| merchant | text | |
-| program_slug | text | app-validated against `affiliate_programs.slug` |
-| affiliate_url | text | shared column; validated against programme domain |
+| merchant | text not null | |
+| program_slug | text not null references affiliate_programs(slug) | |
+| affiliate_url | text not null | validated against programme domain |
 | source_url | text | public listing the data came from |
-| price | numeric(12,2) | widened only if already numeric |
-| currency | text | ISO 4217 shaped (`^[A-Z]{3}$`), see note below |
-| previous_price | numeric(12,2) | for was/now display |
-| original_price | numeric(12,2) | pre-discount price, when supplied |
+| price | numeric(10,2) not null check (price >= 0) | |
+| currency | text not null default 'USD' check in (USD, EUR, GBP) | |
+| previous_price | numeric(10,2) | for was/now display |
 | specs | jsonb default '{}' | key/value spec pairs |
 | pros | jsonb default '[]' | |
 | cons | jsonb default '[]' | |
-| availability | text | `in_stock` / `out_of_stock` / `unknown`, app-validated |
+| availability | text not null default 'unknown' check in (in_stock, out_of_stock, unknown) | |
 | region | jsonb default '[]' | ISO country codes |
 | keywords | jsonb default '[]' | matching tokens for the engine |
 | use_cases | jsonb default '[]' | problems this solves |
-| budget_tier | text | `budget` / `mid` / `premium`, app-derived |
+| budget_tier | text not null default 'budget' check in (budget, mid, premium) | |
 | price_verified_at | timestamptz | last price check |
-| approval_status | text default 'pending' | catalogue visibility |
-| data_source | text default 'manual' | `manual`, `api`, `csv_import`, `n8n_workflow` |
-| source | text | `admitad`, `aliexpress`, `manual` |
-| external_product_id | text | Admitad feed product id |
-| advertiser_id | text | Admitad programme id |
-| commission_info | jsonb | structured provenance, **never an estimate** |
-| last_synced_at | timestamptz | last successful import |
-| ai_headline | text | AI copy; never a source of facts |
-| ai_description | text | AI copy |
-| ai_quality_flags | jsonb default '[]' | deterministic completeness flags |
+| approval_status | text not null default 'pending' check in (approved, pending, rejected) | |
+| data_source | text not null default 'manual' check in (manual, api, csv_import, n8n_workflow) | |
+| created_at | timestamptz default now() | |
 | updated_at | timestamptz default now() | |
+| model_url | text | public URL of the generated GLB; set only when `model_status = 'completed'` |
+| model_format | text | `glb` |
+| model_type | text | `single_image_generative` or `manual` |
+| model_status | text | `pending`, `processing`, `completed`, `failed`, `quota_exhausted`, `image_fallback`, or null |
+| model_provider | text | e.g. `huggingface:stabilityai/stable-fast-3d` |
+| model_generated_at | timestamptz | when the GLB was produced |
+| model_error | text | human-readable failure reason; never contains credentials |
+| source_image_hash | text | SHA-256 of the source photo; used to dedupe generation |
 
-Defaults are attached with `ALTER COLUMN … SET DEFAULT` rather than
-`ADD COLUMN … DEFAULT`. Since PostgreSQL 11 the latter rewrites every existing
-row, which would have written catalogue defaults into research rows.
+RLS: `select` allowed for `anon` **only** where `approval_status = 'approved'`.
+Write access (`insert/update/delete`) only for `service_role`.
 
-Dedupe constraint (exact `on_conflict` target):
+Added by `supabase/migrations/20261123150000_fyndra_3d_models.sql` with
+`ADD COLUMN IF NOT EXISTS`, so it is safe on an existing catalogue.
 
-```sql
-create unique index affiliate_products_source_advertiser_external_key
-  on affiliate_products (source, advertiser_id, external_product_id);
-```
+### product_model_jobs
 
-The index is intentionally **not** partial: PostgREST's `on_conflict` can only
-target a non-partial unique index, and a partial one makes every upsert fail
-with `no unique or exclusion constraint matching the ON CONFLICT specification`.
-PostgreSQL treats NULLs as distinct in a unique index, so manual rows — which
-have no source or external id — are unaffected.
+The 3D generation queue. One row per (product, source image), which is what
+deduplication keys on.
 
-Advertiser ids are part of the key because feed product ids are only guaranteed
-unique inside one advertiser's feed; two programmes may legitimately publish the
-same external id.
+| Column | Type | Notes |
+| --- | --- | --- |
+| id | uuid pk default gen_random_uuid() | |
+| product_id | uuid not null references affiliate_products(id) on delete cascade | |
+| source_image_hash | text not null | SHA-256 of the source image |
+| source_image_url | text not null | what the worker re-fetches and re-hashes |
+| status | text not null default 'pending' | same union as `model_status` |
+| attempts | int not null default 0 | incremented when a worker claims the job |
+| provider | text | `huggingface:stabilityai/stable-fast-3d` |
+| model_path | text | object path inside the `product-models` bucket |
+| error | text | last failure reason |
+| created_at / updated_at | timestamptz | |
 
-`protect_manual_product` (a before-update trigger) refuses to let an automated
-upsert claim a manual row. A row is manual when `data_source = 'manual'` **or
-`data_source IS NULL`** — the second branch is what protects the existing
-research rows, which have no `data_source` value. A manual row also never has
-its `source` / `external_product_id` / `advertiser_id` rewritten.
+`unique (product_id, source_image_hash)` — re-enqueuing the same image is a
+no-op. Indexed on `(status, created_at)` so claiming the oldest pending job is
+cheap. RLS is enabled with **no** policies: only `service_role` touches it.
 
-`id` stays `uuid` on the live project. Imported records use a deterministic,
-RFC 4122 version-5 UUID derived from `(source, advertiser_id,
-external_product_id)`, which is already UUID-shaped and stable across re-syncs.
-The migration also gives `id` a `gen_random_uuid()` default if it is `uuid`, and
-a UUID-shaped text default only if a database still uses the old `id text`
-shape. No column type is ever changed.
+`updated_at` is owned by a `BEFORE UPDATE` trigger
+(`product_model_jobs_set_updated_at` → `set_product_model_jobs_updated_at()`),
+which stamps `now()` on every row change. Callers never send the column, so a
+worker PATCH that only flips `status` still advances the timestamp.
 
-`created_at` is never sent by an import upsert; the column keeps its
-`default now()` on insert and is not rewritten on re-sync.
+### Storage: product-models
 
-The currency check is added as `NOT VALID`. PostgreSQL still validates new and
-updated rows, but a legacy row whose currency predates the rule is never
-rejected or rewritten by the migration. Re-validate later with
-`ALTER TABLE ... VALIDATE CONSTRAINT` once existing data is reviewed.
-
-The cleanup that removes an old three-currency allowlist only drops a constraint
-whose definition is a *single-column* currency comparison. A combined rule such
-as `CHECK (currency = 'USD' AND price >= 0)` is left untouched.
-
-RLS: `select` allowed for `anon`/`authenticated` **only** where
-`approval_status = 'approved'`. Write access (`insert/update/delete`) only for
-`service_role`.
-
-Research rows therefore never appear in the public catalogue: their
-`approval_status` is NULL. That is why the importer-owned rows must be approved
-explicitly.
+Public-read bucket holding generated GLBs at
+`<product_id>/<first 16 chars of source_image_hash>.glb`. 25 MB limit,
+`model/gltf-binary` only. Public read so product pages can load the file
+directly; writes are `service_role` only.
 
 ### affiliate_categories
 
@@ -186,21 +121,6 @@ RLS: `select` for `anon`; writes for `service_role`.
 | commission_note | text | never machine-generated figures |
 
 RLS: `select` for `anon` (active rows only); writes for `service_role`.
-
-### admitad_import_runs
-
-One row per import execution: `campaign_id`, `programme_name`, `feed_format`,
-`total_rows`, `imported`, `duplicates`, `skipped`, `error_count`, `blocked`,
-`blocked_reason`, `unmapped_columns`, `started_at`, `finished_at`.
-
-RLS: `service_role` only.
-
-### admitad_import_errors
-
-Per-row failures, cascading from a run: `run_id`, `row_index`,
-`external_product_id`, `reason`. Capped at 200 rows per run.
-
-RLS: `service_role` only.
 
 ### product_sources
 
@@ -239,7 +159,7 @@ Non-identifying outbound click log.
 | Column | Type | Notes |
 | --- | --- | --- |
 | id | uuid pk | |
-| product_id | text | seed ids are strings (`p-monitor-arm-gas`); imported ids are UUID strings |
+| product_id | uuid references affiliate_products(id) | |
 | program_slug | text not null | |
 | merchant | text | |
 | campaign | text | internal source label (product-page, compare…) |
@@ -331,46 +251,3 @@ Migrations live in `supabase/migrations/NNNN_name.sql`, applied with
 1. Uses `IF NOT EXISTS` / `IF NOT FOUND` guards.
 2. Enables RLS before creating policies.
 3. Never drops columns, tables, or data.
-
-### Applying the migration
-
-`0001_admitad_integration.sql` has **not** been applied to the live project and
-nothing in this branch was deployed. To apply it after review:
-
-1. **Snapshot first.** In the Supabase dashboard, take a backup or record
-   `select * from public.affiliate_products` (currently zero rows) plus
-   `\d public.affiliate_products`.
-2. **Dry run on a copy.** Apply the file to a scratch project seeded with the
-   live schema — not to production — and confirm:
-   ```sql
-   select column_name, data_type, is_nullable
-   from information_schema.columns
-   where table_schema = 'public' and table_name = 'affiliate_products'
-   order by ordinal_position;
-   ```
-3. **Apply.** Run the file in the SQL editor or via `supabase db push`. The whole
-   file is one transaction-safe sequence of additive statements.
-4. **Post-verify.**
-   ```sql
-   -- 53 total: 20 research columns + 33 catalogue columns
-   select count(*) from information_schema.columns
-   where table_schema='public' and table_name='affiliate_products';
-
-   -- dedupe index is unique and non-partial
-   select indexdef from pg_indexes
-   where tablename='affiliate_products'
-     and indexname='affiliate_products_source_advertiser_external_key';
-
-   -- currency rule is NOT VALID (legacy rows untouched)
-   select conname, convalidated from pg_constraint
-   where conrelid='public.affiliate_products'::regclass
-     and conname='affiliate_products_currency_iso';
-
-   -- RLS + policies
-   select relrowsecurity from pg_class
-   where oid='public.affiliate_products'::regclass;
-   select policyname, roles from pg_policies
-   where tablename='affiliate_products';
-   ```
-5. **Re-run the file** once to prove idempotency, then verify the research
-   columns and any research rows are unchanged.

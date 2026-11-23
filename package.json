@@ -9,8 +9,12 @@
     "build": "node scripts/patch-opennext-turbopack.js && next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "node --no-warnings --import ./tests/register.mjs --test tests/*.test.ts && node --no-warnings --import ./tests/load-aliases.mjs --test \"tests/**/*.test.mts\" && python -m unittest discover -s tests -p \"test_*.py\" -v",
     "test:unit": "node --no-warnings --import ./tests/register.mjs --test tests/*.test.ts",
+    "test:3d": "node --no-warnings --import ./tests/load-aliases.mjs --test \"tests/**/*.test.mts\"",
+    "test:py": "python -m unittest discover -s tests -p \"test_*.py\" -v",
     "test:e2e": "playwright test",
+    "typecheck": "tsc --noEmit",
     "worker": "node scripts/patch-opennext-turbopack.js && next build && opennextjs-cloudflare build --skipNextBuild"
   },
   "dependencies": {
@@ -20,7 +24,8 @@
     "next": "16.3.6",
     "react": "19.2.8",
     "react-dom": "19.2.8",
-    "tailwind-merge": "^3.7.0"
+    "tailwind-merge": "^3.7.0",
+    "three": "^0.180.0"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.14.0",
@@ -30,6 +35,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/three": "^0.180.0",
     "eslint": "^9",
     "eslint-config-next": "16.3.6",
     "tailwindcss": "^4",

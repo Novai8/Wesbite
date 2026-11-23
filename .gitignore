@@ -56,3 +56,6 @@ __pycache__/
 /hc-*.json
 /fetch-admitad.cjs
 /fetch-links.cjs
+
+# Local scratch space (3D worker temp files, fixtures)
+/.tmp/

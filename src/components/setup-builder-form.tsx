@@ -136,9 +136,9 @@ export function SetupBuilderForm() {
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <h2 className="text-2xl">Your setup</h2>
               <p className="text-sm text-muted">
-                Total <span className="price">{formatPrice(result.total, currency as "USD")}</span>
+                Total <span className="price">{formatPrice(result.total, currency)}</span>
                 {" · "}
-                Remaining <span className="price">{formatPrice(Math.max(result.remaining, 0), currency as "USD")}</span>
+                Remaining <span className="price">{formatPrice(Math.max(result.remaining, 0), currency)}</span>
               </p>
             </div>
 
@@ -146,7 +146,7 @@ export function SetupBuilderForm() {
             <div
               className="mt-4 flex h-3 w-full overflow-hidden rounded-full bg-surface-warm"
               role="img"
-              aria-label={`Budget allocation: ${result.categories.map((c) => `${c.product.title} ${formatPrice(c.allocated, currency as "USD")}`).join(", ")}`}
+              aria-label={`Budget allocation: ${result.categories.map((c) => `${c.product.title} ${formatPrice(c.allocated, currency)}`).join(", ")}`}
             >
               {result.categories.map((c, i) => (
                 <div
@@ -173,7 +173,7 @@ export function SetupBuilderForm() {
                         </Link>
                       </h3>
                     </div>
-                    <p className="price text-lg">{formatPrice(c.allocated, currency as "USD")}</p>
+                    <p className="price text-lg">{formatPrice(c.allocated, currency)}</p>
                   </div>
                 </div>
               ))}

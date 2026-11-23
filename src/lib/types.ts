@@ -3,6 +3,25 @@ export type ApprovalStatus = "approved" | "pending" | "rejected";
 export type DataSource = "manual" | "api" | "csv_import" | "n8n_workflow";
 
 /**
+ * Lifecycle of a generated 3D product model.
+ *
+ * `image_fallback` means generation was deliberately skipped (for example a
+ * placeholder or non-raster image) and the original product photo is shown
+ * instead. It is a terminal state, not an error to retry.
+ */
+export type ModelStatus =
+  | "pending"
+  | "processing"
+  | "completed"
+  | "failed"
+  | "quota_exhausted"
+  | "image_fallback";
+
+export type ModelFormat = "glb";
+
+export type ModelType = "single_image_generative" | "manual";
+
+/**
  * Programme identifiers are plain strings so new affiliate networks can be
  * added without widening a union. Known values today: `aliexpress`, `admitad`.
  */
@@ -58,6 +77,18 @@ export interface Product {
   aiHeadline?: string;
   aiDescription?: string;
   aiQualityFlags?: string[];
+  /** Public URL of the generated GLB. Only set when modelStatus is completed. */
+  modelUrl?: string;
+  modelFormat?: ModelFormat;
+  modelType?: ModelType;
+  modelStatus?: ModelStatus;
+  /** e.g. `huggingface:stabilityai/stable-fast-3d` */
+  modelProvider?: string;
+  modelGeneratedAt?: string;
+  /** Human-readable failure reason. Never contains credentials or internal research data. */
+  modelError?: string;
+  /** SHA-256 of the source image, used to deduplicate generation jobs. */
+  sourceImageHash?: string;
 }
 
 export interface AffiliateProgram {

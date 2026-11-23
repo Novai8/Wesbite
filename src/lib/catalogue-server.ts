@@ -6,6 +6,11 @@
  * This module adds the *server* view: seed records plus anything imported into
  * Supabase, merged and de-duplicated.
  *
+ * Reads go through `catalogue_products`, the public view that omits research
+ * columns and `model_error`. Using the view (rather than the base table) means
+ * the same query works for the service role *and* is the only shape public
+ * roles are granted access to.
+ *
  * Failure policy: a Supabase outage or a missing key returns the seed catalogue
  * and reports `degraded` in `CatalogueSnapshot`. It never throws into a page
  * render and never pretends imported data exists.
@@ -24,6 +29,10 @@ const PRODUCT_COLUMNS = [
   "price_verified_at", "approval_status", "data_source", "source",
   "external_product_id", "advertiser_id", "last_synced_at", "created_at",
   "updated_at", "ai_headline", "ai_description", "ai_quality_flags",
+  // 3D model state, so the product page can render a GLB without a second
+  // catalogue read. These are display-only fields, never ranking inputs.
+  "model_status", "model_url", "model_format", "model_type", "model_provider",
+  "model_generated_at",
 ].join(",");
 
 /**
@@ -32,6 +41,17 @@ const PRODUCT_COLUMNS = [
  * imports surface within five minutes without a redeploy.
  */
 export const CATALOGUE_REVALIDATE_SECONDS = 300;
+
+/**
+ * Catalogue ordering.
+ *
+ * Deliberately NOT `updated_at`: the Admitad guard trigger stamps
+ * `updated_at = now()` on every non-manual UPDATE, so a background 3D-model
+ * completion would jump an old product to the top of the storefront. Ordering
+ * by `last_synced_at` (when the source data last changed) keeps ranking tied
+ * to catalogue freshness, and `created_at` breaks ties deterministically.
+ */
+const CATALOGUE_ORDER = "last_synced_at.desc.nullslast,created_at.desc";
 
 export interface CatalogueSnapshot {
   products: Product[];
@@ -49,11 +69,11 @@ async function fetchImportedProducts(): Promise<{ products: Product[]; warning?:
   if (!config) return { products: [] };
 
   try {
-    const rows = await selectRows<Record<string, unknown>>(SUPABASE_TABLES.products, {
+    const rows = await selectRows<Record<string, unknown>>(SUPABASE_TABLES.catalogueProducts, {
       select: PRODUCT_COLUMNS,
       approval_status: "eq.approved",
       data_source: "neq.manual",
-      order: "updated_at.desc",
+      order: CATALOGUE_ORDER,
       limit: 500,
     }, undefined, { revalidate: CATALOGUE_REVALIDATE_SECONDS });
     return { products: rows.map(fromProductRow) };

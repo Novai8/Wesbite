@@ -71,28 +71,35 @@ export function getPopularProducts(limit = 4): Product[] {
   return picks.slice(0, limit);
 }
 
-const CURRENCY_SYMBOLS: Record<string, string> = {
-  USD: "$",
-  EUR: "€",
-  GBP: "£",
-  JPY: "¥",
-  CNY: "¥",
-  INR: "₹",
-  KRW: "₩",
-  RUB: "₽",
-  UAH: "₴",
-  TRY: "₺",
-  BRL: "R$",
-  PLN: "zł",
-};
-
 /**
- * Formats a source price. Unknown ISO codes fall back to the code itself
- * (`1,234.00 AED`) rather than a wrong symbol.
+ * Formats a source price using the *actual* currency code.
+ *
+ * `Intl.NumberFormat` picks the right symbol and grouping for every ISO code
+ * (`$1,234.00`, `€1,234.00`, `AED 1,234.00`, `PKR 1,234`, `¥1,234`). A code the
+ * runtime does not recognise is rendered as an explicit code suffix —
+ * `1,234.00 ZZZ` — never as dollars, so a currency is never silently
+ * misrepresented.
+ *
+ * `currencyDisplay: "symbol"` is deliberate. The narrower "Rs" for PKR is also
+ * India's symbol, so an ambiguous glyph would be worse than showing the code.
  */
 export function formatPrice(price: number, currency: string): string {
-  const code = (currency || "USD").toUpperCase();
-  const symbol = CURRENCY_SYMBOLS[code];
-  if (symbol) return `${symbol}${price.toFixed(2)}`;
-  return `${price.toFixed(2)} ${code}`;
+  const amount = Number.isFinite(price) ? price : 0;
+  const code = typeof currency === "string" ? currency.trim().toUpperCase() : "";
+
+  if (code) {
+    try {
+      return new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: code,
+        currencyDisplay: "symbol",
+      }).format(amount);
+    } catch {
+      // RangeError: the runtime has no data for this code. Fall through to the
+      // honest "amount CODE" form instead of guessing a symbol.
+    }
+  }
+
+  const fallbackCode = code || "USD";
+  return `${amount.toFixed(2)} ${fallbackCode}`;
 }

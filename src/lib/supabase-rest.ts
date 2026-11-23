@@ -12,6 +12,14 @@
 
 const TABLE_PRODUCTS = "affiliate_products";
 const TABLE_PROGRAMS = "affiliate_programs";
+/**
+ * Customer-facing projection of `affiliate_products`.
+ *
+ * The base table carries research columns and `model_error`; the view excludes
+ * them. Public/catalogue reads use this so the integration cannot accidentally
+ * start relying on a column the public roles can no longer see.
+ */
+const VIEW_CATALOGUE_PRODUCTS = "catalogue_products";
 
 export interface SupabaseConfig {
   url: string;
@@ -146,6 +154,7 @@ export async function insertRows<T extends object>(
 
 export const SUPABASE_TABLES = {
   products: TABLE_PRODUCTS,
+  catalogueProducts: VIEW_CATALOGUE_PRODUCTS,
   programs: TABLE_PROGRAMS,
   importRuns: "admitad_import_runs",
   importErrors: "admitad_import_errors",

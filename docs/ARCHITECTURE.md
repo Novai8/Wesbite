@@ -27,6 +27,10 @@ src/
     recommendation-engine.ts   deterministic scoring + setup builder
     ai/provider.ts     AI abstraction — explanations only, never facts
     ai/groq.ts         Groq adapter (OpenAI-compatible endpoint)
+    ai/freellmapi.ts   FreeLLMAPI adapter — optional categorisation only
+    supabase-server.ts PostgREST + Storage wrapper (service role, server only)
+    model-store.ts     model state reads + generation queue
+    glb.ts             structural GLB validation (pure, testable)
     affiliate.ts       URL validation + non-identifying click logging
     rate-limit.ts      in-memory token bucket (10 req/60s/IP/route)
     validation.ts      input parsing bounds
@@ -60,9 +64,50 @@ import, approval, price freshness, click stats). Access requires admin
 auth; without credentials configured the dashboard is unreachable and says
 so.
 
+## 3D product models
+
+Generated models come from **remote** inference only: the worker in
+`scripts/3d_worker.py` calls the public Hugging Face Space
+`stabilityai/stable-fast-3d` over its Gradio API, on ZeroGPU hardware.
+Nothing is inferred on this machine — no weights are downloaded, no local GPU
+or CPU model runs, and the browser only displays a finished GLB.
+
+```
+POST /api/products/3d-model   enqueue one product (shared-secret)
+        │
+        ▼
+product_model_jobs            pending → processing → completed | failed | quota_exhausted
+        │                     unique (product_id, source_image_hash)
+        ▼
+scripts/3d_worker.py          HF Gradio API → validate GLB → Supabase Storage
+        │
+        ▼
+affiliate_products.model_*    read once per cached page render
+        │
+        ▼
+Product3dStage                lazy Three.js island, image fallback
+```
+
+Rules the code enforces:
+
+- Page views never trigger generation; the product page only *reads* cached
+  model state (`revalidate: 60`).
+- Jobs dedupe on product ID **and** image hash, so the same photo is modelled
+  once. A completed model is returned instead of a new job.
+- A `quota_exhausted` job is terminal for the day: the worker stops instead of
+  retrying and burning more quota.
+- SVG placeholders are rejected; only raster photos are generatable.
+- Bulk enqueue is not implemented. One image at a time until proven.
+
 ## Constraints honoured
 
-- 8 GB RAM / Intel UHD 620: no WebGL, no 3D, static-first pages, lazy
-  images, minimal client JS. Animations are transform/opacity only.
+- 8 GB RAM / Intel UHD 620: no local model inference and no local GPU
+  dependency. Pages stay static-first with lazy images and minimal client JS.
+  Animations remain transform/opacity based.
+- The one WebGL exception is the product 3D stage: a narrow `"use client"`
+  island that dynamically imports Three.js only when a completed model exists,
+  pauses when offscreen, disposes GPU resources on unmount, and falls back to
+  the original product photo when WebGL is unavailable, the GLB fails to load,
+  or the visitor prefers reduced motion.
 - The wrangler/OpenNext deployment config is untouched; the app builds to
   `.open-next/worker.js` unchanged.

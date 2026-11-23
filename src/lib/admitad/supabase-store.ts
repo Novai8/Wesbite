@@ -133,6 +133,19 @@ export function fromProductRow(row: Record<string, unknown>): Product {
     aiHeadline: row.ai_headline ? String(row.ai_headline) : undefined,
     aiDescription: row.ai_description ? String(row.ai_description) : undefined,
     aiQualityFlags: asStringArray(row.ai_quality_flags),
+    // 3D model state. Display-only; never part of an import payload.
+    // `model_error` is intentionally not read here: the public catalogue view
+    // does not expose it, and the page never needs the failure reason.
+    modelUrl: row.model_url ? String(row.model_url) : undefined,
+    modelFormat: row.model_format === "glb" ? ("glb" as const) : undefined,
+    modelType:
+      row.model_type === "single_image_generative" || row.model_type === "manual"
+        ? (row.model_type as Product["modelType"])
+        : undefined,
+    modelStatus: row.model_status ? (String(row.model_status) as Product["modelStatus"]) : undefined,
+    modelProvider: row.model_provider ? String(row.model_provider) : undefined,
+    modelGeneratedAt: row.model_generated_at ? String(row.model_generated_at) : undefined,
+    sourceImageHash: row.source_image_hash ? String(row.source_image_hash) : undefined,
   };
 }
 

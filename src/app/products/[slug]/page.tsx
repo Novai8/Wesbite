@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ProductCard } from "@/components/product-card";
+import { Product3dStage } from "@/components/product-3d-stage";
 import { Badge } from "@/components/ui/badge";
 import { AffiliateButton } from "@/components/affiliate-button";
 import { formatPrice, getCategories } from "@/lib/catalogue";
@@ -12,6 +13,7 @@ import {
   relatedFrom,
 } from "@/lib/catalogue-server";
 import { outboundPath } from "@/lib/affiliate";
+import { withModelState } from "@/lib/model-store";
 
 export function generateStaticParams() {
   return [];
@@ -41,12 +43,21 @@ export default async function ProductPage({
 }) {
   const { slug } = await params;
   const { products } = await getCatalogueSnapshot();
-  const product = products.find((item) => item.slug === slug);
-  if (!product) notFound();
+  const found = products.find((item) => item.slug === slug);
+  if (!found) notFound();
+
+  // Live catalogue row (seed or Supabase import) plus the generated-model
+  // state, which is read separately so a catalogue read never depends on the
+  // 3D queue being configured.
+  const product = await withModelState(found);
 
   const related = relatedFrom(products, product, 3);
   const category = getCategories().find((item) => item.slug === product.categorySlug);
   const image = product.imageUrls[0] ?? "/products/placeholder-organiser.svg";
+  const hasModel =
+    product.modelStatus === "completed" &&
+    product.modelFormat === "glb" &&
+    Boolean(product.modelUrl);
 
   return (
     <div className="product-room">
@@ -64,14 +75,18 @@ export default async function ProductPage({
         <div className="product-stage">
           <div className="product-media">
             <span className="product-media-tag">{product.merchant}</span>
-            <Image
-              src={image}
-              alt={product.title}
-              fill
-              sizes="(max-width: 1024px) 100vw, 56vw"
-              className="object-cover"
-              priority
-            />
+            {hasModel && product.modelUrl ? (
+              <Product3dStage modelUrl={product.modelUrl} posterUrl={image} alt={product.title} />
+            ) : (
+              <Image
+                src={image}
+                alt={product.title}
+                fill
+                sizes="(max-width: 1024px) 100vw, 56vw"
+                className="object-cover"
+                priority
+              />
+            )}
             <span className="product-media-index" aria-hidden="true">01 — 01</span>
           </div>
 

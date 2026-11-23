@@ -7,6 +7,16 @@ import { PRODUCT_SOURCE_UNIQUE_COLUMNS } from "../src/lib/admitad/mapper.ts";
 import { fromProductRow, toProductRow } from "../src/lib/admitad/supabase-store.ts";
 
 /**
+ * The migration SQL as text, with line endings normalised.
+ *
+ * The assertions below slice on `\n` and anchor with `^...$` regex flags, so a
+ * CRLF checkout (Windows, `core.autocrlf=true`) must not change the result.
+ */
+function migrationSql(): string {
+  return readFileSync("supabase/migrations/0001_admitad_integration.sql", "utf8").replace(/\r\n/g, "\n");
+}
+
+/**
  * Tests against the ACTUAL Affiliate Business Supabase schema, not the earlier
  * "ideal catalogue" documentation.
  *
@@ -272,7 +282,7 @@ async function withEnv(fn: () => Promise<void>, extra: Record<string, string> = 
 }
 
 test("the migration adds every catalogue column and never drops a research column", () => {
-  const sql = readFileSync("supabase/migrations/0001_admitad_integration.sql", "utf8");
+  const sql = migrationSql();
 
   // A fresh database must get the research shape, not a catalogue-only table.
   const createBlock = sql.slice(
@@ -311,7 +321,7 @@ test("the migration adds every catalogue column and never drops a research colum
 });
 
 test("adding catalogue columns never attaches a DEFAULT that would backfill research rows", () => {
-  const sql = readFileSync("supabase/migrations/0001_admitad_integration.sql", "utf8");
+  const sql = migrationSql();
   const addBlock = sql.slice(
     sql.indexOf("alter table public.affiliate_products\n  add column if not exists slug"),
     sql.indexOf("-- Catalogue defaults"),
@@ -331,7 +341,7 @@ test("adding catalogue columns never attaches a DEFAULT that would backfill rese
 });
 
 test("the currency cleanup only targets a single-column currency allowlist", () => {
-  const sql = readFileSync("supabase/migrations/0001_admitad_integration.sql", "utf8");
+  const sql = migrationSql();
   const block = sql.slice(
     sql.indexOf("for con in"),
     sql.indexOf("execute format('alter table public.affiliate_products drop constraint %I', con.conname)"),
@@ -342,7 +352,7 @@ test("the currency cleanup only targets a single-column currency allowlist", () 
 });
 
 test("a catalogue-only database gains the research columns so research inserts still work", () => {
-  const sql = readFileSync("supabase/migrations/0001_admitad_integration.sql", "utf8");
+  const sql = migrationSql();
   const reconcile = sql.slice(
     sql.indexOf("-- Research columns are reconciled"),
     sql.indexOf("-- Products: insert defaults and nullability"),
