@@ -20,6 +20,9 @@ export {
   type AliExpressAvailability,
 } from "./programmes";
 export { generateDeeplink, validateDeeplink, AdmitadDeeplinkError } from "./deeplink";
+export { validateGeneratedDeeplink, type GeneratedLinkCheck } from "./deeplink";
+export { canonicalAliExpressProductUrl, isAliExpressProductId, aliExpressProductIdFromUrl, ALIEXPRESS_ITEM_ORIGIN } from "./aliexpress";
+export { checkFeedPermission, type FeedPermission } from "./permissions";
 export { listWebsites, getWebsite } from "./websites";
 export { getStatistics, getAliExpressCommissionRates, formatAdmitadDate } from "./statistics";
 export { parseFeed, parseCsv, parseXmlRecords, parseJsonRecords, canonicalField, detectFormat } from "./feed-parser";

@@ -109,6 +109,14 @@ export function fromProductRow(row: Record<string, unknown>): Product {
     programSlug: String(row.program_slug ?? ""),
     affiliateUrl: String(row.affiliate_url ?? ""),
     sourceUrl: row.source_url ? String(row.source_url) : undefined,
+    feedProductUrl:
+      row.commission_info && typeof row.commission_info === "object"
+        ? (() => {
+            const info = row.commission_info as Record<string, unknown>;
+            const feedUrl = info.feedUrl ?? info.feed_url;
+            return typeof feedUrl === "string" && feedUrl ? feedUrl : undefined;
+          })()
+        : undefined,
     price: asNumber(row.price) ?? 0,
     currency: String(row.currency ?? "USD"),
     previousPrice: asNumber(row.previous_price),
@@ -212,6 +220,7 @@ export function importUpdateColumns(row: ProductRow): Partial<ProductRow> {
     budget_tier: row.budget_tier,
     price_verified_at: row.price_verified_at,
     last_synced_at: row.last_synced_at,
+    commission_info: row.commission_info,
     updated_at: row.updated_at,
   };
 }

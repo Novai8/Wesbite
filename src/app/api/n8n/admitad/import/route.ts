@@ -27,6 +27,7 @@ import {
   runImport,
   type ImportOptions,
 } from "@/lib/admitad";
+import { checkFeedPermission } from "@/lib/admitad/permissions";
 import { getAdmitadConfig, isAdmitadConfigured } from "@/lib/admitad/config";
 import { clientKey, rateLimit } from "@/lib/rate-limit";
 import { requireWorkflowAuth } from "@/lib/workflow-auth";
@@ -104,6 +105,21 @@ export async function POST(req: Request) {
         { status: 404 },
       );
     }
+    // Permission is checked before any feed is fetched. A signed URL that
+    // answers HTTP 200 is not evidence the advertiser allows importing.
+    const permission = checkFeedPermission(programmeData);
+    if (!permission.allowed) {
+      return NextResponse.json(
+        {
+          ok: false,
+          blocked: true,
+          error: permission.reason,
+          feedPermission: permission,
+          note: "No feed was downloaded and nothing was imported.",
+        },
+        { status: 403 },
+      );
+    }
     programme = programmeData;
     feedUrl =
       programmeData.products_csv_link ??
@@ -120,12 +136,55 @@ export async function POST(req: Request) {
         { status: 404 },
       );
     }
-  } else if (useProgrammeFeed && isAdmitadConfigured()) {
-    // Best-effort metadata so merchant naming and currency fallback are correct.
+  } else {
+    // A caller may supply its own feed, but permission is never assumed from
+    // that. The programme's ad-space record is the only source of the
+    // advertiser's product-feed permission, and the import refuses without it.
+    if (!isAdmitadConfigured()) {
+      return NextResponse.json(
+        {
+          ok: false,
+          blocked: true,
+          error:
+            "Cannot confirm product-feed permission without Admitad credentials. " +
+            "Set ADMITAD_CLIENT_ID/SECRET and ADMITAD_WEBSITE_ID.",
+        },
+        { status: 503 },
+      );
+    }
     try {
-      programme = (await getWebsiteProgramme(campaignId, getAdmitadConfig().websiteId)) ?? undefined;
-    } catch {
-      // Metadata is optional; the import still runs with the campaign id.
+      programme =
+        (await getWebsiteProgramme(campaignId, getAdmitadConfig().websiteId)) ?? undefined;
+    } catch (err) {
+      return NextResponse.json(
+        {
+          ok: false,
+          blocked: true,
+          error: `Could not read the programme record to confirm feed permission: ${
+            err instanceof Error ? err.message : "unknown error"
+          }`,
+        },
+        { status: 502 },
+      );
+    }
+    if (!programme) {
+      return NextResponse.json(
+        { error: `Programme ${campaignId} is not connected to this ad space.` },
+        { status: 404 },
+      );
+    }
+    const permission = checkFeedPermission(programme);
+    if (!permission.allowed) {
+      return NextResponse.json(
+        {
+          ok: false,
+          blocked: true,
+          error: permission.reason,
+          feedPermission: permission,
+          note: "Nothing was imported.",
+        },
+        { status: 403 },
+      );
     }
   }
 
@@ -135,6 +194,7 @@ export async function POST(req: Request) {
       feedText,
       feedUrl,
       programme,
+      allowedDeeplinkDomains: programme?.allowed_deeplink_domains,
       subid: asString(body.subid),
       enrich: body.enrich === true,
       maxRows: Number.isFinite(Number(body.maxRows)) ? Number(body.maxRows) : undefined,

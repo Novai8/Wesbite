@@ -64,6 +64,8 @@ is in `docs/research/admitad-api-notes.md`.
 | `src/lib/admitad/statistics.ts` | Reports + AliExpress commission rates |
 | `src/lib/admitad/feed-parser.ts` | CSV / XML / JSON → canonical rows |
 | `src/lib/admitad/mapper.ts` | Rows → `Product`, with category/tier rules |
+| `src/lib/admitad/aliexpress.ts` | Canonical AliExpress product URLs from feed ids |
+| `src/lib/admitad/permissions.ts` | Product-feed permission (`show_products_links`) gate |
 | `src/lib/admitad/products.ts` | Import pipeline, dedupe, per-row errors |
 | `src/lib/admitad/import-service.ts` | Persistence, audit rows, AI enrichment |
 | `src/lib/admitad/enrich.ts` | Groq copy generation + fabrication guard |
@@ -154,6 +156,48 @@ path needs the service role, which exists server-side only.
 
 ## Honesty rules (enforced in code)
 
+### Tracking hosts vs merchant destinations
+
+Admitad does not always serve deeplinks from `ad.admitad.com`. AliExpress WW
+(advertiser `6115`) returns them on `rzekl.com`. Those two ideas are therefore
+separate:
+
+| Concept | Validated against | Example |
+| --- | --- | --- |
+| Merchant destination (where the shopper lands) | the advertiser's `allowed_deeplink_domains` from the ad-space API | `www.aliexpress.com` |
+| Tracking URL (what `/api/go` redirects to) | the programme's provider tracking hosts, over HTTPS | `rzekl.com`, `ad.admitad.com` |
+
+`rzekl.com` is a *shared* provider host, so being on it proves nothing on its
+own. A generated link is accepted only when it came from an authenticated
+`/deeplink/` response **and** Admitad's `/validate_links/` confirms it will be
+paid. A hand-written `rzekl.com` URL is never accepted.
+
+`/api/go` remains a closed redirect: the destination comes only from a
+catalogue row, never from the request, and the row's host must be on the
+programme's allowlist over HTTPS.
+
+### Long AliExpress feed URLs
+
+AliExpress WW feed rows carry a 485–486 character tracking URL, past Admitad's
+200-character `ulp` limit. The importer builds the canonical product page from
+the feed's product id instead:
+
+```
+https://www.aliexpress.com/item/{external_product_id}.html
+```
+
+Product ids are strictly validated (`^\d{4,20}$`); an id that does not match
+fails the row rather than producing a guessed URL. The `ulp` limit is **not**
+relaxed. The original feed URL is kept as provenance in `commission_info.feedUrl`
+and is never used as a destination.
+
+### Product-feed permission
+
+`show_products_links` is the advertiser's permission switch. Signed feed URLs
+answering HTTP 200 does **not** mean importing is allowed. AliExpress WW
+currently reports `show_products_links: false`, so the importer fails closed
+with a 403 and a named reason, and does not download the feed at all.
+
 1. **Never fabricate.** Missing price, image, description or availability stays
    missing. `productPublishBlockers` refuses to import a row without a price,
    image, source URL or tracked link.
@@ -173,7 +217,7 @@ path needs the service role, which exists server-side only.
 
 ## Verification status
 
-**Proven offline (81 tests, `npm run test:unit`):**
+**Proven offline (107 tests, `npm run test:unit`):**
 
 - CSV/XML/JSON parsing: quoted fields, BOM, CRLF, semicolon delimiters, CDATA,
   XML attributes, nested tags.

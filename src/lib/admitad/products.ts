@@ -13,7 +13,10 @@
  */
 
 import { generateDeeplink } from "./deeplink";
+import { validateGeneratedDeeplink } from "./deeplink";
 import { parseFeed, type NormaliseFeedOptions } from "./feed-parser";
+import { canonicalAliExpressProductUrl } from "./aliexpress";
+import { checkFeedPermission, type FeedPermission } from "./permissions";
 import {
   ADMITAD_PROGRAM_SLUG,
   mapFeedRowToProduct,
@@ -28,7 +31,10 @@ export interface ImportOptions {
   /** ID of the advertiser programme the feed belongs to. */
   campaignId: number;
   /** Programme metadata used for merchant naming and currency fallback. */
-  programme?: Pick<AdmitadCampaignForWebsite, "id" | "name" | "currency" | "regions">;
+  programme?: Pick<
+    AdmitadCampaignForWebsite,
+    "id" | "name" | "currency" | "regions" | "show_products_links" | "allowed_deeplink_domains"
+  >;
   /** Value written to `subid` on every deeplink. */
   subid?: string;
   /** Called for each row after mapping — lets a caller persist as it goes. */
@@ -38,6 +44,19 @@ export interface ImportOptions {
   /** Per-row deeplink delay (ms). Menial but keeps us far under 600 req/min. */
   throttleMs?: number;
   feedOptions?: NormaliseFeedOptions;
+  /**
+   * The ad-space programme record. When supplied, its `show_products_links`
+   * permission flag is enforced before a single row is processed.
+   */
+  permission?: Pick<AdmitadCampaignForWebsite, "id" | "name" | "show_products_links" | "connection_status">;
+  /**
+   * Advertiser's allowed destination domains (Admitad
+   * `allowed_deeplink_domains`). Used to validate the URL actually sent for
+   * tracking. Optional so feed parsing stays testable without API data.
+   */
+  allowedDeeplinkDomains?: string[];
+  /** Skip Admitad `/validate_links/` per row (tests only). */
+  skipLinkValidation?: boolean;
 }
 
 export interface ImportError {
@@ -61,10 +80,58 @@ export interface ImportReport {
   /** True when nothing could be imported for a structural reason. */
   blocked: boolean;
   blockedReason?: string;
+  /** Present when the caller supplied the programme's ad-space record. */
+  feedPermission?: FeedPermission;
 }
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/** Admitad's documented `ulp` limit. Kept as-is on purpose. */
+const ULP_MAX = 200;
+
+/**
+ * Chooses the URL that gets tracked.
+ *
+ * Preference order:
+ *  1. A feed URL that is already a short, non-provider HTTP(S) URL — used
+ *     as-is (the historical behaviour, still correct for ordinary feeds).
+ *  2. A canonical AliExpress product URL built from the product id — the case
+ *     for AliExpress WW, whose feed URL is a 485+ character tracking link.
+ *
+ * Anything else is an error for that row. The `ulp` limit is never bypassed.
+ */
+export function resolveDestination(row: {
+  external_product_id?: string;
+  product_url?: string;
+}): { url: string; rebuiltFromId: boolean; error?: string } {
+  const feedUrl = (row.product_url ?? "").trim();
+  const id = row.external_product_id;
+
+  let usable = false;
+  if (/^https:\/\//i.test(feedUrl) && feedUrl.length <= ULP_MAX) {
+    try {
+      const host = new URL(feedUrl).hostname.toLowerCase();
+      // A provider tracking host is not a destination, even when short.
+      usable = !(host === "rzekl.com" || host.endsWith(".rzekl.com"));
+    } catch {
+      usable = false;
+    }
+  }
+
+  if (usable) return { url: feedUrl, rebuiltFromId: false };
+
+  const canonical = canonicalAliExpressProductUrl(id);
+  if (canonical) return { url: canonical, rebuiltFromId: true };
+
+  return {
+    url: "",
+    rebuiltFromId: false,
+    error: feedUrl
+      ? `no usable tracked destination: the feed URL is ${feedUrl.length} characters (limit ${ULP_MAX}) and the product id "${String(id ?? "")}" is not a valid AliExpress id`
+      : `no usable tracked destination: the feed supplied no URL and the product id "${String(id ?? "")}" is not a valid AliExpress id`,
+  };
 }
 
 /**
@@ -78,6 +145,34 @@ export async function importFromFeedText(
   const startedAt = new Date().toISOString();
   const maxRows = options.maxRows ?? 200;
   const throttleMs = options.throttleMs ?? 0;
+
+  // Permission gate runs before parsing: a programme that has not enabled
+  // product links must not have its feed read at all.
+  if (options.permission) {
+    const permission = checkFeedPermission(options.permission);
+    if (!permission.allowed) {
+      const now = new Date().toISOString();
+      return {
+        report: {
+          campaignId: options.campaignId,
+          programmeName: options.programme?.name ?? options.permission.name ?? `Programme ${options.campaignId}`,
+          totalRows: 0,
+          imported: 0,
+          duplicates: 0,
+          skipped: 0,
+          errors: [],
+          unmappedColumns: [],
+          format: "unknown",
+          startedAt: now,
+          finishedAt: now,
+          blocked: true,
+          blockedReason: permission.reason,
+          feedPermission: permission,
+        },
+        products: [],
+      };
+    }
+  }
 
   const parsed = parseFeed(feedText, { ...options.feedOptions, maxRows });
   const report: ImportReport = {
@@ -93,6 +188,7 @@ export async function importFromFeedText(
     startedAt,
     finishedAt: startedAt,
     blocked: false,
+    feedPermission: options.permission ? checkFeedPermission(options.permission) : undefined,
   };
 
   if (parsed.totalRows === 0) {
@@ -130,16 +226,44 @@ export async function importFromFeedText(
     seen.add(dedupeKey);
 
     try {
+      // Decide which URL to track. A feed URL that is itself a provider
+      // tracking link (or is too long for `ulp`) is replaced by the canonical
+      // product page, which is the real destination.
+      const destination = resolveDestination(row);
+      if (destination.error) {
+        report.errors.push({
+          row: index,
+          externalProductId: row.external_product_id,
+          reason: destination.error,
+        });
+        continue;
+      }
+
       const link = await generateDeeplink(options.campaignId, {
-        ulp: row.product_url,
+        ulp: destination.url,
         subid: options.subid,
       });
+
+      // A generated link is accepted only from the API response and only when
+      // its host is a programme tracking host AND Admitad confirms payment.
+      const accepted = await validateGeneratedDeeplink(link, ADMITAD_PROGRAM_SLUG, {
+        skipNetworkValidation: options.skipLinkValidation,
+      });
+      if (!accepted.ok) {
+        report.errors.push({
+          row: index,
+          externalProductId: row.external_product_id,
+          reason: accepted.reason,
+        });
+        continue;
+      }
 
       const product = mapFeedRowToProduct({
         row,
         programme,
         affiliateUrl: link.link,
         region: programme.regions?.map((r) => r.region).filter(Boolean),
+        destinationUrl: destination.url,
       });
 
       // Domain check against the Admitad programme entry. This is what keeps a
