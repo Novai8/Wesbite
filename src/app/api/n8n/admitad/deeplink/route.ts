@@ -11,6 +11,7 @@
 
 import { NextResponse } from "next/server";
 import { generateDeeplink, validateDeeplink } from "@/lib/admitad/deeplink";
+import { scrubFeedCredentials } from "@/lib/admitad/public-view";
 import { ADMITAD_DEEPLINK_DOMAIN } from "@/lib/admitad/mapper";
 import { isAdmitadFullyConfigured, getAdmitadConfig } from "@/lib/admitad/config";
 import { clientKey, rateLimit } from "@/lib/rate-limit";
@@ -90,7 +91,7 @@ export async function POST(req: Request) {
     });
   } catch (err) {
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Deeplink generation failed." },
+      { error: scrubFeedCredentials(err instanceof Error ? err.message : "Deeplink generation failed.") },
       { status: 502 },
     );
   }

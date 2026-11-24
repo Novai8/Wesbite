@@ -16,6 +16,7 @@
 import { ADMITAD_API_BASE } from "./config";
 import { getAccessToken, invalidateAccessToken } from "./auth";
 import { ADMITAD_ERROR_CODES } from "./types";
+import { scrubFeedCredentials } from "./public-view";
 
 interface ApiErrorBody {
   error?: string;
@@ -118,7 +119,9 @@ export async function admitadRequest<T>(path: string, options: AdmitadRequestOpt
         }
         const err = new AdmitadApiError(
           `Admitad ${options.method ?? "GET"} ${new URL(url).pathname} failed (${res.status}): ` +
-            describe(parsed.error_code, parsed.error_description ?? parsed.error ?? text.slice(0, 200)),
+            scrubFeedCredentials(
+              describe(parsed.error_code, parsed.error_description ?? parsed.error ?? text.slice(0, 200)),
+            ),
           res.status,
           parsed.error_code,
         );

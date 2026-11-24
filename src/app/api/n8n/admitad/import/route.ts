@@ -28,6 +28,10 @@ import {
   type ImportOptions,
 } from "@/lib/admitad";
 import { checkFeedPermission } from "@/lib/admitad/permissions";
+import {
+  scrubFeedCredentials,
+  toPublicFeedPermission,
+} from "@/lib/admitad/public-view";
 import { getAdmitadConfig, isAdmitadConfigured } from "@/lib/admitad/config";
 import { clientKey, rateLimit } from "@/lib/rate-limit";
 import { requireWorkflowAuth } from "@/lib/workflow-auth";
@@ -64,12 +68,9 @@ function permissionResponse(
       ok: false,
       blocked: true,
       error: permission.reason,
-      feedPermission: {
-        state: permission.state,
-        allowed: permission.allowed,
-        reason: permission.reason,
-        evidence: permission.evidence,
-      },
+      // Rebuilt from an allowlist so a new evidence field cannot leak the
+      // signed export URLs the raw record carries.
+      feedPermission: toPublicFeedPermission(permission),
       note,
     },
     { status: permission.state === "ambiguous" ? 409 : 403 },
@@ -179,9 +180,11 @@ export async function POST(req: Request) {
         {
           ok: false,
           blocked: true,
-          error: `Could not read the programme record to confirm feed permission: ${
-            err instanceof Error ? err.message : "unknown error"
-          }`,
+          error: scrubFeedCredentials(
+            `Could not read the programme record to confirm feed permission: ${
+              err instanceof Error ? err.message : "unknown error"
+            }`,
+          ),
         },
         { status: 502 },
       );
@@ -236,30 +239,28 @@ export async function POST(req: Request) {
           durationMs: new Date(report.finishedAt).getTime() - new Date(report.startedAt).getTime(),
         },
         persisted: result.persisted,
-        persistReason: result.persistReason,
+        persistReason: result.persistReason ? scrubFeedCredentials(result.persistReason) : result.persistReason,
         enriched: result.enriched,
         enrichmentNote: result.enrichmentSkipped,
-        blockedReason: report.blockedReason,
+        blockedReason: report.blockedReason ? scrubFeedCredentials(report.blockedReason) : report.blockedReason,
         // Permission state and the evidence behind it, so a caller can tell
         // "not permitted" from "permitted but the feed failed".
         feedPermission: report.feedPermission
-          ? {
-              state: report.feedPermission.state,
-              allowed: report.feedPermission.allowed,
-              reason: report.feedPermission.reason,
-              evidence: report.feedPermission.evidence,
-            }
+          ? toPublicFeedPermission(report.feedPermission)
           : null,
         download: report.download ?? null,
         categories: report.categories ?? null,
         // First few errors only: enough to debug, small enough for a log entry.
-        errorSample: report.errors.slice(0, 10),
+        errorSample: report.errors.slice(0, 10).map((entry) => ({
+          ...entry,
+          reason: entry.reason ? scrubFeedCredentials(entry.reason) : entry.reason,
+        })),
       },
       { status },
     );
   } catch (err) {
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Import failed." },
+      { error: scrubFeedCredentials(err instanceof Error ? err.message : "Import failed.") },
       { status: 500 },
     );
   }

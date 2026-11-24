@@ -9,6 +9,7 @@
 import { NextResponse } from "next/server";
 import { checkAliExpressAvailability, getProgramme } from "@/lib/admitad/programmes";
 import { describeConfig, getAdmitadConfig, isAdmitadConfigured } from "@/lib/admitad/config";
+import { toPublicProgramme, scrubFeedCredentials } from "@/lib/admitad/public-view";
 import { requireWorkflowAuth } from "@/lib/workflow-auth";
 
 export const runtime = "nodejs";
@@ -54,25 +55,21 @@ export async function GET(req: Request) {
       canImportProducts: availability.canImportProducts,
       canUseDeeplinks: availability.canUseDeeplinks,
       reason: availability.reason,
-      programme: availability.programme
-        ? {
-            id: availability.programme.id,
-            name: availability.programme.name,
-            siteUrl: availability.programme.site_url ?? null,
-            currency: availability.programme.currency ?? null,
-            deeplinkAllowed: availability.programme.allow_deeplink ?? null,
-            showProductsLinks: availability.programme.show_products_links ?? null,
-            hasCsvFeed: Boolean(availability.programme.products_csv_link || availability.programme.feeds_info?.some((f) => f.csv_link)),
-            hasXmlFeed: Boolean(availability.programme.products_xml_link || availability.programme.feeds_info?.some((f) => f.xml_link)),
-          }
-        : null,
+      // Allowlisted projection only: the raw record carries signed export
+      // URLs in products_{csv,xml}_link and feeds_info[].{csv,xml}_link.
+      programme: toPublicProgramme(availability.programme),
       catalogueRating: catalogueEntry?.rating ?? null,
       approvalNote:
         "If status is pending or the programme is absent: open Admitad → Catalogue → AliExpress WW → Join. Approval is the advertiser's decision and can take days.",
     });
   } catch (err) {
     return NextResponse.json(
-      { checked: false, error: err instanceof Error ? err.message : "Availability check failed." },
+      {
+        checked: false,
+        error: scrubFeedCredentials(
+          err instanceof Error ? err.message : "Availability check failed.",
+        ),
+      },
       { status: 502 },
     );
   }

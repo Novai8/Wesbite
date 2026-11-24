@@ -47,6 +47,17 @@ export {
   type FeedStreamSuccess,
 } from "./feed-stream";
 export { listWebsites, getWebsite } from "./websites";
+
+export {
+  scrubFeedCredentials,
+  toPublicAvailability,
+  toPublicFeedPermission,
+  toPublicProgramme,
+  type PublicAvailability,
+  type PublicFeedEntry,
+  type PublicFeedPermission,
+  type PublicProgramme,
+} from "./public-view";
 export { getStatistics, getAliExpressCommissionRates, formatAdmitadDate } from "./statistics";
 export {
   parseFeed,

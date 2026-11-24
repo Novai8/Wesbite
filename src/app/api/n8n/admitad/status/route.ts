@@ -22,6 +22,11 @@ import {
   describeFeedEntries,
   type FeedPermission,
 } from "@/lib/admitad/permissions";
+import {
+  scrubFeedCredentials,
+  toPublicAvailability,
+  toPublicFeedPermission,
+} from "@/lib/admitad/public-view";
 import { isSupabaseConfigured } from "@/lib/supabase-rest";
 import { requireWorkflowAuth } from "@/lib/workflow-auth";
 
@@ -38,8 +43,12 @@ interface CheckResult {
   data?: unknown;
 }
 
+/**
+ * Upstream errors are free-form and can echo the request URL. Every message
+ * that reaches the response passes through the credential scrubber first.
+ */
 function errorDetail(err: unknown): string {
-  return err instanceof Error ? err.message : "Unknown error.";
+  return scrubFeedCredentials(err instanceof Error ? err.message : "Unknown error.");
 }
 
 /**
@@ -183,7 +192,7 @@ export async function GET(req: Request) {
         status: "ok",
         detail: `${programmes.length} active programme(s) on this ad space.`,
         data: {
-          aliExpress,
+          aliExpress: toPublicAvailability(aliExpress),
           connectedProgrammes: programmes.length,
           // Counted by permission *state*, never by "a download link exists".
           // A link is not permission; see lib/admitad/permissions.ts.
@@ -194,9 +203,13 @@ export async function GET(req: Request) {
       return NextResponse.json({
         ...base,
         live: true,
-        aliExpress,
-        feedPermission: aliExpress.programme
-          ? checkFeedPermission(aliExpress.programme)
+        // `aliExpress` carries the raw ad-space programme record, including
+        // signed export URLs in `feeds_info[].{csv,xml}_link` and
+        // `products_{csv,xml}_link`. Only the allowlisted projection may cross
+        // the wire: see lib/admitad/public-view.ts.
+        aliExpress: toPublicAvailability(aliExpress),
+        feedPermission: aliExpress.feedPermission
+          ? toPublicFeedPermission(aliExpress.feedPermission)
           : null,
       });
     } catch (err) {
@@ -211,7 +224,9 @@ export async function GET(req: Request) {
       {
         ...base,
         live: false,
-        error: err instanceof Error ? err.message : "Admitad status check failed.",
+        error: scrubFeedCredentials(
+          err instanceof Error ? err.message : "Admitad status check failed.",
+        ),
       },
       { status: 502 },
     );

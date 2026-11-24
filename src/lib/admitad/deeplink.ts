@@ -13,6 +13,7 @@
 import { getAdmitadConfig } from "./config";
 import { admitadRequest } from "./client";
 import { validateAffiliateUrl } from "@/lib/affiliate";
+import { scrubFeedCredentials } from "./public-view";
 import type { AdmitadDeeplinkResult } from "./types";
 
 export class AdmitadDeeplinkError extends Error {
@@ -110,11 +111,12 @@ export async function validateDeeplink(link: string): Promise<LinkValidationResu
     );
     const message = String(data?.message ?? data?.error_description ?? "").trim();
     if (!message) return { ok: false, message: "Admitad returned no validation message.", raw: data };
-    return { ok: /success/i.test(message), message, raw: data };
+    const safeMessage = scrubFeedCredentials(message);
+    return { ok: /success/i.test(safeMessage), message: safeMessage, raw: data };
   } catch (err) {
     return {
       ok: false,
-      message: err instanceof Error ? err.message : "Link validation failed.",
+      message: scrubFeedCredentials(err instanceof Error ? err.message : "Link validation failed."),
     };
   }
 }
