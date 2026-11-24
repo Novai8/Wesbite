@@ -13,6 +13,7 @@ import { clientKey, rateLimit } from "@/lib/rate-limit";
 import { requireWorkflowAuth } from "@/lib/workflow-auth";
 import type { Product } from "@/lib/types";
 import { fromProductRow } from "@/lib/admitad/supabase-store";
+import { scrubFeedCredentials } from "@/lib/admitad/public-view";
 
 export const runtime = "nodejs";
 
@@ -90,7 +91,7 @@ export async function POST(req: Request) {
     headline: result.headline ?? null,
     description: result.description ?? null,
     qualityFlags: result.qualityFlags ?? [],
-    warning: result.error ?? null,
+    warning: result.error ? scrubFeedCredentials(result.error) : null,
   });
 }
 

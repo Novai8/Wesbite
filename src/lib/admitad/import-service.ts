@@ -16,6 +16,7 @@ import {
   type ImportReport,
 } from "./products";
 import { toProductRow } from "./supabase-store";
+import { scrubFeedCredentials } from "./public-view";
 import {
   getSupabaseConfig,
   insertRows,
@@ -230,7 +231,7 @@ async function existingProductIdentities(
   } catch (err) {
     console.warn(
       `[admitad-import] could not read existing identities; using deterministic ids: ${
-        err instanceof Error ? err.message : String(err)
+        scrubFeedCredentials(err instanceof Error ? err.message : String(err))
       }`,
     );
     return new Map();

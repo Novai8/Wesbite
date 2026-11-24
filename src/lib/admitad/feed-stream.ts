@@ -23,6 +23,7 @@
  */
 
 import { parseCategoryDictionary, XmlRecordStream, type XmlRecordBlock } from "./feed-parser";
+import { scrubFeedCredentials } from "./public-view";
 import type { FeedFormat } from "./types";
 
 export type FeedFailureKind =
@@ -464,7 +465,11 @@ export async function streamFeed(
       ok: false,
       kind: "network",
       retryable: true,
-      message: `The feed host could not be reached (${err instanceof Error ? err.message : "unknown error"}). Retry later.`,
+      // A fetch failure message can echo the request URL, which for a signed
+      // export carries the publisher id and access code. Scrub before it leaves.
+      message: `The feed host could not be reached (${
+        scrubFeedCredentials(err instanceof Error ? err.message : "unknown error")
+      }). Retry later.`,
     };
   } finally {
     if (idleTimer) clearTimeout(idleTimer);
