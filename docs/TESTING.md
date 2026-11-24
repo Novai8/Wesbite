@@ -11,6 +11,72 @@
 | OpenNext Cloudflare bundle | `npx opennextjs-cloudflare build` | worker saved |
 | Playwright E2E + axe | `npx playwright test` | 168 passed (4 viewports) |
 
+## Catalogue ACL security tests
+
+Two suites cover the catalogue access-control boundary, and they prove different
+things. Neither one substitutes for the other.
+
+| Suite | Needs PostgreSQL | Command |
+| --- | --- | --- |
+| Static contracts (72 tests) | no | `python -m unittest tests.test_catalogue_acl_static` |
+| Live privilege tests (49 tests) | yes, `psql` on `PATH` | `python -m unittest tests.test_catalogue_acl_lockdown` |
+
+### Static contracts
+
+`tests/test_catalogue_acl_static.py` parses the shipped migration and asserts on
+statement structure: comments are stripped, statements are split on semicolons
+outside literals and dollar-quoted bodies, and then each statement is classified.
+It fails if `security_invoker` is turned off, if an event trigger or `rolsuper`
+check appears, if a table-wide `SELECT` replaces the derived column grant, if
+either default-ACL scope is dropped, if the `TRUNCATE`/`MAINTAIN` revokes are
+weakened, or if a function redefinition or `search_path` pin is absorbed into the
+lockdown migration.
+
+It also contains parser self-tests, so a parser bug cannot silently turn the
+assertions into no-ops.
+
+### Live privilege tests
+
+`tests/test_catalogue_acl_lockdown.py` creates a throwaway database per test
+class, applies the real migration files, and checks actual privilege results with
+`has_table_privilege`, real `SET ROLE` statements and real `DELETE` attempts. It
+needs a role with `CREATEDB`, `CREATE ROLE` and `ALTER DEFAULT PRIVILEGES` -- a
+superuser satisfies all three.
+
+```
+PGHOST=/path/to/socket PGPORT=5432 PGUSER=postgres \
+  python -m unittest tests.test_catalogue_acl_lockdown
+```
+
+Run it against PostgreSQL 17 and 18; the `MAINTAIN` path only exists on 17+.
+
+### Skipped is not passed
+
+When PostgreSQL is unreachable the live tests skip, and `unittest` still exits 0
+with `OK (skipped=N)`. That is *not* evidence of database security.
+
+`FYNDRA_REQUIRE_DATABASE_TESTS` controls that. It is **optional locally and
+mandatory in CI**:
+
+- **Locally it is optional.** Leave it unset and the suite skips cleanly when you
+  have no server running, which keeps frontend-only work unblocked. Set it to
+  `1` when you do want a missing database to be an error:
+
+  ```
+  FYNDRA_REQUIRE_DATABASE_TESTS=1 python -m unittest tests.test_catalogue_acl_static
+  ```
+
+- **In the PostgreSQL CI job it is mandatory.** `.github/workflows/fyndra-ci.yml`
+  sets `FYNDRA_REQUIRE_DATABASE_TESTS=1` at job level for both matrix entries
+  (PostgreSQL 17 and 18), so the static suite fails outright if it cannot connect
+  to the service container. The workflow additionally fails the job when the
+  integration suite reports anything but "at least 49 tests ran, 0 skipped",
+  so a skipped run can never be recorded as a passing security result.
+
+The workflow never relies on the exit code alone, because `unittest` exits 0 for
+a fully skipped run. It parses the `Ran N tests` and `OK (skipped=N)` summary
+line and rejects a short count or any skip.
+
 ## Admitad unit tests
 
 `npm run test:unit` runs the suites in `tests/` with Node's built-in runner.

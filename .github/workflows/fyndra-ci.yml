@@ -1,0 +1,341 @@
+# CI for the Fyndra Admitad integration branch.
+#
+# Two independent jobs:
+#   static-and-frontend  runs everything that needs no database.
+#   acl-database         runs the 49 live privilege tests against disposable
+#                        PostgreSQL 17 and 18 service containers.
+#
+# Security posture:
+#   * read-only token, no secrets referenced anywhere
+#   * no Supabase, no staging or production connection, no external DB URLs
+#   * the only database is a throwaway service container on localhost, and the
+#     suite creates and drops its own per-test databases inside it
+#   * skipped database tests are treated as failures, never as a pass
+#
+# The one hardcoded credential below is the password of an ephemeral container
+# that exists for the duration of a single job, is bound to the runner's
+# localhost, and is destroyed when the job ends. It is not a project secret.
+
+name: Fyndra CI
+
+on:
+  push:
+    branches:
+      - integ/admitad-fyndra-3d
+  pull_request:
+    branches:
+      - integ/admitad-fyndra-3d
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fyndra-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "22"
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Job A: no database required.
+  # ---------------------------------------------------------------------------
+  static-and-frontend:
+    name: Static security and frontend
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out repository
+        # actions/checkout v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Set up Node.js
+        # actions/setup-node v7.1.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Set up Python
+        # actions/setup-python v7.1.0
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Report toolchain versions
+        run: |
+          node --version
+          npm --version
+          python --version
+
+      # Shared verifier. Anchoring on the summary line avoids matching prose:
+      # the modules' own docstrings mention "skipped=N", and verbose output
+      # contains the word "skipped" even when nothing skipped.
+      - name: Write test verifier
+        run: |
+          sed 's/^[[:space:]]*//' > /tmp/verify_tests.sh <<'SCRIPT'
+          #!/usr/bin/env bash
+          # verify_tests.sh <log> <minimum-tests> <max-allowed-skips>
+          set -euo pipefail
+          log="$1"; minimum="$2"; max_skips="$3"
+
+          summary=$(grep -E '^(OK|FAILED)' "$log" | tail -1 || true)
+          echo "summary: ${summary:-<none>}"
+
+          if [ -z "${summary:-}" ]; then
+            echo "::error::no unittest summary line found in ${log}"
+            exit 1
+          fi
+          case "$summary" in
+            FAILED*) echo "::error::unittest reported FAILED"; exit 1 ;;
+          esac
+
+          ran=$(grep -Eo 'Ran [0-9]+ tests?' "$log" | grep -Eo '[0-9]+' | tail -1)
+          if [ -z "${ran:-}" ] || [ "$ran" -lt "$minimum" ]; then
+            echo "::error::expected at least ${minimum} tests, collected ${ran:-none}"
+            exit 1
+          fi
+
+          skips=0
+          if [[ "$summary" =~ skipped=([0-9]+) ]]; then
+            skips="${BASH_REMATCH[1]}"
+          fi
+          if [ "$skips" -gt "$max_skips" ]; then
+            echo "::error::${skips} test(s) skipped, at most ${max_skips} allowed"
+            exit 1
+          fi
+
+          echo "verified: ${ran} tests ran, ${skips} skipped (allowed: ${max_skips})"
+          SCRIPT
+          chmod +x /tmp/verify_tests.sh
+
+      # 72 static contract tests. Exactly one skip is expected: the opt-in
+      # CI gate, which only runs when FYNDRA_REQUIRE_DATABASE_TESTS=1. Job B
+      # exercises that gate for real. Any other skip is a failure.
+      - name: Static ACL contract tests
+        run: |
+          set -euo pipefail
+          python -m unittest tests.test_catalogue_acl_static -v 2>&1 | tee /tmp/static-acl.log
+          # One skip is the opt-in database gate, which Job B enforces for real.
+          /tmp/verify_tests.sh /tmp/static-acl.log 72 1
+
+      # Static checks that parse the migration text; they need no server.
+      - name: Migration contract and worker tests
+        run: |
+          set -euo pipefail
+          python -m unittest tests.test_search_path_migration \
+                            tests.test_migration_contract \
+                            tests.test_worker -v 2>&1 | tee /tmp/static-migration.log
+          # These need no server, so no skip is acceptable.
+          /tmp/verify_tests.sh /tmp/static-migration.log 35 0
+
+      - name: TypeScript typecheck
+        run: npm run typecheck
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: Unit tests
+        run: npm run test:unit
+
+      - name: 3D tests
+        run: npm run test:3d
+
+      - name: Production build
+        run: npm run build
+
+  # ---------------------------------------------------------------------------
+  # Job B: live privilege tests against real PostgreSQL, one run per version.
+  # ---------------------------------------------------------------------------
+  acl-database:
+    name: ACL integration (PostgreSQL ${{ matrix.pg_major }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        pg_major: [17, 18]
+
+    services:
+      postgres:
+        image: postgres:${{ matrix.pg_major }}
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: fyndra_ci_local_only
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+          --health-start-period 10s
+
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: "5432"
+      PGUSER: postgres
+      PGPASSWORD: fyndra_ci_local_only
+      PGDATABASE: postgres
+      PGSSLMODE: disable
+      # Turns the static suite's opt-in gate into a hard requirement.
+      FYNDRA_REQUIRE_DATABASE_TESTS: "1"
+
+    steps:
+      - name: Check out repository
+        # actions/checkout v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Set up Python
+        # actions/setup-python v7.1.0
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      # Defence in depth. The password is a throwaway container credential, but
+      # masking it keeps it out of the rendered log even if a future step
+      # accidentally echoes it or enables shell tracing.
+      - name: Mask the disposable container password
+        run: echo "::add-mask::${PGPASSWORD}"
+
+      # The suite shells out to psql, so install the client matching the server.
+      #
+      # The codename is pinned rather than derived from lsb_release: this job
+      # runs on ubuntu-24.04 (noble), and a silent runner upgrade must not point
+      # apt at a pgdg suite that does not exist for the new codename.
+      - name: Install PostgreSQL ${{ matrix.pg_major }} client
+        run: |
+          set -euo pipefail
+          PGDG_CODENAME="noble"
+
+          runner_codename="$(lsb_release -cs)"
+          echo "runner: $(lsb_release -ds) (codename ${runner_codename})"
+          if [ "${runner_codename}" != "${PGDG_CODENAME}" ]; then
+            echo "::error::runner codename ${runner_codename} does not match the pinned pgdg suite ${PGDG_CODENAME}; update runs-on and PGDG_CODENAME together"
+            exit 1
+          fi
+
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+            -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt ${PGDG_CODENAME}-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list > /dev/null
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends postgresql-client-${{ matrix.pg_major }}
+          psql --version
+
+      # Proves the job is talking to the container it thinks it is, and fails
+      # fast instead of letting every test skip on an unreachable server.
+      - name: Verify server is reachable and is the expected major version
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 30); do
+            if psql -X -A -t -c 'select 1' > /dev/null 2>&1; then
+              break
+            fi
+            echo "waiting for PostgreSQL (${attempt}/30)"
+            sleep 2
+          done
+
+          version_num=$(psql -X -A -t -c 'show server_version_num')
+          version=$(psql -X -A -t -c 'show server_version')
+          major=$((version_num / 10000))
+          echo "server: ${version} (server_version_num=${version_num}, major=${major})"
+
+          if [ "$major" != "${{ matrix.pg_major }}" ]; then
+            echo "::error::expected PostgreSQL ${{ matrix.pg_major }}, connected to major ${major}"
+            exit 1
+          fi
+
+      - name: Write test verifier
+        run: |
+          sed 's/^[[:space:]]*//' > /tmp/verify_tests.sh <<'SCRIPT'
+          #!/usr/bin/env bash
+          # verify_tests.sh <log> <minimum-tests> <max-allowed-skips>
+          set -euo pipefail
+          log="$1"; minimum="$2"; max_skips="$3"
+
+          summary=$(grep -E '^(OK|FAILED)' "$log" | tail -1 || true)
+          echo "summary: ${summary:-<none>}"
+
+          if [ -z "${summary:-}" ]; then
+            echo "::error::no unittest summary line found in ${log}"
+            exit 1
+          fi
+          case "$summary" in
+            FAILED*) echo "::error::unittest reported FAILED"; exit 1 ;;
+          esac
+
+          ran=$(grep -Eo 'Ran [0-9]+ tests?' "$log" | grep -Eo '[0-9]+' | tail -1)
+          if [ -z "${ran:-}" ] || [ "$ran" -lt "$minimum" ]; then
+            echo "::error::expected at least ${minimum} tests, collected ${ran:-none}"
+            exit 1
+          fi
+
+          skips=0
+          if [[ "$summary" =~ skipped=([0-9]+) ]]; then
+            skips="${BASH_REMATCH[1]}"
+          fi
+          if [ "$skips" -gt "$max_skips" ]; then
+            echo "::error::${skips} test(s) skipped, at most ${max_skips} allowed"
+            exit 1
+          fi
+
+          echo "verified: ${ran} tests ran, ${skips} skipped (allowed: ${max_skips})"
+          SCRIPT
+          chmod +x /tmp/verify_tests.sh
+
+      # The same 72 static contracts, but with the gate active: this asserts
+      # that the database really is reachable and that no test skipped.
+      - name: Static contracts with database gate enforced
+        run: |
+          set -euo pipefail
+          python -m unittest tests.test_catalogue_acl_static -v 2>&1 | tee /tmp/static-gated.log
+          # The gate is active here, so not even the opt-in test may skip.
+          /tmp/verify_tests.sh /tmp/static-gated.log 72 0
+
+      - name: search_path migration tests
+        run: |
+          set -euo pipefail
+          python -m unittest tests.test_search_path_migration -v 2>&1 | tee /tmp/search-path.log
+          /tmp/verify_tests.sh /tmp/search-path.log 9 0
+
+      # The 49 live privilege tests. Each test class builds a uniquely named
+      # database, applies the real migration files, and drops the database
+      # afterwards. A skip here means PostgreSQL was unreachable -- which must
+      # fail the job, not pass it.
+      - name: ACL integration tests (must genuinely execute)
+        run: |
+          set -euo pipefail
+          python -m unittest tests.test_catalogue_acl_lockdown -v 2>&1 | tee /tmp/acl-integration.log
+          # Zero skips: a skipped run is not a passing security run.
+          /tmp/verify_tests.sh /tmp/acl-integration.log 49 0
+          echo "executed against PostgreSQL ${{ matrix.pg_major }}"
+
+      - name: Confirm no test database leaked
+        run: |
+          set -euo pipefail
+          leftovers=$(psql -X -A -t -c \
+            "select count(*) from pg_database where datname like 'fyndra_acl_%'")
+          echo "leftover test databases: ${leftovers}"
+          if [ "${leftovers}" != "0" ]; then
+            echo "::error::the suite left ${leftovers} test database(s) behind"
+            exit 1
+          fi
+
+      - name: Upload test logs
+        if: always()
+        # actions/upload-artifact v7.0.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: acl-logs-pg${{ matrix.pg_major }}
+          path: /tmp/*.log
+          retention-days: 7
+          if-no-files-found: ignore
