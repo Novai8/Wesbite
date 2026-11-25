@@ -56,3 +56,13 @@ __pycache__/
 /hc-*.json
 /fetch-admitad.cjs
 /fetch-links.cjs
+
+# Local scratch space (temporary files, fixtures)
+/.tmp/
+
+# Local Supabase CLI state (project ref, pooler URL, versions).
+# Never commit: it names the linked project and is machine-specific.
+/supabase/.temp/
+
+# Local audit path list (file names only) used during the ACL review.
+/.fyndra-files.txt
