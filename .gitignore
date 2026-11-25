@@ -59,3 +59,10 @@ __pycache__/
 
 # Local scratch space (3D worker temp files, fixtures)
 /.tmp/
+
+# Local Supabase CLI state (project ref, pooler URL, versions).
+# Never commit: it names the linked project and is machine-specific.
+/supabase/.temp/
+
+# Local audit path list (file names only) used during the ACL review.
+/.fyndra-files.txt

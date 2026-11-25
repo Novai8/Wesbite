@@ -205,10 +205,25 @@ test.describe("discover", () => {
   });
 });
 
+/**
+ * Product-page coverage runs against one fixed seed record.
+ *
+ * The previous version clicked the first `/products/` link on `/discover`.
+ * That is whatever the catalogue merges first, and imported rows are ordered
+ * ahead of seed rows by `last_synced_at`, so the target changed with live data.
+ * The retained failure trace shows exactly that: an imported row with an empty
+ * `specs` object, which correctly renders no Specifications section.
+ *
+ * A fixed slug removes the dependency on remote ordering while keeping the
+ * same assertions. It must stay a seed slug with non-empty `specs`; `tests/
+ * e2e-product-fixture.test.ts` fails if it drifts.
+ */
+const PRODUCT_SLUG = "hot-swap-65-percent-keyboard";
+const PRODUCT_PATH = `/products/${PRODUCT_SLUG}`;
+
 test.describe("product page", () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto("/discover");
-    await page.locator('a[href^="/products/"]').first().click();
+    await page.goto(PRODUCT_PATH);
   });
 
   test("shows verified specs, pros/cons and labelled affiliate link", async ({
@@ -216,6 +231,9 @@ test.describe("product page", () => {
   }) => {
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
     await expect(page.getByText(/Specifications/i)).toBeVisible();
+    // Assert the section carries real rows, so a heading-only regression is
+    // still caught.
+    await expect(page.locator(".product-spec-row").first()).toBeVisible();
     await expect(page.getByText(/What.s good/i)).toBeVisible();
     await expect(page.getByText(/Trade-offs/i)).toBeVisible();
 
