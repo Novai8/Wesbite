@@ -207,7 +207,7 @@ test("a network failure is surfaced with its cause", async () => {
   } finally {
     globalThis.fetch = REAL_FETCH;
   }
-
+});
 
 test("a transient overload during download is retried without importing twice", async () => {
   let feedRequests = 0;
@@ -256,5 +256,4 @@ test("a transient overload during download is retried without importing twice", 
     assert.equal(report.imported, 2);
     assert.equal(products.length, 2, "a retry must not duplicate rows");
   });
-});
 });
