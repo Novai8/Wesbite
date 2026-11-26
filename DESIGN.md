@@ -5,11 +5,11 @@ Fyndra is the working brand for this platform (centralised in `src/lib/site.ts`,
 ## Design plan (decided, then built)
 
 - **Concept.** A research publication that answers shopping questions. Content-first grids, real product photography, generous whitespace, and one signature element: the **answer bar** — a warm-tinted panel framing every recommendation with its reasoning, like an annotated research note.
-- **Homepage.** A saturated blue scroll story anchored by a centred `Fyndra` wordmark and four editorial rooms. The hero is typographic rather than motion-led: no 3D, video or scroll-scrubbed animation. The catalogue is an Airflex-inspired editorial grid; product pages use a quieter Mushroom-style media/detail split.
+- **Homepage.** A saturated blue scroll story anchored by a centred `Fyndra` wordmark and four editorial rooms. The hero copy is typographic, and a cursor-following 3D shopping cart is layered over it as the page's one motion element (see *The cursor cart* below). The catalogue is an Airflex-inspired editorial grid; product pages use a quieter Mushroom-style media/detail split.
 - **Color.** Warm off-white paper `#FAF9F6`, deep charcoal ink `#1C1917`, restrained electric cobalt `#2941E8`, controlled lime `#A3D418` (value/verified highlights only), soft warm surface `#F3F1EC`, hairline `#E5E1D8`.
 - **Type.** Bricolage Grotesque (display: heroes, section titles — opinionated, slightly compressed at large sizes) + Inter Tight (body and UI — tight, legible, modern). No serif body, no monospace labels.
 - **Layout.** Left-aligned editorial grid, 12-column with intentional asymmetry (7/5 splits), max-width 1200px, wide gutters. Product cards are quiet; photography is large.
-- **Principles.** 1) The recommendation reasoning is the product — always visible, never hidden in tooltips. 2) One bold thing per page (usually the hero statement). 3) Verified data gets the lime tick; AI explanations are visually distinct from verified specs. 4) Motion answers actions: press states, expand/collapse, step transitions — not ambient floating. 5) Exception: the homepage hero is the one scroll-driven ambient stage (3D cart scene) — everything else stays quiet.
+- **Principles.** 1) The recommendation reasoning is the product — always visible, never hidden in tooltips. 2) One bold thing per page (usually the hero statement). 3) Verified data gets the lime tick; AI explanations are visually distinct from verified specs. 4) Motion answers actions: press states, expand/collapse, step transitions — not ambient floating. 5) One deliberate exception: the homepage cursor cart, a single element that follows the pointer and lays tyre prints. It is the only ambient motion in the product.
 
 ## Tokens
 
@@ -57,7 +57,19 @@ Scale: 12 (caption) / 14 (small) / 16 (body) / 18 (lead) / 24 (h3) / 32 (h2) / 4
 - Durations: 120ms press feedback, 200ms hover, 300ms panel/step transitions.
 - Easing: `--ease-out` (cubic-bezier(0.22, 1, 0.36, 1)) for entrances; `--ease-in` for exits.
 - Only `transform` and `opacity` animate. `prefers-reduced-motion` disables non-essential motion globally.
-- Buttons compress `scale(0.97)` on `:active`. No floating ambient loops — with one exception: the homepage hero runs a scroll-linked 3D cart scene (`src/components/landing/hero-scene.tsx`, plain three.js, cobalt comet trail; hidden under `prefers-reduced-motion`).
+- Buttons compress `scale(0.97)` on `:active`. No floating ambient loops — with one exception: the cursor cart described below. It is a WebGL canvas, so its motion is outside the CSS transform/opacity rule; it is still gated by `prefers-reduced-motion`, which swaps it for a single parked frame.
+
+## The cursor cart
+
+The homepage hero carries one 3D element: a shopping cart that follows the pointer and leaves a pair of tyre prints in its wake. It is decorative and correctly hidden from assistive tech (`aria-hidden`), never a control.
+
+- **Mount points.** `src/app/page.tsx` renders `<CartExperience />` alongside `<LandingHero />`. `src/components/cart-experience/cart-experience.tsx` is the gate: it checks `prefers-reduced-motion` and WebGL support, skips devices reporting `deviceMemory <= 2`, and only then lazily loads the stage during an idle window.
+- **Stage.** `src/components/cart-experience/cart-stage.tsx` owns the React Three Fiber canvas, an orthographic near-top-down camera, and the per-frame motion. It is a fixed overlay with `pointer-events: none`, so links and buttons underneath stay fully clickable.
+- **Model.** `cart-model.ts` rebuilds the supplied OBJ into a small scene graph and reparents the four existing wheel meshes into axle pivots so they can roll and steer. Footprint constants come straight from the model, so shadows and prints are sized from real geometry rather than eyeballed.
+- **Motion.** `src/lib/cart-motion.ts` holds the pure, unit-tested spring and heading maths. The cart eases toward the pointer, banks into lateral movement, and rolls its wheels by the distance actually travelled.
+- **Shadow.** `cart-shadow.tsx` draws a wide ambient wash, a darker cast, and one contact patch per tyre, all as radial-shader quads — no shadow map, no render target. `src/lib/cart-shadow.ts` holds the motion response curve.
+- **Tyre prints.** `trail-buffer.ts` writes a bounded ribbon (220 points desktop, 120 mobile) and `trail-mesh.tsx` streams it into one reusable geometry, so driving allocates nothing.
+- **Fallbacks.** Reduced motion parks the cart as a single static frame. Without WebGL the canvas never mounts. Either way the hero reads as designed, because the cart is decoration over a complete typographic layout.
 
 ## Component conventions
 

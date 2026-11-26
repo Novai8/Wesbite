@@ -516,6 +516,36 @@ p, li {
     radial-gradient(60% 40% at 22% 44%, rgba(83, 157, 255, 0.22), transparent 76%);
 }
 
+/* ---------- Interactive 3D cart stage ---------- */
+
+.cart-stage {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+  overflow: hidden;
+  contain: strict;
+}
+
+.cart-stage-inner {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.cart-stage-inner[data-hidden="true"] {
+  visibility: hidden;
+}
+
+.cart-stage-canvas {
+  position: absolute !important;
+  inset: 0;
+  width: 100% !important;
+  height: 100% !important;
+  pointer-events: none !important;
+  touch-action: pan-y;
+}
+
 .container-story {
   width: min(100%, 84rem);
   margin-inline: auto;

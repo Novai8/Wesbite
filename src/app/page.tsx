@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CartExperience } from "@/components/cart-experience/cart-experience";
 import { LandingHero } from "@/components/landing/landing-hero";
 import { ProductCard } from "@/components/product-card";
 import { getCatalogueSnapshot } from "@/lib/catalogue-server";
@@ -29,6 +30,7 @@ export default async function HomePage() {
   return (
     <>
       <LandingHero categories={categoryLinks} />
+      <CartExperience />
 
       <section className="home-shelf" aria-labelledby="home-shelf-title">
         <div className="container-page">
