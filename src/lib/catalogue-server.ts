@@ -12,7 +12,7 @@
  */
 
 import { seedCategories, seedProducts, seedPrograms } from "@/data/seed-products";
-import { fromProductRow } from "@/lib/admitad/supabase-store";
+import { fromPublicProductRow } from "@/lib/admitad/supabase-store";
 import { getSupabaseConfig, selectRows, SUPABASE_TABLES } from "@/lib/supabase-rest";
 import type { Category, Product } from "@/lib/types";
 
@@ -56,7 +56,7 @@ async function fetchImportedProducts(): Promise<{ products: Product[]; warning?:
       order: "updated_at.desc",
       limit: 500,
     }, undefined, { revalidate: CATALOGUE_REVALIDATE_SECONDS });
-    return { products: rows.map(fromProductRow) };
+    return { products: rows.map(fromPublicProductRow) };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Supabase read failed";
     console.error(`[catalogue] Supabase read failed, falling back to seed: ${message}`);

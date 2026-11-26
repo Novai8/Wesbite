@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { fromProductRow, toProductRow } from "../src/lib/admitad/supabase-store.ts";
+import { fromProductRow, fromPublicProductRow, toProductRow } from "../src/lib/admitad/supabase-store.ts";
 import type { Product } from "../src/lib/types.ts";
 
 const product: Product = {
@@ -130,4 +130,56 @@ test("fromProductRow surfaces AI fields separately from source fields", () => {
   assert.equal(back.aiHeadline, "Punchy headline");
   assert.equal(back.aiDescription, "Short blurb");
   assert.deepEqual(back.aiQualityFlags, ["no_specs"]);
+});
+
+
+// --------------------------------------------------------------------------
+// Feed provenance must never reach a browser-facing read.
+// --------------------------------------------------------------------------
+
+const SIGNED_FEED_URL = "https://feeds.example.com/export?code=SECRET-SIGNED-TOKEN";
+
+const rowWithProvenance = {
+  id: "0d5a1f2e-7b64-4c31-9f3a-2c8d1e5b7a90",
+  slug: "desk-lamp",
+  title: "Desk Lamp",
+  description: "A small desk lamp.",
+  category_slug: "desk-setup",
+  image_urls: ["https://cdn.example.com/lamp.jpg"],
+  merchant: "AliExpress WW",
+  program_slug: "admitad",
+  affiliate_url: "https://ad.admitad.com/g/xyz/",
+  price: 12.5,
+  currency: "USD",
+  specs: {},
+  pros: [],
+  cons: [],
+  availability: "in_stock",
+  region: ["US"],
+  keywords: [],
+  use_cases: [],
+  budget_tier: "budget",
+  approval_status: "approved",
+  data_source: "api",
+  source: "admitad",
+  commission_info: { feedUrl: SIGNED_FEED_URL, advertiserId: "6115" },
+};
+
+test("the public row mapper never surfaces a signed feed URL", () => {
+  const mapped = fromPublicProductRow(rowWithProvenance);
+  assert.equal(mapped.feedProductUrl, undefined);
+  // Guard against the whole object leaking through some other field.
+  assert.equal(JSON.stringify(mapped).includes("SECRET-SIGNED-TOKEN"), false);
+});
+
+test("the privileged row mapper still preserves provenance for the import path", () => {
+  const mapped = fromProductRow(rowWithProvenance);
+  assert.equal(mapped.feedProductUrl, SIGNED_FEED_URL);
+});
+
+test("the public mapper still maps the display fields it is responsible for", () => {
+  const mapped = fromPublicProductRow(rowWithProvenance);
+  assert.equal(mapped.title, "Desk Lamp");
+  assert.equal(mapped.affiliateUrl, "https://ad.admitad.com/g/xyz/");
+  assert.deepEqual(mapped.imageUrls, ["https://cdn.example.com/lamp.jpg"]);
 });

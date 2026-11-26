@@ -90,8 +90,28 @@ function asNumber(value: unknown): number | undefined {
   return Number.isFinite(n) ? n : undefined;
 }
 
-/** Row -> Product. Tolerant of nulls so an incomplete import cannot crash a page. */
-export function fromProductRow(row: Record<string, unknown>): Product {
+/**
+ * The feed URL the advertiser originally supplied, if the row carries it.
+ *
+ * `commission_info` is internal provenance: it holds signed, advertiser-
+ * controlled feed URLs. It must never reach a browser. Only privileged
+ * (service-role) base-table reads may surface it; the public row mapper drops
+ * it by construction.
+ */
+function feedUrlFromCommissionInfo(value: unknown): string | undefined {
+  if (!value || typeof value !== "object") return undefined;
+  const info = value as Record<string, unknown>;
+  const feedUrl = info.feedUrl ?? info.feed_url;
+  return typeof feedUrl === "string" && feedUrl ? feedUrl : undefined;
+}
+
+interface RowToProductOptions {
+  /** Read `commission_info` for `feedProductUrl`. Privileged reads only. */
+  readProvenance: boolean;
+}
+
+/** Shared row -> Product mapping. Tolerant of nulls and partial rows. */
+function rowToProduct(row: Record<string, unknown>, options: RowToProductOptions): Product {
   const availability = String(row.availability ?? "unknown");
   const tier = String(row.budget_tier ?? "budget");
   const approval = String(row.approval_status ?? "pending");
@@ -109,14 +129,7 @@ export function fromProductRow(row: Record<string, unknown>): Product {
     programSlug: String(row.program_slug ?? ""),
     affiliateUrl: String(row.affiliate_url ?? ""),
     sourceUrl: row.source_url ? String(row.source_url) : undefined,
-    feedProductUrl:
-      row.commission_info && typeof row.commission_info === "object"
-        ? (() => {
-            const info = row.commission_info as Record<string, unknown>;
-            const feedUrl = info.feedUrl ?? info.feed_url;
-            return typeof feedUrl === "string" && feedUrl ? feedUrl : undefined;
-          })()
-        : undefined,
+    feedProductUrl: options.readProvenance ? feedUrlFromCommissionInfo(row.commission_info) : undefined,
     price: asNumber(row.price) ?? 0,
     currency: String(row.currency ?? "USD"),
     previousPrice: asNumber(row.previous_price),
@@ -154,6 +167,27 @@ export function fromProductRow(row: Record<string, unknown>): Product {
     aiDescription: row.ai_description ? String(row.ai_description) : undefined,
     aiQualityFlags: asStringArray(row.ai_quality_flags),
   };
+}
+
+/**
+ * Row -> Product for a privileged read of `public.affiliate_products`.
+ *
+ * Privileged callers (the service-role import/enrichment paths) see the base
+ * table, including `commission_info`, so feed provenance is preserved.
+ */
+export function fromProductRow(row: Record<string, unknown>): Product {
+  return rowToProduct(row, { readProvenance: true });
+}
+
+/**
+ * Row -> Product for a browser-facing catalogue read.
+ *
+ * Feed provenance is never available on this path by construction, so a signed
+ * advertiser feed URL cannot be serialised into the client payload even if the
+ * underlying row carries one.
+ */
+export function fromPublicProductRow(row: Record<string, unknown>): Product {
+  return rowToProduct(row, { readProvenance: false });
 }
 
 function stringOrUndefined(value: unknown): string | undefined {
