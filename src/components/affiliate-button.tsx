@@ -1,23 +1,28 @@
-const LABEL = "Buy at merchant — Affiliate";
+import {
+  getAffiliateButtonState,
+  type ProductAvailability,
+} from "@/lib/affiliate-availability";
 
 export function AffiliateButton({
   href,
-  available,
+  availability,
 }: {
   href: string;
-  available: boolean;
+  availability: ProductAvailability;
 }) {
-  if (!available) {
+  const state = getAffiliateButtonState(availability);
+
+  if (state.kind === "disabled") {
     return (
       <span className="btn btn-secondary cursor-not-allowed opacity-60" aria-disabled="true">
-        Currently unavailable
+        {state.label}
       </span>
     );
   }
 
   return (
     <a href={href} rel="nofollow sponsored noopener" className="btn btn-primary">
-      {LABEL}
+      {state.label}
     </a>
   );
 }

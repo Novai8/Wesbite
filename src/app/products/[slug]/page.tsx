@@ -47,6 +47,12 @@ export default async function ProductPage({
   const related = relatedFrom(products, product, 3);
   const category = getCategories().find((item) => item.slug === product.categorySlug);
   const image = product.imageUrls[0] ?? "/products/placeholder-organiser.svg";
+  const availabilityLabel =
+    product.availability === "in_stock"
+      ? "Listed in stock"
+      : product.availability === "out_of_stock"
+        ? "Reported out of stock"
+        : "Availability unverified";
 
   return (
     <div className="product-room">
@@ -79,9 +85,7 @@ export default async function ProductPage({
             <div className="product-detail-topline">
               <Badge tone="neutral">{tierCopy[product.budgetTier] ?? product.budgetTier}</Badge>
               {product.priceVerifiedAt ? <Badge tone="verified">Price verified</Badge> : null}
-              <Badge tone="neutral">
-                {product.availability === "in_stock" ? "Listed in stock" : "Check availability"}
-              </Badge>
+              <Badge tone="neutral">{availabilityLabel}</Badge>
             </div>
 
             <h1>{product.title}</h1>
@@ -107,7 +111,7 @@ export default async function ProductPage({
             <div className="product-buy">
               <AffiliateButton
                 href={outboundPath(product, "product-page")}
-                available={product.availability === "in_stock"}
+                availability={product.availability}
               />
               <p className="product-buy-disclosure">
                 Links marked Affiliate earn Fyndra a commission if you buy
