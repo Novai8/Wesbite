@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   Archive, ArrowLeft, ArrowRight, BookOpen, Check, Coffee, Gamepad2,
-  Grid2X2, Monitor, PackageCheck, Plane, Search, SlidersHorizontal, Sparkles,
+  Grid2X2, Monitor, Plane, Search, SlidersHorizontal, Sparkles,
   type LucideIcon,
 } from "lucide-react";
 import { ProductCard } from "@/components/product-card";
