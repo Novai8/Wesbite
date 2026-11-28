@@ -16,6 +16,12 @@ const nextConfig: NextConfig = {
           { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
         ],
       },
+      {
+        // The category walkthrough is fully buffered before playback starts.
+        // It is only revalidated on purpose, when a new cut is published.
+        source: "/videos/category/:path*",
+        headers: [{ key: "Cache-Control", value: "public, max-age=86400, must-revalidate" }],
+      },
     ];
   },
   images: {

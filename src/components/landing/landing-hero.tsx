@@ -6,6 +6,7 @@ import { site } from "@/lib/site";
 
 const navItems = [
   { href: "/discover", label: "Discover" },
+  { href: "/categories", label: "Categories" },
   { href: "/problem-solver", label: "Find a fix" },
   { href: "/guides", label: "Guides" },
 ];
@@ -109,9 +110,17 @@ export function LandingHero({ categories }: Props) {
               worth buying. No infinite feed. No sponsored fog.
             </p>
             <div className="story-actions">
-              <Link href="/discover" className="story-button story-button-primary">
+              <Link href="/categories" className="story-button story-button-primary choose-category">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true">
+                  <rect x="3" y="4" width="7" height="7" rx="1.6" stroke="currentColor" strokeWidth="1.8" />
+                  <rect x="14" y="4" width="7" height="7" rx="1.6" stroke="currentColor" strokeWidth="1.8" />
+                  <rect x="3" y="14" width="7" height="7" rx="1.6" stroke="currentColor" strokeWidth="1.8" />
+                  <rect x="14" y="14" width="7" height="7" rx="1.6" stroke="currentColor" strokeWidth="1.8" />
+                </svg>
+                Choose category
+              </Link>
+              <Link href="/discover" className="story-button story-button-quiet">
                 Explore the catalogue
-                <span aria-hidden="true">↗</span>
               </Link>
               <Link href="/problem-solver" className="story-button story-button-quiet">
                 Describe a problem
